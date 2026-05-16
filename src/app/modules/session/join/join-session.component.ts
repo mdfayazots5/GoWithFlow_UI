@@ -225,12 +225,12 @@ export class JoinSessionComponent implements OnInit {
 
     this.isJoining.set(true);
     this.sessionService.joinSession({
-      sessionId: this.preview()!.id,
+      joinCode: this.code(),
       slotIndex: this.selectedSlot()!
     }).subscribe({
-      next: (res) => {
+      next: () => {
         this.isJoining.set(false);
-        this.router.navigate(['/session/lobby', res.session.id]);
+        this.router.navigate(['/session/lobby', this.preview()!.id]);
         this.toast.success('Joined session!');
       },
       error: () => this.isJoining.set(false)

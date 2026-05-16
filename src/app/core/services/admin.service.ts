@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of, delay } from 'rxjs';
+import { Observable, of, delay, map } from 'rxjs';
 import { environment } from '@env/environment';
 import { DUMMY_SESSIONS } from '../../data/dummy/session.dummy';
 import { DUMMY_USERS } from '../../data/dummy/user.dummy';
@@ -65,7 +65,18 @@ export class AdminService {
         ]
       }).pipe(delay(500));
     }
-    return this.http.get<AdminDashboard>(`${this.baseUrl}/dashboard`);
+    return this.http.get<any>(`${this.baseUrl}/dashboard`).pipe(
+      map(res => ({
+        stats: {
+          totalUsers: res.data.totalUsers,
+          activeSessions: res.data.activeSessions,
+          totalScripts: res.data.totalScripts,
+          totalMistakes: res.data.totalMistakes
+        },
+        recentActivity: res.data.recentActivities,
+        weakAreas: res.data.topGrammarMistakes
+      } as AdminDashboard))
+    );
   }
 
   getUsers(params: any = {}): Observable<any> {
@@ -85,11 +96,18 @@ export class AdminService {
         total: 156
       }).pipe(delay(500));
     }
-    let httpParams = new HttpParams();
-    Object.keys(params).forEach(key => {
-      if (params[key]) httpParams = httpParams.set(key, params[key]);
+    const httpParams = new HttpParams({
+      fromObject: {
+        searchTerm: params.search || params.searchTerm || '',
+        ageGroup: params.ageGroup || '',
+        isActive: params.activeOnly !== undefined ? String(params.activeOnly) : '',
+        pageNumber: String((params.page ?? 0) + 1),
+        pageSize: String(params.size || params.pageSize || 10)
+      }
     });
-    return this.http.get<any>(`${this.baseUrl}/users`, { params: httpParams });
+    return this.http.get<any>(`${this.baseUrl}/users`, { params: httpParams }).pipe(
+      map(res => res.data)
+    );
   }
 
   getUserDetail(userId: string): Observable<AdminUserDetail> {
@@ -115,14 +133,19 @@ export class AdminService {
     return this.http.get<AdminUserDetail>(`${this.baseUrl}/users/${userId}`);
   }
 
-  updateUserStatus(payload: { userId: string, status: string }): Observable<boolean> {
+  updateUserStatus(payload: { userId: number, isActive: boolean }): Observable<any> {
     if (environment.isDemo) return of(true).pipe(delay(300));
-    return this.http.patch<boolean>(`${this.baseUrl}/users/status`, payload);
+    return this.http.patch<any>(`${this.baseUrl}/users/status`, payload);
   }
 
-  addAdminNote(payload: { userId: string, note: string }): Observable<any> {
+  addAdminNote(payload: { targetUserId: number, noteText: string }): Observable<any> {
     if (environment.isDemo) return of({ id: 'N1', ...payload, date: new Date().toISOString() }).pipe(delay(300));
     return this.http.post<any>(`${this.baseUrl}/users/notes`, payload);
+  }
+
+  getAdminNotes(userId: number): Observable<any> {
+    if (environment.isDemo) return of([]).pipe(delay(300));
+    return this.http.get<any>(`${this.baseUrl}/users/${userId}/notes`).pipe(map(res => res.data));
   }
 
   getReports(params: any = {}): Observable<any> {

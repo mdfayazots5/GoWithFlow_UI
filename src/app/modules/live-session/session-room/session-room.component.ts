@@ -55,8 +55,10 @@ import { environment } from '@env/environment';
                (turnShifted)="onTurnShifted()"
              ></app-speaker-screen>
            } @else {
-             <app-listener-screen 
+             <app-listener-screen
                [turnState]="turnState()!"
+               [showReReadBanner]="showReReadBanner()"
+               [listenerTagFlash]="listenerTagFlash()"
              ></app-listener-screen>
            }
         </div>
@@ -83,7 +85,11 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
   isSpeaker = signal(false);
   sessionName = signal('Live Session');
   sessionTime = signal('00:00');
-  
+  showReReadBanner = signal(false);
+  listenerTagFlash = signal<string | null>(null);
+
+  private readonly DEMO_USERS = ['U001', 'U002', 'U003'];
+  private demoUserIndex = 0;
   private timeSeconds = 0;
   private timerInterval: any;
   private demoInterval: any;
@@ -110,8 +116,8 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
     const user = this.authService.currentUser;
     
     // Connect to websocket
-    this.ws.connect(sessionId, user?.id || '', 'mock-token', 'live-session');
-    
+    this.ws.connect(sessionId, user?.id || '', 'live-session');
+
     this.loadCurrentTurn(sessionId);
 
     // Listen for real-time events
@@ -119,18 +125,31 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
       this.updateState(newState);
     });
 
+    this.ws.on('LISTENER_TAG').subscribe((tagData: { feedbackTag: string }) => {
+      this.listenerTagFlash.set(tagData.feedbackTag);
+      setTimeout(() => this.listenerTagFlash.set(null), 2000);
+    });
+
+    this.ws.on('RE_READ_REQUESTED').subscribe(() => {
+      this.showReReadBanner.set(true);
+      setTimeout(() => this.showReReadBanner.set(false), 5000);
+    });
+
     this.ws.on('SESSION_ENDED').subscribe(() => {
       this.router.navigate(['/session/report', sessionId]);
     });
 
-    // isDemo behavior: Cycle turns every 15s to show both views
+    // isDemo: simulate TURN_SHIFT every 10s cycling through DUMMY_USERS
     if (environment.isDemo) {
       this.demoInterval = setInterval(() => {
         const current = this.turnState();
         if (current) {
-          this.isSpeaker.set(!this.isSpeaker());
+          this.demoUserIndex = (this.demoUserIndex + 1) % this.DEMO_USERS.length;
+          const nextMemberId = this.DEMO_USERS[this.demoUserIndex];
+          this.turnState.set({ ...current, activeMemberId: nextMemberId, turnIndex: current.turnIndex + 1 });
+          this.isSpeaker.set(nextMemberId === localStorage.getItem('gwf_userId'));
         }
-      }, 15000);
+      }, 10000);
     }
   }
 
@@ -143,8 +162,7 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
 
   private updateState(state: TurnState) {
     this.turnState.set(state);
-    const user = this.authService.currentUser;
-    this.isSpeaker.set(state.activeMemberId === user?.id);
+    this.isSpeaker.set(String(state.activeMemberId) === localStorage.getItem('gwf_userId'));
   }
 
   onTurnShifted() {

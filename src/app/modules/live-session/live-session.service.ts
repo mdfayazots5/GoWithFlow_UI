@@ -1,7 +1,7 @@
 // File: src/app/modules/live-session/live-session.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, delay } from 'rxjs';
+import { Observable, of, delay, map } from 'rxjs';
 import { environment } from '@env/environment';
 import { TurnState, VoiceAnalysisResponse } from '@core/models/voice.model';
 
@@ -20,7 +20,7 @@ export class LiveSessionService {
         totalTurns: 10,
         activeMemberId: 'U001',
         activeMemberName: 'Ravi Kumar',
-        isReReading: false,
+        reReadAllowed: true,
         reReadCount: 0,
         maxReReads: 2,
         utterance: {
@@ -34,7 +34,7 @@ export class LiveSessionService {
         }
       }).pipe(delay(500));
     }
-    return this.http.get<TurnState>(`${this.baseUrl}/${sessionId}/current`);
+    return this.http.get<{ data: TurnState }>(`${this.baseUrl}/${sessionId}/current`).pipe(map(r => r.data));
   }
 
   shiftTurn(sessionId: string, payload: any): Observable<TurnState> {
@@ -67,6 +67,6 @@ export class LiveSessionService {
 
   completeSession(sessionId: string): Observable<any> {
     if (environment.isDemo) return of({ success: true }).pipe(delay(500));
-    return this.http.post<any>(`${environment.apiBaseUrl}/sessions/${sessionId}/complete`, {});
+    return this.http.post<{ data: any }>(`${environment.apiBaseUrl}/sessions/${sessionId}/complete`, {}).pipe(map(r => r.data));
   }
 }

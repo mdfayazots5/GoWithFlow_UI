@@ -21,7 +21,7 @@ import { RouterLink } from '@angular/router';
             <div class="flex items-center gap-2 mt-1">
                <span class="bg-gw-accent/10 text-gw-accent text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full flex items-center gap-1">
                   <i-lucide [img]="FlameIcon" size="10"></i-lucide>
-                  {{ user()?.dailyStreakCount || 0 }} Day Streak
+                  {{ dashboard()?.currentStreak || 0 }} Day Streak
                </span>
             </div>
          </div>
@@ -33,9 +33,9 @@ import { RouterLink } from '@angular/router';
         <div class="bg-gw-accent rounded-2xl p-6 text-white flex items-center justify-between shadow-lg shadow-gw-accent/20">
            <div>
               <p class="text-[10px] font-black uppercase tracking-widest text-white/70 italic">You have an active session</p>
-              <h3 class="text-xl font-black italic tracking-tight">{{ dashboard()?.activeSession.title }}</h3>
+              <h3 class="text-xl font-black italic tracking-tight">{{ dashboard()?.activeSession?.sessionName }}</h3>
            </div>
-           <a [routerLink]="['/session/lobby', dashboard()?.activeSession.id]" class="h-10 px-6 bg-white text-gw-accent rounded-xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center hover:scale-105 transition-transform">
+           <a [routerLink]="['/session/lobby', dashboard()?.activeSession?.sessionId]" class="h-10 px-6 bg-white text-gw-accent rounded-xl font-black uppercase tracking-widest text-[10px] flex items-center justify-center hover:scale-105 transition-transform">
               Rejoin →
            </a>
         </div>
@@ -105,17 +105,17 @@ import { RouterLink } from '@angular/router';
          </div>
          
          <div class="flex gap-4 overflow-x-auto pb-4 no-scrollbar -mx-4 px-4 md:mx-0 md:px-0">
-            @for (session of dashboard()?.recentSessions; track session.id) {
+            @for (session of dashboard()?.recentSessions; track session.sessionId) {
                <div class="min-w-[240px] gw-card p-4 space-y-4 shrink-0 hover:shadow-lg transition-all border-b-4 border-b-gw-primary/20">
                   <div class="flex items-center justify-between">
                      <span class="text-[10px] font-black text-gw-primary uppercase tracking-widest italic bg-gw-primary/10 px-2 py-0.5 rounded-full">Grammar Drill</span>
-                     <span class="text-[10px] font-bold text-gw-text-muted">{{ session.date | date:'MMM d' }}</span>
+                     <span class="text-[10px] font-bold text-gw-text-muted">{{ session.createdDate | date:'MMM d' }}</span>
                   </div>
-                  <h4 class="text-sm font-black italic text-gw-text leading-tight uppercase">{{ session.title }}</h4>
+                  <h4 class="text-sm font-black italic text-gw-text leading-tight uppercase">{{ session.sessionName }}</h4>
                   <div class="flex items-center justify-between pt-2 border-t border-gw-bg">
                      <div class="flex flex-col">
                         <span class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Fluency</span>
-                        <span class="text-sm font-black italic text-gw-primary">{{ session.score }}%</span>
+                        <span class="text-sm font-black italic text-gw-primary">{{ session.myScore }}%</span>
                      </div>
                      <div class="flex flex-col items-end">
                         <span class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Mistakes</span>
@@ -135,7 +135,7 @@ import { RouterLink } from '@angular/router';
          </div>
 
          <div class="space-y-3">
-            @for (mistake of dashboard()?.recentMistakes || []; track $index) {
+            @for (mistake of dashboard()?.pendingMistakes || []; track $index) {
                <div class="gw-card p-4 flex items-center justify-between gap-4">
                   <div class="flex-1 min-w-0">
                      <p class="text-sm italic font-bold text-gw-text truncate">"{{ mistake.text }}"</p>
@@ -192,14 +192,6 @@ export class UserDashboardComponent implements OnInit {
 
   ngOnInit() {
     this.userService.getDashboard().subscribe(res => {
-      // Mock some mistakes if none returned
-      if (!res.recentMistakes) {
-        res.recentMistakes = [
-          { text: 'I have been to there yesterday', type: 'GRAMMAR' },
-          { text: 'He did not went to school', type: 'GRAMMAR' },
-          { text: 'Un-clear pronun-ciation', type: 'PRONUNCIATION' }
-        ];
-      }
       this.dashboard.set(res);
     });
   }

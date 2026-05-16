@@ -34,6 +34,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         );
       } else if (error.status === 401) {
         authService.logout();
+        return throwError(() => error);
       }
 
       // Handle other error codes
@@ -48,7 +49,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
       switch (error.status) {
         case 403:
-          toastService.error('Not authorized to perform this action');
+          toastService.warning('Not authorized to perform this action.');
           break;
         case 409:
           toastService.warning(errorMessage || 'This record already exists');

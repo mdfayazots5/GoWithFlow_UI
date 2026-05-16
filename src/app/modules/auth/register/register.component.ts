@@ -185,7 +185,7 @@ export class RegisterComponent {
       this.isLoading = true;
       const payload = {
         ...this.registerForm.value,
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${this.selectedAvatar()}`
+        avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${this.selectedAvatar()}`
       };
 
       this.auth.register(payload).subscribe({

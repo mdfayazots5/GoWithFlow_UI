@@ -17,8 +17,9 @@ export class AuthService {
   private demo = inject(DemoService);
 
   private readonly TOKEN_KEY = 'gwf_token';
-  private readonly REFRESH_TOKEN_KEY = 'gwf_refresh_token';
-  private readonly USER_KEY = 'gwf_user';
+  private readonly REFRESH_TOKEN_KEY = 'gwf_refreshToken';
+  private readonly USER_ID_KEY = 'gwf_userId';
+  private readonly ROLE_KEY = 'gwf_role';
   private readonly PROFILE_KEY = 'gwf_user_profile';
 
   requestOtp(mobile: string): Observable<{sent: boolean, expiresIn: number}> {
@@ -42,8 +43,8 @@ export class AuthService {
         tap(res => this.setSession(res))
       );
     }
-    return this.http.post<any>(`${environment.apiBaseUrl}/auth/verify-otp`, { mobileNumber: mobile, otp }).pipe(
-      tap(res => this.setSession(res))
+    return this.http.post<any>(`${environment.apiBaseUrl}/auth/verify-otp`, { mobileNumber: mobile, otpCode: otp }).pipe(
+      tap(res => this.setSession(res.data))
     );
   }
 
@@ -68,9 +69,9 @@ export class AuthService {
 
     return this.http.post<any>(`${environment.apiBaseUrl}/auth/refresh-token`, { refreshToken }).pipe(
       tap(res => {
-        localStorage.setItem(this.TOKEN_KEY, res.accessToken);
-        if (res.refreshToken) {
-          localStorage.setItem(this.REFRESH_TOKEN_KEY, res.refreshToken);
+        localStorage.setItem(this.TOKEN_KEY, res.data.accessToken);
+        if (res.data.refreshToken) {
+          localStorage.setItem(this.REFRESH_TOKEN_KEY, res.data.refreshToken);
         }
       })
     );
@@ -81,12 +82,8 @@ export class AuthService {
     if (res.refreshToken) {
       localStorage.setItem(this.REFRESH_TOKEN_KEY, res.refreshToken);
     }
-    
-    localStorage.setItem(this.USER_KEY, JSON.stringify({
-      userId: res.userId,
-      role: res.role,
-      token: res.token || res.accessToken
-    }));
+    localStorage.setItem(this.USER_ID_KEY, String(res.userId));
+    localStorage.setItem(this.ROLE_KEY, res.role);
 
     if (res.profile) {
        localStorage.setItem(this.PROFILE_KEY, JSON.stringify(res.profile));
@@ -115,8 +112,7 @@ export class AuthService {
   }
 
   getRole(): string | null {
-    const user = localStorage.getItem(this.USER_KEY);
-    return user ? JSON.parse(user).role : null;
+    return localStorage.getItem(this.ROLE_KEY);
   }
 
   isAdmin(): boolean {

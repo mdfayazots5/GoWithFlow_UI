@@ -160,8 +160,13 @@ export class AdminReportsComponent implements OnInit {
   }
 
   exportReport() {
-    this.toast.info('Export available in production');
-    // In real app:
-    // this.adminService.exportReports().subscribe(blob => { ... download blob ... });
+    this.adminService.exportReports().subscribe(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'gwf-report.xlsx';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
   }
 }

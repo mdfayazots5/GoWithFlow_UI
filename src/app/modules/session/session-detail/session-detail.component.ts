@@ -71,7 +71,7 @@ import { ToastService } from '@core/services/toast.service';
                   LISTENER FEEDBACK
                </h3>
                <div class="grid grid-cols-2 gap-4">
-                  @for (fb of detail()?.listenerFeedback; track fb.tag) {
+                  @for (fb of detail()?.listenerFeedbackReceived; track fb.tag) {
                     <div class="p-4 bg-gw-bg rounded-2xl border border-gw-bg flex items-center justify-between">
                        <span class="text-[10px] font-bold text-gw-text italic">{{ fb.tag }}</span>
                        <span class="px-2 py-0.5 bg-white rounded-lg text-[10px] font-black text-gw-primary">{{ fb.count }}</span>
@@ -147,7 +147,7 @@ import { ToastService } from '@core/services/toast.service';
                   </tr>
                </thead>
                <tbody class="divide-y divide-gw-bg">
-                  @for (member of detail()?.memberScores; track member.name) {
+                  @for (member of detail()?.allMemberScores; track member.name) {
                     <tr class="hover:bg-gw-bg/20 transition-colors">
                        <td class="px-8 py-6 flex items-center gap-3">
                           <img [src]="'https://api.dicebear.com/7.x/avataaars/svg?seed=' + member.name" class="w-8 h-8 rounded-lg bg-gw-bg">
@@ -223,8 +223,8 @@ export class SessionDetailComponent implements OnInit {
   }
 
   practiceMistake() {
-    this.repracticeService.generateRepracticeSession(this.detail()?.id || '0').subscribe(res => {
-      this.router.navigate(['/repractice', res.id]);
+    this.repracticeService.generateRepracticeSession(Number(this.detail()?.id) || 0).subscribe(res => {
+      this.router.navigate(['/repractice', res.repracticeSessionId]);
     });
   }
 

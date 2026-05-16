@@ -57,7 +57,7 @@ export class BottomNavComponent {
   showNav(): boolean {
     const url = this.router.url;
     const hideOn = ['/auth', '/live-session', '/repractice', '/admin'];
-    const isUser = this.auth.currentUser?.role === 'USER';
-    return isUser && !hideOn.some(path => url.includes(path));
+    const role = this.auth.getRole();
+    return role === 'USER' && !hideOn.some(path => url.includes(path));
   }
 }

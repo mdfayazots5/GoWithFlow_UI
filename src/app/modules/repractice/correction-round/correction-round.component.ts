@@ -52,7 +52,7 @@ import { VoiceAnalysis } from '@core/models/voice.model';
                <div class="bg-white/5 p-8 rounded-[40px] border border-white/5 space-y-6">
                   <div class="space-y-2">
                      <span class="text-[8px] font-black uppercase tracking-widest text-gw-error italic">What went wrong:</span>
-                     <p class="text-lg font-bold text-white/40 italic line-through decoration-gw-error/40">{{ currentUtterance()?.originalSpoken }}</p>
+                     <p class="text-lg font-bold text-white/40 italic line-through decoration-gw-error/40">{{ currentUtterance()?.mistakeDetail }}</p>
                   </div>
                   <div class="space-y-2">
                      <span class="text-[8px] font-black uppercase tracking-widest text-gw-success italic">Correction:</span>
@@ -64,7 +64,7 @@ import { VoiceAnalysis } from '@core/models/voice.model';
                <div class="space-y-8 py-4">
                   <div class="space-y-2">
                      <span class="text-[10px] font-black uppercase tracking-widest text-gw-accent italic">Now say this correctly:</span>
-                     <h1 class="text-4xl font-black text-white italic leading-tight tracking-tight">{{ currentUtterance()?.correctText }}</h1>
+                     <h1 class="text-4xl font-black text-white italic leading-tight tracking-tight">{{ currentUtterance()?.englishText }}</h1>
                   </div>
 
                   <!-- Hint Area -->
@@ -270,14 +270,12 @@ export class CorrectionRoundComponent implements OnInit, OnDestroy {
   analyzeAttempt(spoken: string) {
     if (!this.currentUtterance()) return;
     
-    const analysis = this.voiceService.analyzeTranscript(spoken, this.currentUtterance()!.correctText);
+    const analysis = this.voiceService.analyzeTranscript(spoken, this.currentUtterance()!.englishText);
     this.lastAnalysis.set(analysis);
 
     this.repracticeService.updateAttempt({
-      sessionId: this.session()!.id,
-      utteranceId: this.currentUtterance()!.id,
-      score: analysis.fluencyScore,
-      spokenText: spoken
+      repracticeUtteranceId: Number(this.currentUtterance()!.id),
+      score: analysis.fluencyScore
     }).subscribe();
 
     if (analysis.isPassed) {
@@ -307,8 +305,8 @@ export class CorrectionRoundComponent implements OnInit, OnDestroy {
 
   finishSession() {
     if (this.session()) {
-      this.repracticeService.completeRepracticeSession(this.session()!.id).subscribe(() => {
-        this.improvement.set(Math.round((this.resolvedCount() / this.session()!.utterances.length) * 100));
+      this.repracticeService.completeRepracticeSession(this.session()!.id).subscribe(res => {
+        this.improvement.set(res.improvementPercent);
         this.isComplete.set(true);
       });
     }

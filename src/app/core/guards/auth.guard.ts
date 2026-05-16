@@ -10,13 +10,19 @@ export const authGuard: CanActivateFn = (route, state) => {
   if (environment.isDemo) return true;
 
   if (auth.isLoggedIn) {
-    const user = auth.currentUser;
+    const role = auth.getRole();
     const isAdminRoute = state.url.startsWith('/admin');
-    
-    if (isAdminRoute && user?.role !== 'ADMIN') {
+
+    if (isAdminRoute && role !== 'ADMIN') {
       router.navigate(['/user/dashboard']);
       return false;
     }
+
+    if (!isAdminRoute && role !== 'USER' && role !== 'ADMIN') {
+      router.navigate(['/auth/login']);
+      return false;
+    }
+
     return true;
   }
 

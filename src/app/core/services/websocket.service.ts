@@ -11,14 +11,15 @@ export class WebsocketService {
   private connection: signalR.HubConnection | null = null;
   private messageSubjects: { [key: string]: Subject<any> } = {};
 
-  connect(sessionId: string, userId: string, token: string, hubPath: 'session' | 'live-session'): void {
+  connect(sessionId: string, userId: string, hubPath: 'session' | 'live-session'): void {
     if (environment.isDemo) {
       console.log(`[Demo] Connected to ${hubPath} hub for session ${sessionId}`);
       return;
     }
 
-    const hubUrl = `${environment.apiBaseUrl.replace('/api/v1', '')}/hubs/${hubPath}`;
-    
+    const token = localStorage.getItem('gwf_token');
+    const hubUrl = `${environment.signalRHubUrl}/hubs/${hubPath}`;
+
     this.connection = new signalR.HubConnectionBuilder()
       .withUrl(`${hubUrl}?access_token=${token}&sessionId=${sessionId}`)
       .withAutomaticReconnect()

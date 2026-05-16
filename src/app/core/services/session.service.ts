@@ -1,7 +1,7 @@
 // File: src/app/core/services/session.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of, delay } from 'rxjs';
+import { Observable, of, delay, map } from 'rxjs';
 import { environment } from '@env/environment';
 import { 
   Session, 
@@ -52,7 +52,7 @@ export class SessionService {
         status: 'LOBBY'
       }).pipe(delay(1000));
     }
-    return this.http.post<CreateSessionResponse>(this.baseUrl, payload);
+    return this.http.post<any>(this.baseUrl, payload).pipe(map(res => res.data as CreateSessionResponse));
   }
 
   validateCode(joinCode: string): Observable<SessionPreview> {
@@ -74,14 +74,14 @@ export class SessionService {
         ]
       }).pipe(delay(500));
     }
-    return this.http.get<SessionPreview>(`${this.baseUrl}/validate/${joinCode}`);
+    return this.http.get<any>(`${this.baseUrl}/validate/${joinCode}`).pipe(map(res => res.data as SessionPreview));
   }
 
-  joinSession(payload: { sessionId: string, slotIndex: number }): Observable<LobbyState> {
+  joinSession(payload: { joinCode: string, slotIndex: number }): Observable<any> {
     if (environment.isDemo) {
-      return this.getLobbyState(payload.sessionId);
+      return this.getLobbyState('DEMO');
     }
-    return this.http.post<LobbyState>(`${this.baseUrl}/join`, payload);
+    return this.http.post<any>(`${this.baseUrl}/join`, payload).pipe(map(res => res.data));
   }
 
   getLobbyState(sessionId: string): Observable<LobbyState> {
@@ -99,12 +99,12 @@ export class SessionService {
         canStart: true
       }).pipe(delay(500));
     }
-    return this.http.get<LobbyState>(`${this.baseUrl}/lobby/${sessionId}`);
+    return this.http.get<any>(`${this.baseUrl}/lobby/${sessionId}`).pipe(map(res => res.data as LobbyState));
   }
 
-  updateReadyStatus(payload: { sessionId: string, ready: boolean }): Observable<boolean> {
+  updateReadyStatus(payload: { sessionId: number, isReady: boolean }): Observable<any> {
     if (environment.isDemo) return of(true).pipe(delay(300));
-    return this.http.patch<boolean>(`${this.baseUrl}/ready`, payload);
+    return this.http.patch<any>(`${this.baseUrl}/ready`, payload);
   }
 
   startSession(sessionId: string): Observable<boolean> {

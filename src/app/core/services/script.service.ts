@@ -1,7 +1,7 @@
 // File: src/app/core/services/script.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, of, delay } from 'rxjs';
+import { Observable, of, delay, map } from 'rxjs';
 import { environment } from '@env/environment';
 import { 
   Script, 
@@ -50,7 +50,7 @@ export class ScriptService {
       });
     }
 
-    return this.http.get<PagedResult<Script>>(this.baseUrl, { params });
+    return this.http.get<any>(this.baseUrl, { params }).pipe(map(res => res.data as PagedResult<Script>));
   }
 
   getScriptById(id: string): Observable<Script> {
@@ -74,7 +74,13 @@ export class ScriptService {
     }
     const formData = new FormData();
     formData.append('file', file);
-    return this.http.post<ValidationResult>(`${this.baseUrl}/validate`, formData);
+    return this.http.post<any>(`${this.baseUrl}/validate`, formData).pipe(
+      map(res => ({
+        isValid: res.data.isValid,
+        rows: res.data.validRows,
+        errors: (res.data.errorRows ?? []).map((e: any) => `Row ${e.rowNumber} — ${e.columnName}: ${e.errorMessage}`)
+      } as ValidationResult))
+    );
   }
 
   uploadScript(file: File, metadata: any): Observable<ScriptUploadResponse> {
@@ -87,8 +93,14 @@ export class ScriptService {
     }
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('metadata', JSON.stringify(metadata));
-    return this.http.post<ScriptUploadResponse>(`${this.baseUrl}/upload`, formData);
+    formData.append('scriptTitle', metadata.scriptTitle);
+    formData.append('category', metadata.category);
+    formData.append('grammarFocusTag', metadata.grammarFocusTag);
+    formData.append('contextTag', metadata.contextTag);
+    formData.append('complexityLevel', String(metadata.complexityLevel));
+    formData.append('targetAgeGroup', metadata.targetAgeGroup);
+    formData.append('hintLanguage', metadata.hintLanguage);
+    return this.http.post<any>(`${this.baseUrl}/upload`, formData).pipe(map(res => res.data as ScriptUploadResponse));
   }
 
   getSampleTemplate(): Observable<Blob> {
@@ -99,11 +111,11 @@ export class ScriptService {
     return this.http.get(`${this.baseUrl}/sample-template`, { responseType: 'blob' });
   }
 
-  updateScriptStatus(payload: { scriptId: string, active: boolean }): Observable<boolean> {
+  updateScriptStatus(payload: { scriptId: number, isActive: boolean }): Observable<any> {
     if (environment.isDemo) {
       return of(true).pipe(delay(300));
     }
-    return this.http.patch<boolean>(`${this.baseUrl}/status`, payload);
+    return this.http.patch<any>(`${this.baseUrl}/status`, payload);
   }
 
   getVersionHistory(scriptId: string): Observable<ScriptVersion[]> {

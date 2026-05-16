@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, delay } from 'rxjs';
+import { Observable, of, delay, map } from 'rxjs';
 import { environment } from '@env/environment';
 
 export interface Utterance {
@@ -38,6 +38,9 @@ export class TurnService {
         activeMemberId: 'U001',
         slotIndex: 0,
         turnIndex: 0,
+        reReadAllowed: true,
+        reReadCount: 0,
+        maxReReads: 2,
         utterance: {
           sequenceId: 1,
           speakerLabel: 'Ravi',
@@ -49,7 +52,7 @@ export class TurnService {
         isLastTurn: false
       } as TurnState).pipe(delay(500));
     }
-    return this.http.get<TurnState>(`${this.baseUrl}/${sessionId}/current`);
+    return this.http.get<{ data: TurnState }>(`${this.baseUrl}/${sessionId}/current`).pipe(map(r => r.data));
   }
 
   submitVoiceAnalysis(sessionId: string, analysis: any): Observable<any> {

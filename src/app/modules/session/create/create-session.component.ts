@@ -292,11 +292,23 @@ export class CreateSessionComponent implements OnInit {
   onSubmit() {
     if (this.createForm.invalid) return;
 
+    const roomExpiryMap: Record<string, number> = { '1hr': 60, '6hr': 360, '24hr': 1440 };
+    const payload = {
+      sessionName: this.createForm.value.sessionName,
+      sessionMode: this.createForm.value.sessionMode,
+      maxMembers: this.createForm.value.maxMembers,
+      sessionDuration: this.createForm.value.sessionDuration,
+      scriptId: Number(this.createForm.value.scriptId),
+      roomExpiryMinutes: roomExpiryMap[this.createForm.value.roomExpiry] ?? 60
+    };
+
     this.isLoading.set(true);
-    this.sessionService.createSession(this.createForm.value).subscribe({
+    this.sessionService.createSession(payload).subscribe({
       next: (res) => {
         this.isLoading.set(false);
         this.createdSession.set(res);
+        localStorage.setItem('gwf_sessionId', String(res.id));
+        localStorage.setItem('gwf_joinCode', res.joinCode);
         this.toast.success('Session created!');
       },
       error: () => this.isLoading.set(false)

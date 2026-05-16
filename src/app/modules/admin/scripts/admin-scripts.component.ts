@@ -161,8 +161,11 @@ export class AdminScriptsComponent implements OnInit {
   }
 
   toggleScript(script: any) {
-    // In a real app we'd call a toggle endpoint
-    this.toast.success(`Script status updated for ${script.title}`);
+    const isActive = script.active === false;
+    this.scriptService.updateScriptStatus({ scriptId: Number(script.id), isActive }).subscribe(() => {
+      this.toast.success(`Script ${isActive ? 'activated' : 'deactivated'}`);
+      this.scriptService.getScripts({}).subscribe(data => this.scripts.set(data.items || []));
+    });
   }
 
   downloadSample() {

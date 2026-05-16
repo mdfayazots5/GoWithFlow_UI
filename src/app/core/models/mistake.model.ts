@@ -21,14 +21,16 @@ export interface Mistake {
 export interface MistakeSummary {
   totalMistakes: number;
   resolvedMistakes: number;
-  pendingPractice: number;
+  pendingMistakes: number;
   improvementPercent: number;
 }
 
 export interface GrammarProgress {
-  tag: string;
-  errorCount: number;
+  grammarTag: string;
+  totalMistakes: number;
+  resolvedMistakes: number;
   improvementPercent: number;
+  progressBarValue: number;
 }
 
 export interface RepracticeSession {
@@ -43,12 +45,14 @@ export interface RepracticeSession {
 
 export interface RepracticeUtterance {
   id: string;
-  mistakeId: string;
-  originalSpoken: string;
-  correctText: string;
-  correctionNote: string;
+  englishText: string;
   hintText: string;
-  attempts: RepracticeAttempt[];
+  mistakeType: string;
+  mistakeDetail: string;
+  correctionNote: string;
+  attemptCount: number;
+  bestScore: number;
+  lastScore: number;
   isResolved: boolean;
 }
 

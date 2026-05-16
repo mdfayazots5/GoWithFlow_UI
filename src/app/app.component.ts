@@ -88,7 +88,7 @@ export class AppComponent {
   }
 
   isAdminLayout(): boolean {
-    return this.auth.currentUser?.role === 'ADMIN' && this.currentUrl().includes('/admin');
+    return this.auth.getRole() === 'ADMIN' && this.currentUrl().includes('/admin');
   }
 
   isMobileView(): boolean {

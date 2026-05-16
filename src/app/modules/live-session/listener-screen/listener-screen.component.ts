@@ -1,5 +1,5 @@
 // File: src/app/modules/live-session/listener-screen/listener-screen.component.ts
-import { Component, Input, inject, signal } from '@angular/core';
+import { Component, Input, inject, signal, OnChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TurnState } from '@core/models/voice.model';
 import { LucideAngularModule, Mic, ThumbsUp, HelpCircle, AlertTriangle, MessageCircle, Info } from 'lucide-angular';
@@ -68,6 +68,17 @@ import { ToastService } from '@core/services/toast.service';
          </div>
          <span class="text-[10px] font-black uppercase tracking-widest text-gw-primary italic">Your turn is next</span>
       </div>
+
+      @if (showReReadBanner) {
+        <div class="p-4 bg-[#E07B39]/10 border border-[#E07B39]/30 rounded-2xl text-center animate-in fade-in duration-300">
+          <span class="text-[10px] font-black uppercase tracking-widest text-[#E07B39] italic">Re-reading...</span>
+        </div>
+      }
+      @if (listenerTagFlash) {
+        <div class="p-4 bg-gw-primary/10 border border-gw-primary/30 rounded-2xl text-center animate-in fade-in duration-300">
+          <span class="text-[10px] font-black uppercase tracking-widest text-gw-primary italic">{{ listenerTagFlash }}</span>
+        </div>
+      }
     </div>
   `,
   styles: [`
@@ -87,7 +98,9 @@ import { ToastService } from '@core/services/toast.service';
 })
 export class ListenerScreenComponent {
   @Input({ required: true }) turnState!: TurnState;
-  
+  @Input() showReReadBanner = false;
+  @Input() listenerTagFlash: string | null = null;
+
   private liveSessionService = inject(LiveSessionService);
   private toast = inject(ToastService);
 
@@ -105,9 +118,13 @@ export class ListenerScreenComponent {
 
   sendFeedback(tag: string) {
     this.lastAction.set(tag);
-    this.liveSessionService.submitListenerFeedback(this.turnState.sessionId, { tag })
-      .subscribe(() => {
-        setTimeout(() => this.lastAction.set(null), 300);
-      });
+    this.liveSessionService.submitListenerFeedback(this.turnState.sessionId, {
+      sessionId: this.turnState.sessionId,
+      turnIndex: this.turnState.turnIndex,
+      targetUserId: this.turnState.activeMemberId,
+      feedbackTag: tag
+    }).subscribe(() => {
+      setTimeout(() => this.lastAction.set(null), 300);
+    });
   }
 }

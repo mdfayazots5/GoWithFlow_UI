@@ -142,13 +142,15 @@ import { ToastService } from '@core/services/toast.service';
               </button>
 
               <div class="flex gap-4">
-                 <button 
-                    (click)="resetRecording()"
+                 @if (turnState.reReadAllowed && turnState.reReadCount < turnState.maxReReads) {
+                 <button
+                    (click)="onReRead()"
                     class="flex-1 h-12 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white/60 flex items-center justify-center gap-2 hover:bg-white/5 transition-all"
                  >
                     <i-lucide [img]="RetryIcon" size="14"></i-lucide>
                     RE-READ
                  </button>
+                 }
                  <button 
                     (click)="onConfirm()"
                     class="flex-1 h-12 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-white/60 flex items-center justify-center gap-2 hover:bg-white/5 transition-all"
@@ -233,14 +235,43 @@ export class SpeakerScreenComponent {
   }
 
   onConfirm() {
-    const score = this.analysis()?.fluencyScore || 0;
-    this.liveSessionService.saveVoiceAnalysis(this.turnState.sessionId, {
-      fluencyScore: score,
-      transcript: this.interimTranscript()
-    }).subscribe(() => {
-      this.liveSessionService.shiftTurn(this.turnState.sessionId, {}).subscribe(() => {
+    const a = this.analysis();
+    const score = a?.fluencyScore || 0;
+    const analysisPayload = {
+      sessionId: this.turnState.sessionId,
+      turnIndex: this.turnState.turnIndex,
+      utteranceId: this.turnState.utterance.sequenceId,
+      transcribedText: this.interimTranscript(),
+      expectedText: this.turnState.utterance.englishText,
+      fluencyScore: a?.fluencyScore || 0,
+      confidenceScore: a?.confidenceScore || 0,
+      speakingSpeedWpm: a?.speedWpm || 0,
+      pauseCount: 0,
+      hesitationWords: a?.hesitations || [],
+      repeatedWords: [],
+      grammarErrors: (a?.mistakes || []).filter(m => m.type === 'GRAMMAR').map(m => ({
+        expectedPhrase: m.expected || '', spokenPhrase: m.actual || '', errorType: m.type, position: 0
+      })),
+      pronunciationIssues: (a?.mistakes || []).filter(m => m.type === 'PRONUNCIATION').map(m => ({
+        word: m.word || '', expectedPhonetic: m.expected || '', issueNote: ''
+      })),
+      overallScore: score
+    };
+    this.liveSessionService.saveVoiceAnalysis(this.turnState.sessionId, analysisPayload).subscribe(() => {
+      this.liveSessionService.shiftTurn(this.turnState.sessionId, {
+        sessionId: this.turnState.sessionId,
+        memberId: localStorage.getItem('gwf_userId'),
+        turnIndex: this.turnState.turnIndex,
+        analysisScore: score
+      }).subscribe(() => {
         this.turnShifted.emit();
       });
+    });
+  }
+
+  onReRead() {
+    this.liveSessionService.requestReRead(this.turnState.sessionId).subscribe(() => {
+      this.resetRecording();
     });
   }
 }

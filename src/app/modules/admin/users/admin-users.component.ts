@@ -313,9 +313,10 @@ export class AdminUsersComponent implements OnInit {
   }
 
   toggleStatus(user: AdminUserListItem | AdminUserDetail) {
-    const newStatus = user.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
-    this.adminService.updateUserStatus({ userId: user.id, status: newStatus }).subscribe(() => {
-      this.toast.success(`User ${newStatus.toLowerCase()}d successfully`);
+    const isActive = user.status !== 'ACTIVE';
+    const newStatus = isActive ? 'ACTIVE' : 'INACTIVE';
+    this.adminService.updateUserStatus({ userId: Number(user.id), isActive }).subscribe(() => {
+      this.toast.success(`User ${isActive ? 'activated' : 'deactivated'} successfully`);
       this.loadUsers();
       if (this.selectedUser()?.id === user.id) {
         this.selectedUser.update(u => u ? { ...u, status: newStatus } : null);

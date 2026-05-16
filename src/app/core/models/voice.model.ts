@@ -23,10 +23,10 @@ export interface TurnState {
   sessionId: string;
   turnIndex: number;
   totalTurns: number;
-  activeMemberId: string;
+  activeMemberId: string | number;
   activeMemberName: string;
   utterance: UtteranceData;
-  isReReading: boolean;
+  reReadAllowed: boolean;
   reReadCount: number;
   maxReReads: number;
   nextUtterance?: string;

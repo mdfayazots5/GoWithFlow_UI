@@ -51,7 +51,7 @@ import { RouterLink } from '@angular/router';
                   </tr>
                </thead>
                <tbody class="divide-y divide-gw-bg">
-                  @for (point of data()?.scoreTrend; track point.date) {
+                  @for (point of data()?.recentSessions; track point.date) {
                     <tr class="hover:bg-gw-bg/20 transition-all">
                        <td class="px-8 py-5 text-[10px] font-bold text-gw-text-muted italic">{{ point.date | date:'MMM d' }}</td>
                        <td class="px-8 py-5 text-sm font-black text-gw-text italic">{{ point.sessionName }}</td>
@@ -72,16 +72,16 @@ import { RouterLink } from '@angular/router';
       <div class="space-y-6">
          <h3 class="text-lg font-black text-gw-text italic uppercase tracking-widest border-l-4 border-gw-primary pl-4">Grammar Focus</h3>
          <div class="grid gap-4">
-            @for (grammar of data()?.grammarProgress; track grammar.tag) {
+            @for (grammar of data()?.grammarProgress; track grammar.grammarTag) {
                <div class="bg-white p-6 rounded-[32px] border border-gw-card-border shadow-sm space-y-4">
                   <div class="flex justify-between items-center">
-                     <span class="text-[10px] font-black uppercase tracking-widest text-gw-text italic">{{ grammar.tag }}</span>
+                     <span class="text-[10px] font-black uppercase tracking-widest text-gw-text italic">{{ grammar.grammarTag }}</span>
                      <span class="text-[10px] font-bold text-gw-text-muted italic">{{ grammar.resolvedMistakes }}/{{ grammar.totalMistakes }} Resolved</span>
                   </div>
                   <div class="h-2 w-full bg-gw-bg rounded-full overflow-hidden">
-                     <div 
+                     <div
                         class="h-full bg-gw-primary transition-all duration-1000"
-                        [style.width.%]="(grammar.resolvedMistakes / grammar.totalMistakes) * 100"
+                        [style.width.%]="grammar.progressBarValue"
                      ></div>
                   </div>
                </div>
@@ -178,17 +178,16 @@ export class ImprovementTrackerComponent implements OnInit {
     this.userService.getImprovementData().subscribe(res => {
       this.data.set(res);
       this.trackerStats = [
-        { label: 'Completed', value: res.sessionsCompleted, icon: Award },
-        { label: 'Avg score', value: res.avgScoreThisWeek + '%', icon: TrendingUp },
-        { label: 'Resolved', value: res.mistakesResolved, icon: Target },
-        { label: 'Streak', value: res.currentStreak, icon: Flame }
+        { label: 'Completed', value: res.statsHeader.sessionsCompleted, icon: Award },
+        { label: 'Avg score', value: res.statsHeader.avgScoreThisWeek + '%', icon: TrendingUp },
+        { label: 'Resolved', value: res.statsHeader.mistakesResolved, icon: Target },
+        { label: 'Streak', value: res.statsHeader.currentStreak, icon: Flame }
       ];
+      this.badges.set(res.badgesEarned);
     });
   }
 
   loadBadges() {
-    this.userService.getBadges().subscribe(res => {
-      this.badges.set(res);
-    });
+    // badges now loaded from getImprovementData() → badgesEarned
   }
 }

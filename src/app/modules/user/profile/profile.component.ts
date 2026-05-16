@@ -2,7 +2,7 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { UserService } from '@core/services/user.service';
-import { UserProfile } from '@core/models/user.model';
+import { UserProfile, StreakData } from '@core/models/user.model';
 import { LucideAngularModule, User, Mail, Smartphone, Calendar, Award, Target, Flame, Edit2, LogOut, Camera, Check } from 'lucide-angular';
 import { AuthService } from '@core/services/auth.service';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
@@ -173,6 +173,7 @@ export class ProfileComponent implements OnInit {
   readonly LogoutIcon = LogOut;
 
   profile = signal<UserProfile | null>(null);
+  streak = signal<StreakData | null>(null);
   isEditing = signal(false);
   isLoading = signal(false);
   stats: any[] = [];
@@ -183,18 +184,22 @@ export class ProfileComponent implements OnInit {
 
   ngOnInit() {
     this.loadProfile();
+    this.userService.getStreakData().subscribe(s => this.streak.set(s));
   }
 
   loadProfile() {
     this.userService.getProfile().subscribe(res => {
       this.profile.set(res);
       this.editForm.patchValue({ fullName: res.fullName });
-      this.stats = [
-        { label: 'Sessions', value: res.totalSessionsPlayed },
-        { label: 'Avg Fluency', value: res.avgFluencyScore + '%' },
-        { label: 'Mistakes Fixed', value: res.mistakesFixed },
-        { label: 'Streak', value: res.dailyStreakCount }
-      ];
+      this.userService.getStreakData().subscribe(s => {
+        this.streak.set(s);
+        this.stats = [
+          { label: 'Sessions', value: res.totalSessionsPlayed },
+          { label: 'Avg Fluency', value: res.avgFluencyScore + '%' },
+          { label: 'Current Streak', value: s.currentStreak },
+          { label: 'Best Streak', value: s.longestStreak }
+        ];
+      });
     });
   }
 
@@ -205,9 +210,14 @@ export class ProfileComponent implements OnInit {
   saveProfile() {
     if (this.editForm.invalid) return;
     this.isLoading.set(true);
-    const fullName = this.editForm.value.fullName as string;
-    
-    this.userService.updateProfile({ fullName }).subscribe({
+    const p = this.profile()!;
+    this.userService.updateProfile({
+      fullName: this.editForm.value.fullName!,
+      email: p.email,
+      ageGroup: p.ageGroup,
+      preferredHintLanguage: p.preferredHintLanguage,
+      avatarUrl: p.avatar
+    }).subscribe({
       next: (res) => {
         this.profile.set(res);
         this.isEditing.set(false);
@@ -233,8 +243,15 @@ export class ProfileComponent implements OnInit {
     }
   }
 
-  updatePreference(key: string, value: any) {
-    this.userService.updateProfile({ [key]: value }).subscribe(res => {
+  updatePreference(key: 'preferredHintLanguage' | 'ageGroup', value: string) {
+    const p = this.profile()!;
+    this.userService.updateProfile({
+      fullName: p.fullName,
+      email: p.email,
+      ageGroup: key === 'ageGroup' ? value : p.ageGroup,
+      preferredHintLanguage: key === 'preferredHintLanguage' ? value : p.preferredHintLanguage,
+      avatarUrl: p.avatar
+    }).subscribe(res => {
       this.profile.set(res);
       this.toast.success('Preference updated');
     });

@@ -107,7 +107,7 @@ import { ToastService } from '@core/services/toast.service';
                         <p class="text-xl font-black text-gw-text italic">{{ mistake.occurredCount }}x</p>
                      </div>
                      <button 
-                        (click)="startPractice(mistake.sessionId)"
+                        (click)="startPractice(0)"
                         class="h-12 bg-gw-primary/10 text-gw-primary font-black uppercase tracking-widest text-[10px] italic rounded-xl border border-gw-primary/20 hover:bg-gw-primary hover:text-white transition-all flex items-center justify-center gap-2"
                      >
                         PRACTICE THIS
@@ -179,7 +179,7 @@ export class MyMistakesComponent implements OnInit {
   summaryItems = [
     { label: 'Total Mistakes', value: 0, icon: AlertCircle, key: 'totalMistakes' },
     { label: 'Resolved', value: 0, icon: CheckCircle, key: 'resolvedMistakes' },
-    { label: 'Pending', value: 0, icon: Clock, key: 'pendingPractice' },
+    { label: 'Pending', value: 0, icon: Clock, key: 'pendingMistakes' },
     { label: 'Improvement', value: 0, icon: TrendingUp, key: 'improvementPercent', suffix: '%' }
   ];
 
@@ -200,18 +200,18 @@ export class MyMistakesComponent implements OnInit {
 
   loadMistakes() {
     this.isLoading.set(true);
-    this.mistakeService.getMistakes({ type: this.activeTab() }).subscribe(res => {
+    this.mistakeService.getMistakes({ mistakeType: this.activeTab() }).subscribe(res => {
       this.mistakes.set(res.items);
       this.isLoading.set(false);
     });
   }
 
-  startPractice(sessionId: string = '0') {
+  startPractice(sessionId: number = 0) {
     this.isPracticing.set(true);
     this.repracticeService.generateRepracticeSession(sessionId).subscribe({
       next: (res) => {
         this.isPracticing.set(false);
-        this.router.navigate(['/repractice', res.id]);
+        this.router.navigate(['/repractice', res.repracticeSessionId]);
       },
       error: () => this.isPracticing.set(false)
     });

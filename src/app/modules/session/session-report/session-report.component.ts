@@ -161,8 +161,8 @@ export class SessionReportComponent implements OnInit {
   }
 
   startCorrection() {
-    this.repracticeService.generateRepracticeSession(this.summary()?.id || '0').subscribe(res => {
-      this.router.navigate(['/repractice', res.id]);
+    this.repracticeService.generateRepracticeSession(Number(this.summary()?.id) || 0).subscribe(res => {
+      this.router.navigate(['/repractice', res.repracticeSessionId]);
     });
   }
 }

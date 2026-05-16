@@ -60,11 +60,11 @@ export interface SessionDetail extends Session {
     shouldBe: string;
     tag: string;
   }[];
-  listenerFeedback: {
+  listenerFeedbackReceived: {
     tag: string;
     count: number;
   }[];
-  memberScores: {
+  allMemberScores: {
     name: string;
     fluency: number;
     confidence: number;

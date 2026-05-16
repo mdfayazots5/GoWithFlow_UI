@@ -62,7 +62,7 @@ export const DUMMY_MISTAKES: Mistake[] = [
 export const DUMMY_MISTAKE_SUMMARY: MistakeSummary = {
   totalMistakes: 8,
   resolvedMistakes: 3,
-  pendingPractice: 5,
+  pendingMistakes: 5,
   improvementPercent: 65
 };
 
@@ -74,22 +74,26 @@ export const DUMMY_REPRACTICE: RepracticeSession = {
   utterances: [
     {
       id: 'RU001',
-      mistakeId: 'M001',
-      originalSpoken: 'I have work here for three years.',
-      correctText: 'I have been working here for three years.',
-      correctionNote: "Use 'have been working' for continuous past actions.",
+      englishText: 'I have been working here for three years.',
       hintText: 'నేను మూడు సంవత్సరాలుగా ఇక్కడ పని చేస్తున్నాను.',
-      attempts: [],
+      mistakeType: 'GRAMMAR',
+      mistakeDetail: 'I have work here for three years.',
+      correctionNote: "Use 'have been working' for continuous past actions.",
+      attemptCount: 0,
+      bestScore: 0,
+      lastScore: 0,
       isResolved: false
     },
     {
       id: 'RU002',
-      mistakeId: 'M002',
-      originalSpoken: 'He don\'t like coffee.',
-      correctText: 'He doesn\'t like coffee.',
-      correctionNote: "Use 'doesn't' for He/She/It.",
+      englishText: "He doesn't like coffee.",
       hintText: 'అతనికి కాఫీ ఇష్టం ఉండదు.',
-      attempts: [],
+      mistakeType: 'GRAMMAR',
+      mistakeDetail: "He don't like coffee.",
+      correctionNote: "Use 'doesn't' for He/She/It.",
+      attemptCount: 0,
+      bestScore: 0,
+      lastScore: 0,
       isResolved: false
     }
   ]

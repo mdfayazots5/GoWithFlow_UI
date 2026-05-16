@@ -31,18 +31,22 @@ export interface UserBadge {
 
 export interface StreakData {
   currentStreak: number;
-  lastPracticeDate: string;
-  streakHistory: { date: string; completed: boolean }[];
+  longestStreak: number;
+  last30Days: { streakDate: string; sessionCount: number; practiceMinutes: number }[];
 }
 
 export interface ImprovementData {
-  sessionsCompleted: number;
-  avgScoreThisWeek: number;
-  mistakesResolved: number;
-  currentStreak: number;
-  scoreTrend: ScoreTrendPoint[];
+  statsHeader: {
+    sessionsCompleted: number;
+    avgScoreThisWeek: number;
+    mistakesResolved: number;
+    currentStreak: number;
+  };
+  recentSessions: ScoreTrendPoint[];
+  weeklyScores: { week: string; avgScore: number }[];
   grammarProgress: GrammarProgress[];
   repracticeHistory: RepracticeHistoryItem[];
+  badgesEarned: UserBadge[];
 }
 
 export interface ScoreTrendPoint {
@@ -54,9 +58,11 @@ export interface ScoreTrendPoint {
 }
 
 export interface GrammarProgress {
-  tag: string;
+  grammarTag: string;
   totalMistakes: number;
   resolvedMistakes: number;
+  improvementPercent: number;
+  progressBarValue: number;
 }
 
 export interface RepracticeHistoryItem {

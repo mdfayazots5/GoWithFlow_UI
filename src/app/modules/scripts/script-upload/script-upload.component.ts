@@ -432,11 +432,12 @@ export class ScriptUploadComponent {
 
   downloadTemplate() {
     this.scriptService.getSampleTemplate().subscribe(blob => {
-      const url = window.URL.createObjectURL(blob);
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = 'sample-script-template.xlsx';
       a.click();
+      URL.revokeObjectURL(url);
     });
   }
 

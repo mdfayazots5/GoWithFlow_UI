@@ -200,7 +200,7 @@ export class ScriptLibraryComponent implements OnInit {
   ageControl = new FormControl('');
 
   ngOnInit() {
-    this.isAdmin.set(this.authService.currentUser?.role === 'ADMIN');
+    this.isAdmin.set(this.authService.getRole() === 'ADMIN');
     this.loadScripts();
 
     this.searchControl.valueChanges.pipe(
@@ -215,7 +215,7 @@ export class ScriptLibraryComponent implements OnInit {
 
   loadScripts(pageIndex = 0, pageSize = 12) {
     this.isLoading.set(true);
-    const filters = {
+    const filters: any = {
       search: this.searchControl.value,
       category: this.categoryControl.value,
       grammarFocusTag: this.grammarControl.value,
@@ -223,6 +223,9 @@ export class ScriptLibraryComponent implements OnInit {
       page: pageIndex,
       limit: pageSize
     };
+    if (!this.isAdmin()) {
+      filters.isActive = true;
+    }
 
     this.scriptService.getScripts(filters).subscribe({
       next: (res) => {
@@ -248,7 +251,7 @@ export class ScriptLibraryComponent implements OnInit {
 
   deactivateScript(script: Script) {
     if (confirm(`Are you sure you want to deactivate "${script.scriptTitle}"?`)) {
-      this.scriptService.updateScriptStatus({ scriptId: script.id, active: false }).subscribe(() => {
+      this.scriptService.updateScriptStatus({ scriptId: Number(script.id), isActive: false }).subscribe(() => {
         this.toast.success('Script deactivated');
         this.loadScripts();
       });

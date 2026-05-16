@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, tap, delay } from 'rxjs';
+import { Observable, of, tap, delay, map } from 'rxjs';
 import { environment } from '@env/environment';
 import { Router } from '@angular/router';
 
@@ -40,10 +40,10 @@ export class AuthService {
       this.setSession(res);
       return of(res).pipe(delay(500));
     }
-    return this.http.post<any>(`${environment.apiBaseUrl}/auth/verify-otp`, { mobileNumber, code }).pipe(
+    return this.http.post<any>(`${environment.apiBaseUrl}/auth/verify-otp`, { mobileNumber, otpCode: code }).pipe(
       tap(res => {
-        if (!res.isRegistrationRequired) {
-          this.setSession(res);
+        if (res.data && !res.data.isRegistrationRequired) {
+          this.setSession(res.data);
         }
       })
     );
@@ -51,16 +51,22 @@ export class AuthService {
 
   private setSession(res: any) {
     localStorage.setItem('gwf_token', res.accessToken);
-    localStorage.setItem('accessToken', res.accessToken); // Added for SignalR compatibility
-    localStorage.setItem('gwf_refresh_token', res.refreshToken);
-    localStorage.setItem('gwf_user', JSON.stringify(res.user));
+    localStorage.setItem('accessToken', res.accessToken);
+    localStorage.setItem('gwf_refreshToken', res.refreshToken);
+    localStorage.setItem('gwf_userId', String(res.userId ?? res.user?.id ?? ''));
+    localStorage.setItem('gwf_role', res.role ?? res.user?.role ?? '');
   }
 
   refreshToken(): Observable<any> {
-    const refreshToken = localStorage.getItem('gwf_refresh_token');
-    return this.http.post(`${environment.apiBaseUrl}/auth/refresh-token`, { refreshToken }).pipe(
+    const refreshToken = localStorage.getItem('gwf_refreshToken');
+    return this.http.post<any>(`${environment.apiBaseUrl}/auth/refresh-token`, { refreshToken }).pipe(
+      map(res => res.data),
       tap(res => this.setSession(res))
     );
+  }
+
+  getRole(): string | null {
+    return localStorage.getItem('gwf_role');
   }
 
   get currentUser(): User | null {

@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { SessionService } from '@core/services/session.service';
 import { AuthService } from '@core/services/auth.service';
+import { WebsocketService } from '@core/services/websocket.service';
 import { ToastService } from '@core/services/toast.service';
 import { 
   LucideAngularModule, 
@@ -179,6 +180,7 @@ export class LobbyComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private sessionService = inject(SessionService);
   private authService = inject(AuthService);
+  private wsService = inject(WebsocketService);
   private toast = inject(ToastService);
   private router = inject(Router);
 
@@ -201,33 +203,64 @@ export class LobbyComponent implements OnInit, OnDestroy {
   showScript = signal(false);
 
   private pollInterval: any;
+  private sessionId = '';
+  private hasLeft = false;
 
   ngOnInit() {
     this.route.params.subscribe(params => {
-      const sessionId = params['sessionId'];
-      if (sessionId) {
-        this.loadLobby(sessionId);
-        
-        // In demo mode, simulate updates via interval
+      this.sessionId = params['sessionId'];
+      if (this.sessionId) {
+        this.loadLobby(this.sessionId);
+
         if (environment.isDemo) {
-          this.pollInterval = setInterval(() => this.loadLobby(sessionId), 5000);
+          this.pollInterval = setInterval(() => this.loadLobby(this.sessionId), 5000);
+        } else {
+          const userId = localStorage.getItem('gwf_userId') ?? '';
+          this.wsService.connect(this.sessionId, userId, 'session');
+          this.subscribeToLobbyEvents();
         }
       }
     });
-
-    const user = this.authService.currentUser;
-    // Default isReady for demo if needed, but normally it's false
   }
 
   ngOnDestroy() {
     if (this.pollInterval) clearInterval(this.pollInterval);
+    if (!this.hasLeft && this.sessionId && !environment.isDemo) {
+      this.sessionService.leaveSession(this.sessionId).subscribe();
+    }
+    this.wsService.disconnect();
+  }
+
+  private subscribeToLobbyEvents() {
+    this.wsService.on('MEMBER_JOINED').subscribe(() => this.loadLobby(this.sessionId));
+
+    this.wsService.on('MEMBER_READY').subscribe((data: any) => {
+      this.state.update(s => {
+        if (!s) return s;
+        const members = s.members.map(m => m.userId === data.userId ? { ...m, ready: true } : m);
+        return { ...s, members };
+      });
+    });
+
+    this.wsService.on('SESSION_STARTED').subscribe(() => {
+      this.hasLeft = true;
+      this.router.navigate(['/live-session/room', this.sessionId]);
+    });
+
+    this.wsService.on('MEMBER_LEFT').subscribe((data: any) => {
+      this.state.update(s => {
+        if (!s) return s;
+        const members = s.members.filter(m => m.userId !== data.userId);
+        return { ...s, members };
+      });
+    });
   }
 
   loadLobby(sessionId: string) {
     this.sessionService.getLobbyState(sessionId).subscribe(state => {
       this.state.set(state);
-      const user = this.authService.currentUser;
-      const myMember = state.members.find(m => m.userId === user?.id);
+      const userId = localStorage.getItem('gwf_userId');
+      const myMember = state.members.find(m => String(m.userId) === userId);
       if (myMember) {
         this.isReady.set(myMember.ready);
         this.isHost.set(myMember.isHost);
@@ -249,20 +282,22 @@ export class LobbyComponent implements OnInit, OnDestroy {
   toggleReady() {
     const next = !this.isReady();
     this.sessionService.updateReadyStatus({
-      sessionId: this.state()!.session.id,
-      ready: next
+      sessionId: Number(this.state()!.session.id),
+      isReady: next
     }).subscribe(() => {
       this.isReady.set(next);
-      this.loadLobby(this.state()!.session.id);
+      this.loadLobby(this.sessionId);
     });
   }
 
   startSession() {
     this.isLoading.set(true);
-    this.sessionService.startSession(this.state()!.session.id).subscribe({
+    this.sessionService.startSession(this.sessionId).subscribe({
       next: () => {
         this.isLoading.set(false);
-        this.router.navigate(['/live-session/room', this.state()!.session.id]);
+        this.wsService.emit('StartSession', this.sessionId);
+        this.hasLeft = true;
+        this.router.navigate(['/live-session/room', this.sessionId]);
       },
       error: () => this.isLoading.set(false)
     });
@@ -270,7 +305,9 @@ export class LobbyComponent implements OnInit, OnDestroy {
 
   leaveSession() {
     if (confirm('Are you sure you want to leave this session?')) {
-      this.sessionService.leaveSession(this.state()!.session.id).subscribe(() => {
+      this.hasLeft = true;
+      this.sessionService.leaveSession(this.sessionId).subscribe(() => {
+        this.wsService.disconnect();
         this.router.navigate(['/user/dashboard']);
       });
     }
