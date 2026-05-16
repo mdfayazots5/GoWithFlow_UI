@@ -20,7 +20,7 @@ import { ToastService } from '@core/services/toast.service';
             <span class="text-xs font-black text-white/40 italic">Turn {{ turnState.turnIndex }} of {{ turnState.totalTurns }}</span>
          </div>
          <div class="flex gap-1.5 h-1.5">
-            @for (i of [].constructor(turnState.totalTurns); track j; let j = $index) {
+            @for (i of [].constructor(turnState.totalTurns); track $index; let j = $index) {
               <div 
                 class="flex-1 rounded-full transition-all duration-500"
                 [class.bg-[#3D5A99]]="j < turnState.turnIndex"
@@ -41,7 +41,7 @@ import { ToastService } from '@core/services/toast.service';
 
             <div class="space-y-4">
               <h1 class="text-4xl md:text-5xl font-black text-white italic leading-[1.1] tracking-tight">
-                 @for (word of words(); track k; let k = $index) {
+                 @for (word of words(); track $index; let k = $index) {
                    <span [class.text-[#E07B39]]="word.toLowerCase() === turnState.utterance.focusWord?.toLowerCase()">{{ word }} </span>
                  }
               </h1>
@@ -83,7 +83,7 @@ import { ToastService } from '@core/services/toast.service';
              <p class="text-lg font-bold text-white/60 italic animate-pulse">{{ interimTranscript() || 'Listening...' }}</p>
            } @else if (analysis()) {
              <p class="text-lg font-bold text-white italic">
-                @for (word of spokenWords(); track m; let m = $index) {
+                @for (word of spokenWords(); track $index; let m = $index) {
                    <span class="inline-block mr-1" [class.text-gw-error]="word.isError">{{ word.text }}</span>
                 }
              </p>

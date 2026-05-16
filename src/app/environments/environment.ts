@@ -1,7 +1,7 @@
 export const environment = {
   production: false,
-  isDemo: true,
-  apiBaseUrl: 'http://localhost:8080/api/v1',
-  wsBaseUrl: 'ws://localhost:8080',
-  signalRHubUrl: 'http://localhost:8080'
+  isDemo: false,
+  apiBaseUrl: 'https://localhost:44378/api/v1',
+  wsBaseUrl: 'wss://localhost:44378',
+  signalRHubUrl: 'https://localhost:44378'
 };

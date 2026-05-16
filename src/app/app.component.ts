@@ -51,7 +51,7 @@ import { AuthService } from '@core/services/auth.service';
         }
 
         <main class="flex-1 overflow-y-auto">
-          <div [class.max-w-[480px]="isMobileView()" class="mx-auto min-h-full p-4 md:p-6 lg:p-8">
+          <div [ngClass]="{ 'max-w-[480px]': isMobileView() }" class="mx-auto min-h-full p-4 md:p-6 lg:p-8">
             <router-outlet></router-outlet>
           </div>
         </main>

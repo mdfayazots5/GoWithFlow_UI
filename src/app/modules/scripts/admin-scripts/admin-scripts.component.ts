@@ -70,7 +70,13 @@ import { RouterModule, Router } from '@angular/router';
                   <button (click)="viewHistory(s.id)" class="p-2 text-ls-text-muted hover:bg-ls-bg rounded-lg transition-all" title="History">
                     <i-lucide [img]="HistoryIcon" size="18"></i-lucide>
                   </button>
-                  <button (click)="toggleStatus(s)" class="p-2 [class.text-ls-error]="s.active" [class.text-ls-success]="!s.active" class="hover:bg-ls-bg rounded-lg transition-all" title="Toggle Status">
+                  <button
+                    (click)="toggleStatus(s)"
+                    class="p-2 hover:bg-ls-bg rounded-lg transition-all"
+                    [class.text-ls-error]="s.active"
+                    [class.text-ls-success]="!s.active"
+                    title="Toggle Status"
+                  >
                     <i-lucide [img]="PowerIcon" size="18"></i-lucide>
                   </button>
                   <button class="p-2 text-ls-primary hover:bg-blue-50 rounded-lg transition-all" title="Edit">
