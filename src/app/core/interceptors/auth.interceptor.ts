@@ -21,7 +21,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
       // Handle 401 - Unauthorized (Token expired)
-      if (error.status === 401 && !authReq.url.includes('/auth/refresh-token')) {
+      if (error.status === 401 && !authReq.url.includes('/auth/refresh-token') && !authReq.url.includes('/auth/login')) {
         return authService.refreshToken().pipe(
           switchMap((res: any) => {
             const newAuthReq = req.clone({ setHeaders: { Authorization: `Bearer ${res.accessToken}` } });
@@ -32,14 +32,18 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
             return throwError(() => err);
           })
         );
+      } else if (error.status === 401) {
+        authService.logout();
       }
 
       // Handle other error codes
       let errorMessage = 'An unexpected error occurred';
-      if (error.error && error.error.errors && Array.isArray(error.error.errors)) {
-        errorMessage = error.error.errors.join(', ');
-      } else if (error.error && error.error.message) {
-        errorMessage = error.error.message;
+      const wrapperResponse = error.error;
+      
+      if (wrapperResponse && wrapperResponse.errors && Array.isArray(wrapperResponse.errors) && wrapperResponse.errors.length > 0) {
+        errorMessage = wrapperResponse.errors.join(', ');
+      } else if (wrapperResponse && wrapperResponse.message) {
+        errorMessage = wrapperResponse.message;
       }
 
       switch (error.status) {
@@ -50,14 +54,18 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
           toastService.warning(errorMessage || 'This record already exists');
           break;
         case 422:
-          toastService.error(errorMessage || 'Business rule violation');
+          toastService.error(errorMessage || 'Validation error');
           break;
         case 500:
           toastService.error('Server error. Please try again later.');
           break;
         case 0:
-          toastService.error('Cannot connect to server. Check your internet.');
+          toastService.error('Cannot connect to server.');
           break;
+        default:
+          if (error.status >= 400) {
+            toastService.error(errorMessage);
+          }
       }
 
       return throwError(() => error);

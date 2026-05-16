@@ -1,36 +1,34 @@
+// File: src/app/shared/components/toast/toast.component.ts
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ToastService } from '@core/services/toast.service';
-import { LucideAngularModule, X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-angular';
+import { ToastService, Toast } from '@core/services/toast.service';
+import { LucideAngularModule, CheckCircle, XCircle, Info, AlertTriangle, X } from 'lucide-angular';
 
 @Component({
   selector: 'app-toast',
   standalone: true,
   imports: [CommonModule, LucideAngularModule],
   template: `
-    <div class="fixed top-20 right-4 z-[9999] flex flex-col gap-3 pointer-events-none">
-      @for (toast of toastService.toasts(); track toast) {
+    <div class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-2 items-center pointer-events-none w-full max-w-sm px-4">
+      @for (toast of toasts(); track toast) {
         <div 
-          class="pointer-events-auto flex items-center gap-3 p-4 rounded-xl shadow-2xl border min-w-[280px] max-w-sm animate-in slide-in-from-right duration-300"
-          [class.bg-white]="true"
-          [class.border-ls-success]="toast.type === 'success'"
-          [class.border-ls-error]="toast.type === 'error'"
-          [class.border-ls-warning]="toast.type === 'warning'"
-          [class.border-ls-primary]="toast.type === 'info'"
+          class="w-full bg-white border-l-4 shadow-2xl rounded-xl p-4 flex items-center gap-3 animate-in slide-in-from-bottom-2 fade-in duration-200 pointer-events-auto"
+          [class.border-gw-success]="toast.type === 'success'"
+          [class.border-gw-error]="toast.type === 'error'"
+          [class.border-gw-primary]="toast.type === 'info'"
+          [class.border-gw-warning]="toast.type === 'warning'"
         >
-          <div class="shrink-0" [ngSwitch]="toast.type">
-            <i-lucide *ngSwitchCase="'success'" [img]="SuccessIcon" class="text-ls-success" size="20"></i-lucide>
-            <i-lucide *ngSwitchCase="'error'" [img]="ErrorIcon" class="text-ls-error" size="20"></i-lucide>
-            <i-lucide *ngSwitchCase="'warning'" [img]="WarningIcon" class="text-ls-warning" size="20"></i-lucide>
-            <i-lucide *ngSwitchCase="'info'" [img]="InfoIcon" class="text-ls-primary" size="20"></i-lucide>
+          <div [ngSwitch]="toast.type" class="shrink-0 flex items-center justify-center">
+             <i-lucide *ngSwitchCase="'success'" [img]="CheckIcon" size="18" class="text-gw-success"></i-lucide>
+             <i-lucide *ngSwitchCase="'error'" [img]="ErrorIcon" size="18" class="text-gw-error"></i-lucide>
+             <i-lucide *ngSwitchCase="'info'" [img]="InfoIcon" size="18" class="text-gw-primary"></i-lucide>
+             <i-lucide *ngSwitchCase="'warning'" [img]="WarnIcon" size="18" class="text-gw-warning"></i-lucide>
           </div>
           
-          <div class="flex-1">
-            <p class="text-sm font-bold text-ls-text">{{ toast.message }}</p>
-          </div>
-
-          <button (click)="remove(toast)" class="text-ls-text-muted hover:text-ls-text shrink-0">
-            <i-lucide [img]="CloseIcon" size="16"></i-lucide>
+          <p class="text-[13px] font-bold text-gw-text italic flex-1 leading-tight">{{ toast.message }}</p>
+          
+          <button (click)="toastService.toasts.set(toasts().filter(t => t !== toast))" class="text-gw-text-muted hover:text-gw-text shrink-0">
+             <i-lucide [img]="CloseIcon" size="16"></i-lucide>
           </button>
         </div>
       }
@@ -42,15 +40,11 @@ import { LucideAngularModule, X, CheckCircle, AlertCircle, Info, AlertTriangle }
 })
 export class ToastComponent {
   toastService = inject(ToastService);
-  
-  readonly SuccessIcon = CheckCircle;
-  readonly ErrorIcon = AlertCircle;
-  readonly WarningIcon = AlertTriangle;
-  readonly InfoIcon = Info;
-  readonly CloseIcon = X;
+  toasts = this.toastService.toasts;
 
-  remove(toast: any) {
-    // Calling internal remove via public if needed but service handles it
-    // For manual close we could add a method to service
-  }
+  readonly CheckIcon = CheckCircle;
+  readonly ErrorIcon = XCircle;
+  readonly InfoIcon = Info;
+  readonly WarnIcon = AlertTriangle;
+  readonly CloseIcon = X;
 }

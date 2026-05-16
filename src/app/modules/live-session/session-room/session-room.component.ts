@@ -1,174 +1,169 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+// File: src/app/modules/live-session/session-room/session-room.component.ts
+import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
-import { LucideAngularModule, LogOut, Settings, Info, MessageSquare } from 'lucide-angular';
-import { TurnService, TurnState } from '@core/services/turn.service';
-import { WebsocketService } from '@core/services/websocket.service';
+import { LiveSessionService } from '../live-session.service';
 import { AuthService } from '@core/services/auth.service';
-import { LiveSessionService } from '@core/services/live-session.service';
-import { Subscription } from 'rxjs';
-import { SpeakerScreenComponent } from './speaker-screen.component';
-import { ListenerScreenComponent } from './listener-screen.component';
+import { WebsocketService } from '@core/services/websocket.service';
+import { SpeakerScreenComponent } from '../speaker-screen/speaker-screen.component';
+import { ListenerScreenComponent } from '../listener-screen/listener-screen.component';
+import { LucideAngularModule, LogOut, Clock, Activity } from 'lucide-angular';
+import { TurnState } from '@core/models/voice.model';
+import { environment } from '@env/environment';
 
 @Component({
   selector: 'app-session-room',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, SpeakerScreenComponent, ListenerScreenComponent],
+  imports: [CommonModule, SpeakerScreenComponent, ListenerScreenComponent, LucideAngularModule],
   template: `
-    <div class="min-h-screen flex flex-col focus-mode bg-[#1A1A2E] text-[#EAEAEA] relative overflow-hidden">
-      <!-- Session Header -->
-      <header class="h-20 border-b border-white/10 flex items-center justify-between px-6 z-10">
-        <div class="flex items-center gap-4">
-           <div class="w-10 h-10 bg-ls-primary/20 rounded-xl flex items-center justify-center border border-ls-primary/30">
-              <span class="font-black italic text-ls-primary">F</span>
-           </div>
-           <div>
-              <p class="text-xs font-black uppercase tracking-widest text-[#EAEAEA]/50">Live Session</p>
-              <h2 class="text-lg font-black italic tracking-tight leading-none uppercase">Engage & Practice</h2>
-           </div>
+    <div class="min-h-screen bg-[#1A1A2E] text-white flex flex-col focus-mode animate-in fade-in duration-700">
+      <!-- Top Bar -->
+      <div class="h-16 px-6 flex items-center justify-between border-b border-white/5 bg-[#121221]">
+         <div class="flex items-center gap-4">
+            <div class="w-8 h-8 rounded-lg bg-gw-primary/20 flex items-center justify-center text-gw-primary">
+               <i-lucide [img]="ActivityIcon" size="18"></i-lucide>
+            </div>
+            <div class="hidden md:block">
+               <h4 class="text-xs font-black uppercase tracking-widest italic leading-tight">{{ turnState()?.utterance?.contextTag || 'SESSION' }}</h4>
+               <p class="text-[10px] font-bold text-white/40 italic uppercase tracking-tighter">{{ sessionName() }}</p>
+            </div>
+         </div>
+
+         <div class="flex items-center gap-6">
+            <div class="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10">
+               <i-lucide [img]="TimerIcon" size="14" class="text-gw-accent"></i-lucide>
+               <span class="text-xs font-black italic tabular-nums">{{ sessionTime() }}</span>
+            </div>
+            
+            <button (click)="confirmLeave()" class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/40 hover:text-gw-error hover:bg-gw-error/10 transition-all">
+               <i-lucide [img]="LeaveIcon" size="20"></i-lucide>
+            </button>
+         </div>
+      </div>
+
+      <!-- Main Container: Speaker or Listener -->
+      <div class="flex-1 overflow-y-auto">
+        <div class="max-w-[480px] mx-auto p-6 md:p-10 min-h-full flex flex-col justify-center">
+           @if (isLoading()) {
+             <div class="flex flex-col items-center gap-4 py-20">
+                <div class="w-12 h-12 border-4 border-gw-primary border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-xs font-black uppercase tracking-widest italic text-white/40">Synchronizing session...</p>
+             </div>
+           } @else if (isSpeaker()) {
+             <app-speaker-screen 
+               [turnState]="turnState()!" 
+               (turnShifted)="onTurnShifted()"
+             ></app-speaker-screen>
+           } @else {
+             <app-listener-screen 
+               [turnState]="turnState()!"
+             ></app-listener-screen>
+           }
         </div>
-
-        <div class="flex items-center gap-2">
-           <div class="px-4 py-2 bg-white/5 rounded-full border border-white/10 flex items-center gap-2">
-              <div class="w-2 h-2 bg-ls-success rounded-full animate-pulse shadow-[0_0_8px_#2E7D32]"></div>
-              <span class="text-[10px] font-black uppercase tracking-widest">Room Synced</span>
-           </div>
-           <button (click)="quitSession()" class="p-3 hover:bg-red-500/10 text-ls-error transition-all rounded-xl">
-              <i-lucide [img]="LogoutIcon" size="20"></i-lucide>
-           </button>
-        </div>
-      </header>
-
-      <!-- Main Interaction Area -->
-      <main class="flex-1 overflow-y-auto p-6 flex flex-col items-center justify-center">
-        <ng-container *ngIf="turnState">
-          <app-speaker-screen 
-            *ngIf="isMyTurn" 
-            [state]="turnState" 
-            (completed)="onTurnComplete()"
-            (sessionEnded)="completeAndNavigate()">
-          </app-speaker-screen>
-          
-          <app-listener-screen 
-            *ngIf="!isMyTurn" 
-            [state]="turnState">
-          </app-listener-screen>
-        </ng-container>
-
-        <div *ngIf="!turnState" class="flex flex-col items-center gap-4">
-           <div class="w-12 h-12 border-4 border-ls-primary border-t-transparent rounded-full animate-spin"></div>
-           <p class="text-xs font-black uppercase tracking-[0.3em] text-white/30">Loading State...</p>
-        </div>
-        
-        <!-- Completion Loading -->
-        <div *ngIf="isCompleting" class="fixed inset-0 bg-[#1A1A2E]/90 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-4">
-           <div class="w-16 h-16 border-4 border-ls-accent border-t-transparent rounded-full animate-spin"></div>
-           <p class="text-xs font-black uppercase tracking-[0.4em] text-ls-accent">Finalizing Report...</p>
-        </div>
-      </main>
-
-      <!-- Footer Info -->
-      <footer class="h-16 border-t border-white/5 flex items-center justify-center text-[10px] font-black uppercase tracking-[0.4em] text-white/20">
-         Turn Index: {{ turnState?.turnIndex || 0 }} • Sequential Broadcast Active
-      </footer>
-
-      <!-- Background Elements -->
-      <div class="absolute -top-40 -left-40 w-96 h-96 bg-ls-primary/10 rounded-full blur-[100px]"></div>
-      <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-ls-accent/5 rounded-full blur-[100px]"></div>
+      </div>
     </div>
   `,
-  styles: []
+  styles: [`
+    .focus-mode { font-family: 'Inter', sans-serif; }
+  `]
 })
 export class SessionRoomComponent implements OnInit, OnDestroy {
-  readonly LogoutIcon = LogOut;
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private liveSessionService = inject(LiveSessionService);
+  private authService = inject(AuthService);
+  private ws = inject(WebsocketService);
 
-  sessionId = '';
-  turnState?: TurnState;
-  userId = '';
-  isCompleting = false;
-  private subs = new Subscription();
+  readonly ActivityIcon = Activity;
+  readonly TimerIcon = Clock;
+  readonly LeaveIcon = LogOut;
 
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private turnService: TurnService,
-    private ws: WebsocketService,
-    private auth: AuthService,
-    private liveSession: LiveSessionService
-  ) {}
+  turnState = signal<TurnState | null>(null);
+  isLoading = signal(true);
+  isSpeaker = signal(false);
+  sessionName = signal('Live Session');
+  sessionTime = signal('00:00');
+  
+  private timeSeconds = 0;
+  private timerInterval: any;
+  private demoInterval: any;
 
   ngOnInit() {
-    this.sessionId = this.route.snapshot.paramMap.get('id') || '';
-    this.userId = this.auth.currentUser?.id || '';
-
-    if (this.sessionId) {
-      this.loadTurn();
-      this.ws.connectLive(this.sessionId);
-      this.setupEvents();
-    }
-  }
-
-  loadTurn() {
-    this.turnService.getCurrentTurn(this.sessionId).subscribe(res => {
-      this.turnState = res;
-    });
-  }
-
-  setupEvents() {
-    this.subs.add(this.ws.onLive('TURN_SHIFT').subscribe(data => {
-      if (data) {
-        this.turnState = {
-          sessionId: this.sessionId,
-          activeMemberId: data.newActiveMemberId,
-          slotIndex: data.slotIndex,
-          turnIndex: data.turnIndex,
-          utterance: data.nextUtterance,
-          isLastTurn: data.isLastTurn || false
-        };
-      }
-    }));
-
-    this.subs.add(this.ws.onLive('SESSION_ENDED').subscribe(data => {
-      if (data) {
-        this.completeAndNavigate();
-      }
-    }));
-  }
-
-  get isMyTurn(): boolean {
-    return this.turnState?.activeMemberId === this.userId;
-  }
-
-  onTurnComplete() {
-    // Turn shifting is now handled by speaker-screen component
-  }
-
-  completeAndNavigate() {
-    if (this.isCompleting) return;
-    this.isCompleting = true;
-    this.liveSession.completeSession(this.sessionId).subscribe({
-      next: (summary) => {
-        // Navigate to report and pass summary via state
-        this.router.navigate(['/session/report', this.sessionId], {
-          state: { summary }
-        });
-      },
-      error: () => {
-        this.isCompleting = false;
-        // Fallback navigation even on error
-        this.router.navigate(['/session/report', this.sessionId]);
+    this.route.params.subscribe(params => {
+      const sessionId = params['sessionId'];
+      if (sessionId) {
+        this.initSession(sessionId);
       }
     });
-  }
 
-  quitSession() {
-    if (confirm('Are you sure you want to exit the live session?')) {
-      this.router.navigate(['/admin/dashboard']);
-    }
+    this.startTimer();
   }
 
   ngOnDestroy() {
-    this.ws.disconnectAll();
-    this.subs.unsubscribe();
+    if (this.timerInterval) clearInterval(this.timerInterval);
+    if (this.demoInterval) clearInterval(this.demoInterval);
+    this.ws.disconnect();
+  }
+
+  private initSession(sessionId: string) {
+    this.isLoading.set(true);
+    const user = this.authService.currentUser;
+    
+    // Connect to websocket
+    this.ws.connect(sessionId, user?.id || '', 'mock-token', 'live-session');
+    
+    this.loadCurrentTurn(sessionId);
+
+    // Listen for real-time events
+    this.ws.on('TURN_SHIFT').subscribe(newState => {
+      this.updateState(newState);
+    });
+
+    this.ws.on('SESSION_ENDED').subscribe(() => {
+      this.router.navigate(['/session/report', sessionId]);
+    });
+
+    // isDemo behavior: Cycle turns every 15s to show both views
+    if (environment.isDemo) {
+      this.demoInterval = setInterval(() => {
+        const current = this.turnState();
+        if (current) {
+          this.isSpeaker.set(!this.isSpeaker());
+        }
+      }, 15000);
+    }
+  }
+
+  private loadCurrentTurn(sessionId: string) {
+    this.liveSessionService.getCurrentTurn(sessionId).subscribe(state => {
+      this.updateState(state);
+      this.isLoading.set(false);
+    });
+  }
+
+  private updateState(state: TurnState) {
+    this.turnState.set(state);
+    const user = this.authService.currentUser;
+    this.isSpeaker.set(state.activeMemberId === user?.id);
+  }
+
+  onTurnShifted() {
+    this.isLoading.set(true);
+    this.loadCurrentTurn(this.turnState()!.sessionId);
+  }
+
+  private startTimer() {
+    this.timerInterval = setInterval(() => {
+      this.timeSeconds++;
+      const mins = Math.floor(this.timeSeconds / 60);
+      const secs = this.timeSeconds % 60;
+      this.sessionTime.set(`${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
+    }, 1000);
+  }
+
+  confirmLeave() {
+    if (confirm('Are you sure you want to leave the live session?')) {
+      this.router.navigate(['/user/dashboard']);
+    }
   }
 }

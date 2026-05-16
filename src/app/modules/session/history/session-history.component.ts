@@ -72,7 +72,7 @@ export class SessionHistoryComponent implements OnInit {
   constructor(private sessionService: SessionService) {}
 
   ngOnInit() {
-    this.sessionService.getSessionHistory({}).subscribe(res => {
+    this.sessionService.getSessionHistory('All').subscribe((res: any) => {
       this.history = res;
     });
   }

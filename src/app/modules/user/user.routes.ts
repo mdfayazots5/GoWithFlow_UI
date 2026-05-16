@@ -10,8 +10,13 @@ export const USER_ROUTES: Routes = [
     loadComponent: () => import('./improvement-tracker/improvement-tracker.component').then(m => m.ImprovementTrackerComponent)
   },
   {
-    path: 'mistakes',
+    path: 'my-mistakes',
     loadComponent: () => import('./my-mistakes/my-mistakes.component').then(m => m.MyMistakesComponent)
+  },
+  {
+    path: 'mistakes',
+    redirectTo: 'my-mistakes',
+    pathMatch: 'full'
   },
   {
     path: 'profile',

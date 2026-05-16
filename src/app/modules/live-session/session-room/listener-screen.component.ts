@@ -102,7 +102,7 @@ export class ListenerScreenComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    this.subs.add(this.wsService.onLive('RE_READ_REQUESTED').subscribe(() => {
+    this.subs.add(this.wsService.on('RE_READ_REQUESTED').subscribe(() => {
       this.showReReadNotice = true;
       setTimeout(() => this.showReReadNotice = false, 3000);
     }));

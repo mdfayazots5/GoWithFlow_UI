@@ -6,7 +6,7 @@ import { Router } from '@angular/router';
 
 export interface User {
   id: string;
-  name: string;
+  fullName: string;
   mobileNumber: string;
   email?: string;
   mobile?: string;
@@ -20,6 +20,10 @@ export interface User {
 export class AuthService {
   constructor(private http: HttpClient, private router: Router) {}
 
+  getCurrentUser(): User | null {
+    return this.currentUser;
+  }
+
   requestOtp(mobileNumber: string): Observable<any> {
     if (environment.isDemo) return of({ message: 'OTP Sent' }).pipe(delay(500));
     return this.http.post(`${environment.apiBaseUrl}/auth/request-otp`, { mobileNumber });
@@ -31,7 +35,7 @@ export class AuthService {
       const res = {
         accessToken: 'dummy-jwt',
         refreshToken: 'dummy-refresh',
-        user: { id: 'U001', name: 'Ravi Kumar', role: 'USER' }
+        user: { id: 'U001', fullName: 'Ravi Kumar', role: 'USER', mobileNumber: '+919876543210' }
       };
       this.setSession(res);
       return of(res).pipe(delay(500));

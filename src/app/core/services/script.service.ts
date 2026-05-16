@@ -1,90 +1,118 @@
-import { Injectable } from '@angular/core';
+// File: src/app/core/services/script.service.ts
+import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of, delay } from 'rxjs';
 import { environment } from '@env/environment';
-
-export interface Script {
-  id: string;
-  title: string;
-  category: string;
-  grammarFocusTag: string;
-  targetAgeGroup: string;
-  isActive: boolean;
-  version: number;
-  description?: string;
-}
+import { 
+  Script, 
+  PagedResult, 
+  ValidationResult, 
+  ScriptUploadResponse, 
+  ScriptVersion 
+} from '@core/models/script.model';
+import { DUMMY_SCRIPTS } from '@data/dummy/script.dummy';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ScriptService {
-  private baseUrl = `${environment.apiBaseUrl}/scripts`;
+  private http = inject(HttpClient);
+  private readonly baseUrl = `${environment.apiBaseUrl}/scripts`;
 
-  constructor(private http: HttpClient) {}
-
-  getScripts(filters: any): Observable<{ items: Script[], total: number }> {
+  getScripts(filters?: any): Observable<PagedResult<Script>> {
     if (environment.isDemo) {
+      let filtered = [...DUMMY_SCRIPTS];
+      if (filters) {
+        if (filters.category) {
+          filtered = filtered.filter((s: Script) => s.category === filters.category);
+        }
+        if (filters.grammarFocusTag) {
+          filtered = filtered.filter((s: Script) => s.grammarFocusTag === filters.grammarFocusTag);
+        }
+        if (filters.targetAgeGroup) {
+          filtered = filtered.filter((s: Script) => s.targetAgeGroup === filters.targetAgeGroup);
+        }
+        if (filters.search) {
+          const search = filters.search.toLowerCase();
+          filtered = filtered.filter((s: Script) => s.scriptTitle.toLowerCase().includes(search));
+        }
+      }
       return of({
-        items: [
-          { id: 'SC001', title: 'Office Prep — Have Been', category: 'Grammar Drill', grammarFocusTag: 'Have Been', targetAgeGroup: 'Adult', isActive: true, version: 1 },
-          { id: 'SC002', title: 'Family Kitchen', category: 'Roleplay', grammarFocusTag: 'None', targetAgeGroup: 'All', isActive: true, version: 2 },
-          { id: 'SC003', title: 'Coding Interview', category: 'Mock Interview', grammarFocusTag: 'Present Perfect', targetAgeGroup: 'Adult', isActive: false, version: 1 }
-        ],
-        total: 3
+        items: filtered,
+        total: filtered.length
       }).pipe(delay(500));
     }
 
     let params = new HttpParams();
-    Object.keys(filters).forEach(key => {
-      if (filters[key] !== undefined && filters[key] !== null) {
-        params = params.set(key, filters[key]);
-      }
-    });
-
-    return this.http.get<{ items: Script[], total: number }>(this.baseUrl, { params });
-  }
-
-  updateScriptStatus(scriptId: string, isActive: boolean): Observable<any> {
-    if (environment.isDemo) return of({ success: true }).pipe(delay(300));
-    return this.http.patch(`${this.baseUrl}/status`, { scriptId, isActive });
-  }
-
-  getVersionHistory(scriptId: string): Observable<any[]> {
-    if (environment.isDemo) {
-      return of([
-        { version: 2, updatedAt: '2024-03-15', updatedBy: 'Admin' },
-        { version: 1, updatedAt: '2024-03-01', updatedBy: 'Admin' }
-      ]).pipe(delay(400));
+    if (filters) {
+      Object.keys(filters).forEach(key => {
+        if (filters[key]) params = params.set(key, filters[key]);
+      });
     }
-    return this.http.get<any[]>(`${this.baseUrl}/${scriptId}/versions`);
+
+    return this.http.get<PagedResult<Script>>(this.baseUrl, { params });
   }
 
-  validateExcel(file: File): Observable<{ isValid: boolean, rows: any[], errors: any[] }> {
+  getScriptById(id: string): Observable<Script> {
+    if (environment.isDemo) {
+      const script = DUMMY_SCRIPTS.find((s: Script) => s.id === id) || DUMMY_SCRIPTS[0];
+      return of(script).pipe(delay(300));
+    }
+    return this.http.get<Script>(`${this.baseUrl}/${id}`);
+  }
+
+  validateExcel(file: File): Observable<ValidationResult> {
     if (environment.isDemo) {
       return of({
         isValid: true,
         rows: [
-          { sequenceId: 1, speakerLabel: 'A', englishText: 'Hello', hintText: 'నమస్కారం' },
-          { sequenceId: 2, speakerLabel: 'B', englishText: 'How are you?', hintText: 'ఎలా ఉన్నారు?' }
+          { sequenceId: 1, speakerLabel: 'A', englishText: 'Hello', hintText: 'నమస్కారం', grammarTag: 'Greeting', contextTag: 'General' },
+          { sequenceId: 2, speakerLabel: 'B', englishText: 'How are you?', hintText: 'ఎలా ఉన్నారు?', grammarTag: 'Question', contextTag: 'General' }
         ],
         errors: []
       }).pipe(delay(1000));
     }
     const formData = new FormData();
     formData.append('file', file);
-    return this.http.post<any>(`${this.baseUrl}/validate`, formData);
+    return this.http.post<ValidationResult>(`${this.baseUrl}/validate`, formData);
   }
 
-  uploadScript(file: File, metadata: any): Observable<any> {
-    if (environment.isDemo) return of({ success: true, scriptId: 'SC' + Math.floor(Math.random() * 1000) }).pipe(delay(1500));
+  uploadScript(file: File, metadata: any): Observable<ScriptUploadResponse> {
+    if (environment.isDemo) {
+      return of({
+        success: true,
+        scriptId: 'SC' + Math.floor(Math.random() * 1000),
+        version: 1
+      }).pipe(delay(1500));
+    }
     const formData = new FormData();
     formData.append('file', file);
     formData.append('metadata', JSON.stringify(metadata));
-    return this.http.post<any>(`${this.baseUrl}/upload`, formData);
+    return this.http.post<ScriptUploadResponse>(`${this.baseUrl}/upload`, formData);
   }
 
-  getSampleTemplate(): Observable<any> {
-    if (environment.isDemo) return of({ url: '#' }).pipe(delay(200));
-    return this.http.get(`${this.baseUrl}/sample-template`);
+  getSampleTemplate(): Observable<Blob> {
+    if (environment.isDemo) {
+      // In a real app, this would be an actual file in assets
+      return of(new Blob(['dummy excel content'], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })).pipe(delay(500));
+    }
+    return this.http.get(`${this.baseUrl}/sample-template`, { responseType: 'blob' });
+  }
+
+  updateScriptStatus(payload: { scriptId: string, active: boolean }): Observable<boolean> {
+    if (environment.isDemo) {
+      return of(true).pipe(delay(300));
+    }
+    return this.http.patch<boolean>(`${this.baseUrl}/status`, payload);
+  }
+
+  getVersionHistory(scriptId: string): Observable<ScriptVersion[]> {
+    if (environment.isDemo) {
+      return of([
+        { version: 2, updatedAt: '2024-05-15T10:00:00Z', updatedBy: 'Admin' },
+        { version: 1, updatedAt: '2024-05-01T09:00:00Z', updatedBy: 'Admin' }
+      ]).pipe(delay(400));
+    }
+    return this.http.get<ScriptVersion[]>(`${this.baseUrl}/${scriptId}/versions`);
   }
 }

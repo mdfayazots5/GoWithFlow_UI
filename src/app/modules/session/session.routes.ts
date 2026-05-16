@@ -15,15 +15,15 @@ export const SESSION_ROUTES: Routes = [
   },
   {
     path: 'history',
-    loadComponent: () => import('./history/session-history.component').then(m => m.SessionHistoryComponent)
+    loadComponent: () => import('./session-list/session-list.component').then(m => m.SessionListComponent)
   },
   {
-    path: 'detail/:id',
-    loadComponent: () => import('./detail/session-detail.component').then(m => m.SessionDetailComponent)
+    path: ':sessionId/detail',
+    loadComponent: () => import('./session-detail/session-detail.component').then(m => m.SessionDetailComponent)
   },
   {
-    path: 'report/:id',
-    loadComponent: () => import('./report/session-report.component').then(m => m.SessionReportComponent)
+    path: 'report/:sessionId',
+    loadComponent: () => import('./session-report/session-report.component').then(m => m.SessionReportComponent)
   },
   {
     path: '',

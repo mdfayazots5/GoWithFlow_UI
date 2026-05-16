@@ -4,15 +4,16 @@ import { environment } from '@env/environment';
 import { AuthService } from '@core/services/auth.service';
 
 export const authGuard: CanActivateFn = (route, state) => {
-  if (environment.isDemo) return true;
-
   const auth = inject(AuthService);
   const router = inject(Router);
 
+  if (environment.isDemo) return true;
+
   if (auth.isLoggedIn) {
     const user = auth.currentUser;
-    // Basic role check for admin routes
-    if (state.url.startsWith('/admin') && user?.role !== 'ADMIN') {
+    const isAdminRoute = state.url.startsWith('/admin');
+    
+    if (isAdminRoute && user?.role !== 'ADMIN') {
       router.navigate(['/user/dashboard']);
       return false;
     }

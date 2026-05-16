@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule, Plus, History, Power, Edit3, Trash2, FileText, CheckCircle, XCircle } from 'lucide-angular';
-import { ScriptService, Script } from '@core/services/script.service';
+import { ScriptService } from '@core/services/script.service';
+import { Script } from '@core/models/script.model';
 import { RouterModule, Router } from '@angular/router';
 
 @Component({
@@ -57,10 +58,10 @@ import { RouterModule, Router } from '@angular/router';
               </td>
               <td class="px-6 py-5 text-center">
                  <div class="flex items-center justify-center gap-2">
-                    <i-lucide *ngIf="s.isActive" [img]="CheckIcon" size="16" class="text-ls-success"></i-lucide>
-                    <i-lucide *ngIf="!s.isActive" [img]="XIcon" size="16" class="text-ls-error"></i-lucide>
-                    <span class="text-[10px] font-black uppercase tracking-widest" [class.text-ls-success]="s.isActive" [class.text-ls-error]="!s.isActive">
-                      {{ s.isActive ? 'Active' : 'Inactive' }}
+                    <i-lucide *ngIf="s.active" [img]="CheckIcon" size="16" class="text-ls-success"></i-lucide>
+                    <i-lucide *ngIf="!s.active" [img]="XIcon" size="16" class="text-ls-error"></i-lucide>
+                    <span class="text-[10px] font-black uppercase tracking-widest" [class.text-ls-success]="s.active" [class.text-ls-error]="!s.active">
+                      {{ s.active ? 'Active' : 'Inactive' }}
                     </span>
                  </div>
               </td>
@@ -69,7 +70,7 @@ import { RouterModule, Router } from '@angular/router';
                   <button (click)="viewHistory(s.id)" class="p-2 text-ls-text-muted hover:bg-ls-bg rounded-lg transition-all" title="History">
                     <i-lucide [img]="HistoryIcon" size="18"></i-lucide>
                   </button>
-                  <button (click)="toggleStatus(s)" class="p-2 [class.text-ls-error]="s.isActive" [class.text-ls-success]="!s.isActive" class="hover:bg-ls-bg rounded-lg transition-all" title="Toggle Status">
+                  <button (click)="toggleStatus(s)" class="p-2 [class.text-ls-error]="s.active" [class.text-ls-success]="!s.active" class="hover:bg-ls-bg rounded-lg transition-all" title="Toggle Status">
                     <i-lucide [img]="PowerIcon" size="18"></i-lucide>
                   </button>
                   <button class="p-2 text-ls-primary hover:bg-blue-50 rounded-lg transition-all" title="Edit">
@@ -104,8 +105,8 @@ export class AdminScriptsComponent implements OnInit {
   }
 
   toggleStatus(script: Script) {
-    this.scriptService.updateScriptStatus(script.id, !script.isActive).subscribe(() => {
-      script.isActive = !script.isActive;
+    this.scriptService.updateScriptStatus({ scriptId: script.id, active: !script.active }).subscribe(() => {
+      script.active = !script.active;
     });
   }
 

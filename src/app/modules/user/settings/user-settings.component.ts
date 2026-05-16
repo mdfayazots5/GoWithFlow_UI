@@ -112,9 +112,9 @@ export class UserSettingsComponent implements OnInit {
   ngOnInit() {
     const user = this.auth.currentUser;
     this.settingsForm = this.fb.group({
-      name: [user?.name || '', [Validators.required]],
+      name: [user?.fullName || '', [Validators.required]],
       email: [user?.email || '', [Validators.required, Validators.email]],
-      mobile: [user?.mobile || '', [Validators.required]]
+      mobile: [user?.mobileNumber || '', [Validators.required]]
     });
 
     if (user?.avatarUrl) {

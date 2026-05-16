@@ -1,159 +1,194 @@
-import { Component, OnInit } from '@angular/core';
+// File: src/app/modules/user/improvement-tracker/improvement-tracker.component.ts
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, TrendingUp, Flame, Trophy, Award, Target, ChevronRight, Inbox, BookOpen, RotateCcw } from 'lucide-angular';
-import { HeaderComponent } from '@shared/components/header/header.component';
-import { BottomNavComponent } from '@shared/components/bottom-nav/bottom-nav.component';
-import { DemoBannerComponent } from '@shared/components/demo-banner/demo-banner.component';
 import { UserService } from '@core/services/user.service';
+import { ImprovementData } from '@core/models/user.model';
+import { LucideAngularModule, TrendingUp, Award, Clock, Target, Flame, ChevronRight, Zap, Info, Calendar, BookOpen, Star } from 'lucide-angular';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-improvement-tracker',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, HeaderComponent, BottomNavComponent, DemoBannerComponent],
+  imports: [CommonModule, LucideAngularModule, RouterLink],
   template: `
-    <div class="min-h-screen bg-ls-bg pb-24">
-      <app-demo-banner></app-demo-banner>
-      <app-header title="Progress Analytics" subtitle="Track your fluency evolution"></app-header>
+    <div class="space-y-10 animate-in fade-in duration-500 pb-32">
+      <!-- Header -->
+      <div class="space-y-1">
+        <h2 class="text-4xl font-black text-gw-text italic uppercase tracking-tighter">PROGRESS JOURNEY</h2>
+        <p class="text-xs font-bold text-gw-text-muted uppercase tracking-widest italic">Your path to English fluency</p>
+      </div>
 
-      <main class="p-6 space-y-8 animate-in slide-in-from-bottom-8">
-        <!-- Improvement Summary -->
-        <div class="card bg-ls-primary border-none text-white p-8 overflow-hidden relative">
-           <div class="relative z-10">
-              <p class="text-[10px] font-black uppercase tracking-[0.4em] text-white/50 mb-2">Fluency Gain</p>
-              <h3 class="text-6xl font-black italic tracking-tighter">{{ improvementData?.totalImprovement }}</h3>
-              <p class="text-xs font-bold mt-4 opacity-70">Compared to last month's performance baseline</p>
-           </div>
-           <i-lucide [img]="TrendingUpIcon" size="160" class="absolute -right-12 -bottom-12 opacity-10"></i-lucide>
-        </div>
+      <!-- Stats Grid -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        @for (stat of trackerStats; track stat.label) {
+          <div class="bg-white p-6 rounded-[32px] border border-gw-card-border shadow-sm space-y-2 relative overflow-hidden group">
+             <div class="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-110 transition-transform">
+                <i-lucide [img]="stat.icon" size="80"></i-lucide>
+             </div>
+             <div class="flex items-center gap-2">
+                <i-lucide [img]="stat.icon" size="14" class="text-gw-primary"></i-lucide>
+                <span class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">{{ stat.label }}</span>
+             </div>
+             <p class="text-3xl font-black text-gw-text italic tracking-tight">{{ stat.value }}</p>
+          </div>
+        }
+      </div>
 
-        <!-- Grammar Progress -->
-        <div class="space-y-4">
-           <h3 class="text-xs font-black uppercase tracking-[0.2em] text-ls-text-muted px-1">Concept Mastery</h3>
-           
-           <!-- Empty State -->
-           <div *ngIf="grammarProgress.length === 0" class="card py-8 flex flex-col items-center justify-center text-center gap-3 opacity-60">
-              <i-lucide [img]="BookIcon" size="24" class="text-ls-text-muted/30"></i-lucide>
-              <p class="text-[10px] font-bold text-ls-text-muted">Complete sessions to see grammar progress here.</p>
-           </div>
+      <!-- Score Trend (Table) -->
+      <div class="space-y-6">
+         <div class="flex items-center justify-between">
+            <h3 class="text-lg font-black text-gw-text italic uppercase tracking-widest border-l-4 border-gw-accent pl-4">Score Trend</h3>
+            <span class="text-[8px] font-black text-gw-text-muted uppercase italic">LAST 10 SESSIONS</span>
+         </div>
+         <div class="bg-white rounded-[40px] border border-gw-card-border overflow-hidden shadow-sm">
+            <table class="w-full text-left">
+               <thead>
+                  <tr class="bg-gw-bg/50">
+                     <th class="px-8 py-4 text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Date</th>
+                     <th class="px-8 py-4 text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Session</th>
+                     <th class="px-8 py-4 text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic text-center">Fluency</th>
+                     <th class="px-8 py-4 text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic text-center">Confidence</th>
+                  </tr>
+               </thead>
+               <tbody class="divide-y divide-gw-bg">
+                  @for (point of data()?.scoreTrend; track point.date) {
+                    <tr class="hover:bg-gw-bg/20 transition-all">
+                       <td class="px-8 py-5 text-[10px] font-bold text-gw-text-muted italic">{{ point.date | date:'MMM d' }}</td>
+                       <td class="px-8 py-5 text-sm font-black text-gw-text italic">{{ point.sessionName }}</td>
+                       <td class="px-8 py-5 text-center">
+                          <span class="px-3 py-1 bg-gw-success/10 text-gw-success rounded-lg text-[10px] font-black italic">{{ point.fluency }}%</span>
+                       </td>
+                       <td class="px-8 py-5 text-center">
+                          <span class="text-xs font-bold text-gw-text italic">{{ point.confidence }}%</span>
+                       </td>
+                    </tr>
+                  }
+               </tbody>
+            </table>
+         </div>
+      </div>
 
-           <div *ngIf="grammarProgress.length > 0" class="card space-y-4">
-              <div *ngFor="let g of grammarProgress" class="space-y-2">
-                 <div class="flex justify-between items-center">
-                    <span class="text-[10px] font-black uppercase tracking-widest text-ls-text">{{ g.label }}</span>
-                    <span class="text-[10px] font-bold text-ls-primary italic">{{ g.progress }}%</span>
-                 </div>
-                 <div class="h-1.5 bg-ls-bg rounded-full overflow-hidden">
-                    <div class="h-full bg-ls-primary" [style.width.%]="g.progress"></div>
-                 </div>
-              </div>
-           </div>
-        </div>
+      <!-- Grammar Progress bars -->
+      <div class="space-y-6">
+         <h3 class="text-lg font-black text-gw-text italic uppercase tracking-widest border-l-4 border-gw-primary pl-4">Grammar Focus</h3>
+         <div class="grid gap-4">
+            @for (grammar of data()?.grammarProgress; track grammar.tag) {
+               <div class="bg-white p-6 rounded-[32px] border border-gw-card-border shadow-sm space-y-4">
+                  <div class="flex justify-between items-center">
+                     <span class="text-[10px] font-black uppercase tracking-widest text-gw-text italic">{{ grammar.tag }}</span>
+                     <span class="text-[10px] font-bold text-gw-text-muted italic">{{ grammar.resolvedMistakes }}/{{ grammar.totalMistakes }} Resolved</span>
+                  </div>
+                  <div class="h-2 w-full bg-gw-bg rounded-full overflow-hidden">
+                     <div 
+                        class="h-full bg-gw-primary transition-all duration-1000"
+                        [style.width.%]="(grammar.resolvedMistakes / grammar.totalMistakes) * 100"
+                     ></div>
+                  </div>
+               </div>
+            }
+         </div>
+      </div>
 
-        <!-- Weekly Chart (Pure CSS) -->
-        <div class="space-y-4">
-           <h3 class="text-xs font-black uppercase tracking-[0.2em] text-ls-text-muted px-1">Daily Mastery %</h3>
-           <div class="card p-6 flex items-end justify-between h-48 gap-2">
-              <div *ngFor="let d of improvementData?.weeklyProgress" class="flex-1 flex flex-col items-center gap-2">
-                 <div class="w-full bg-ls-bg rounded-t-lg relative" [style.height.%]="d.score">
-                    <div class="absolute inset-0 bg-ls-primary/20 animate-pulse"></div>
-                    <div class="absolute bottom-0 left-0 right-0 bg-ls-primary rounded-t-lg" [style.height.%]="100"></div>
-                 </div>
-                 <span class="text-[8px] font-black uppercase tracking-widest text-ls-text-muted">{{ d.day }}</span>
-              </div>
-           </div>
-        </div>
+      <!-- Badge Showcase -->
+      <div class="space-y-6">
+         <h3 class="text-lg font-black text-gw-text italic uppercase tracking-widest border-l-4 border-[#F59E0B] pl-4">Badges Earned</h3>
+         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            @for (badge of badges(); track badge.id) {
+               <div 
+                 class="p-6 rounded-[40px] border flex flex-col items-center text-center gap-4 transition-all"
+                 [class.bg-white]="badge.isEarned"
+                 [class.border-gw-card-border]="badge.isEarned"
+                 [class.shadow-sm]="badge.isEarned"
+                 [class.opacity-40]="!badge.isEarned"
+                 [class.bg-gw-bg]="!badge.isEarned"
+                 [class.border-transparent]="!badge.isEarned"
+               >
+                  <div 
+                    class="w-16 h-16 rounded-3xl flex items-center justify-center text-[#F59E0B] shadow-lg"
+                    [class.bg-[#F59E0B]/10]="badge.isEarned"
+                    [class.bg-white/50]="!badge.isEarned"
+                  >
+                     <i-lucide [img]="StarIcon" size="32"></i-lucide>
+                  </div>
+                  <div class="space-y-1">
+                     <p class="text-[10px] font-black uppercase tracking-widest text-gw-text italic">{{ badge.name }}</p>
+                     <p class="text-[8px] font-bold text-gw-text-muted italic leading-tight">{{ badge.description }}</p>
+                  </div>
+                  @if (badge.isEarned) {
+                    <span class="text-[8px] font-black text-[#F59E0B] uppercase italic">EARNED {{ badge.earnedDate | date:'MMM yyyy' }}</span>
+                  } @else {
+                    <span class="text-[8px] font-black text-gw-text-muted uppercase italic">LOCKED</span>
+                  }
+               </div>
+            }
+         </div>
+      </div>
 
-        </div>
+      <!-- Repractice History -->
+      <div class="space-y-6">
+         <h3 class="text-lg font-black text-gw-text italic uppercase tracking-widest border-l-4 border-gw-text pl-4">Repractice History</h3>
+         <div class="grid gap-4">
+            @for (item of data()?.repracticeHistory; track item.date) {
+               <div class="bg-white p-6 rounded-[32px] border border-gw-card-border flex items-center justify-between group hover:border-gw-primary transition-all">
+                  <div class="flex items-center gap-4">
+                     <div class="w-10 h-10 bg-gw-bg rounded-xl flex items-center justify-center text-gw-text-muted group-hover:bg-gw-primary/10 group-hover:text-gw-primary transition-all">
+                        <i-lucide [img]="ZapIcon" size="18"></i-lucide>
+                     </div>
+                     <div>
+                        <p class="text-sm font-black text-gw-text italic uppercase tracking-tight">{{ item.sourceSession }}</p>
+                        <p class="text-[8px] font-black text-gw-text-muted uppercase italic">{{ item.date | date:'mediumDate' }} • {{ item.mistakesPracticed }} Mistakes</p>
+                     </div>
+                  </div>
+                  <div class="text-center">
+                     <p class="text-xl font-black text-gw-success italic">+{{ item.improvementPercent }}%</p>
+                     <p class="text-[8px] font-black text-gw-text-muted uppercase italic">IMPROVED</p>
+                  </div>
+               </div>
+            }
+         </div>
+      </div>
 
-        <!-- Repractice History -->
-        <div class="space-y-4">
-           <h3 class="text-xs font-black uppercase tracking-[0.2em] text-ls-text-muted px-1">Correction Rounds</h3>
-           
-           <!-- Empty State -->
-           <div *ngIf="repracticeHistory.length === 0" class="card py-8 flex flex-col items-center justify-center text-center gap-3 opacity-60">
-              <i-lucide [img]="HistoryIcon" size="24" class="text-ls-text-muted/30"></i-lucide>
-              <p class="text-[10px] font-bold text-ls-text-muted">No correction rounds yet. Start one from My Mistakes.</p>
-           </div>
-
-           <div *ngFor="let r of repracticeHistory" class="card p-4 flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                 <div class="w-10 h-10 bg-ls-bg rounded-xl flex items-center justify-center text-ls-primary">
-                    <i-lucide [img]="HistoryIcon" size="20"></i-lucide>
-                 </div>
-                 <div>
-                    <h4 class="text-xs font-black uppercase tracking-tight">{{ r.title }}</h4>
-                    <p class="text-[8px] font-bold text-ls-text-muted uppercase">{{ r.date | date }}</p>
-                 </div>
-              </div>
-              <div class="text-right">
-                 <p class="text-xs font-black italic text-ls-primary">{{ r.score }}%</p>
-                 <p class="text-[8px] font-bold text-ls-text-muted uppercase italic">Fluency</p>
-              </div>
-           </div>
-        </div>
-
-        <!-- Streak & Badges -->
-        <div class="space-y-4">
-           <div class="flex items-center justify-between px-1">
-              <h3 class="text-xs font-black uppercase tracking-[0.2em] text-ls-text-muted">Collected Badges</h3>
-              <span class="text-[10px] font-black uppercase italic text-ls-primary">{{ badges.length }} Earned</span>
-           </div>
-           
-           <div class="grid grid-cols-1 gap-4">
-              <div *ngFor="let b of badges" class="card bg-white p-5 flex items-center justify-between group active:scale-[0.98] transition-all">
-                 <div class="flex items-center gap-4">
-                    <div class="w-14 h-14 bg-ls-bg rounded-2xl flex items-center justify-center text-ls-accent border border-ls-card-border overflow-hidden p-3 group-hover:scale-110 transition-all">
-                       <i-lucide [img]="getBadgeIcon(b.icon)" size="24"></i-lucide>
-                    </div>
-                    <div>
-                       <h4 class="font-black italic text-ls-text uppercase tracking-tight">{{ b.name }}</h4>
-                       <p class="text-[10px] text-ls-text-muted font-bold">{{ b.description }}</p>
-                    </div>
-                 </div>
-                 <i-lucide [img]="CheckIcon" size="16" class="text-ls-success"></i-lucide>
-              </div>
-           </div>
-        </div>
-      </main>
-
-      <app-bottom-nav></app-bottom-nav>
     </div>
   `,
-  styles: []
+  styles: [`
+    :host { display: block; }
+  `]
 })
 export class ImprovementTrackerComponent implements OnInit {
-  readonly TrendingUpIcon = TrendingUp;
-  readonly FlameIcon = Flame;
-  readonly TrophyIcon = Trophy;
+  private userService = inject(UserService);
+
+  readonly TrendingIcon = TrendingUp;
   readonly AwardIcon = Award;
+  readonly ClockIcon = Clock;
   readonly TargetIcon = Target;
-  readonly CheckIcon = ChevronRight;
-  readonly InboxIcon = Inbox;
-  readonly BookIcon = BookOpen;
-  readonly HistoryIcon = RotateCcw;
+  readonly FlameIcon = Flame;
+  readonly ZapIcon = Zap;
+  readonly StarIcon = Star;
 
-  improvementData: any;
-  badges: any[] = [];
-  streak: any;
-  grammarProgress: any[] = [];
-  repracticeHistory: any[] = [];
-
-  constructor(private userService: UserService) {}
+  data = signal<ImprovementData | null>(null);
+  badges = signal<any[]>([]);
+  trackerStats: any[] = [];
 
   ngOnInit() {
-    this.userService.getImprovementData().subscribe(res => this.improvementData = res);
-    this.userService.getBadges().subscribe(res => this.badges = res || []);
-    this.userService.getStreak().subscribe(res => this.streak = res);
-    this.userService.getGrammarProgress().subscribe(res => this.grammarProgress = res || []);
-    this.userService.getRepracticeHistory().subscribe(res => this.repracticeHistory = res || []);
+    this.loadData();
+    this.loadBadges();
   }
 
-  getBadgeIcon(name: string) {
-    switch (name) {
-      case 'Sun': return Award;
-      case 'Flame': return Flame;
-      case 'Smile': return Trophy;
-      default: return Target;
-    }
+  loadData() {
+    this.userService.getImprovementData().subscribe(res => {
+      this.data.set(res);
+      this.trackerStats = [
+        { label: 'Completed', value: res.sessionsCompleted, icon: Award },
+        { label: 'Avg score', value: res.avgScoreThisWeek + '%', icon: TrendingUp },
+        { label: 'Resolved', value: res.mistakesResolved, icon: Target },
+        { label: 'Streak', value: res.currentStreak, icon: Flame }
+      ];
+    });
+  }
+
+  loadBadges() {
+    this.userService.getBadges().subscribe(res => {
+      this.badges.set(res);
+    });
   }
 }

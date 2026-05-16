@@ -1,152 +1,128 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { LucideAngularModule, Phone, ShieldCheck, Sparkles, ArrowRight } from 'lucide-angular';
-import { AuthService } from '@core/services/auth.service';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../auth.service';
+import { DemoService } from '@core/services/demo.service';
+import { LucideAngularModule, Phone } from 'lucide-angular';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, LucideAngularModule],
   template: `
-    <div class="min-h-screen flex items-center justify-center p-6 bg-ls-bg">
-      <div class="w-full max-w-md space-y-8 animate-in fade-in duration-700">
-        <!-- Logo Area -->
-        <div class="flex flex-col items-center gap-4">
-          <div class="w-16 h-16 bg-ls-primary rounded-3xl flex items-center justify-center shadow-xl shadow-ls-primary/20 rotate-3">
-            <span class="text-white font-black italic text-4xl">F</span>
-          </div>
-          <div class="text-center">
-            <h1 class="text-4xl font-black italic uppercase tracking-tighter text-ls-text">GoWithFlow</h1>
-            <p class="text-ls-text-muted font-bold text-xs uppercase tracking-widest mt-1">Real-time English Fluency Engine</p>
-          </div>
+    <div class="min-h-screen flex flex-col items-center justify-center p-6 bg-gw-bg">
+      <div class="w-full max-w-md space-y-8">
+        <!-- Logo Section -->
+        <div class="text-center">
+          <h1 class="text-[32px] font-black text-gw-primary italic tracking-tight">GoWithFlow</h1>
+          <p class="text-gw-text-muted font-medium mt-2">Speak. Together. Grow.</p>
         </div>
 
-        <div class="card p-8 space-y-8 shadow-2xl shadow-black/5 bg-white relative overflow-hidden">
-          <div class="absolute -right-12 -top-12 w-32 h-32 bg-ls-accent/10 rounded-full blur-3xl"></div>
-          
-          <div class="space-y-2 relative">
-            <h2 class="text-2xl font-black italic text-ls-text uppercase tracking-tight">{{ step === 1 ? 'Welcome Back' : 'Verify Identity' }}</h2>
-            <p class="text-ls-text-muted text-xs font-semibold">{{ step === 1 ? 'Enter your mobile number to access your portal' : 'We sent a 6-digit code to your mobile' }}</p>
-          </div>
-
-          <!-- Step 1: Input Mobile -->
-          <div *ngIf="step === 1" class="space-y-6">
+        <div class="card bg-gw-card-bg border-gw-card-border shadow-sm p-8 rounded-3xl">
+          <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
             <div class="space-y-2">
-              <label class="text-[10px] font-black uppercase tracking-widest text-ls-text-muted px-1">Mobile Number</label>
+              <label class="text-xs font-black uppercase tracking-widest text-gw-text-muted px-1">Mobile Number</label>
               <div class="relative">
-                <i-lucide [img]="PhoneIcon" size="20" class="absolute left-4 top-1/2 -translate-y-1/2 text-ls-text-muted"></i-lucide>
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gw-text-muted font-bold text-sm">+91</span>
                 <input 
                   type="tel" 
-                  [(ngModel)]="mobileNumber"
-                  placeholder="98765 43210"
-                  class="input-field pl-12 h-14 text-lg font-bold"
+                  formControlName="mobileNumber"
+                  class="w-full h-14 bg-gw-bg/50 border border-gw-card-border rounded-2xl pl-14 pr-4 font-bold text-gw-text focus:border-gw-primary outline-none transition-all"
+                  placeholder="Enter 10-digit number"
+                  maxlength="10"
                 >
               </div>
+              <p *ngIf="loginForm.get('mobileNumber')?.touched && loginForm.get('mobileNumber')?.invalid" class="text-[10px] font-bold text-gw-error px-1 uppercase tracking-wider italic">
+                Enter a valid 10-digit mobile number
+              </p>
             </div>
-            <button 
-              (click)="requestOtp()"
-              [disabled]="loading || mobileNumber.length < 10"
-              class="w-full btn-primary h-14 text-lg gap-3"
-            >
-              {{ loading ? 'Synchronizing...' : 'Request OTP' }}
-              <i-lucide *ngIf="!loading" [img]="NextIcon" size="20"></i-lucide>
-            </button>
-          </div>
 
-          <!-- Step 2: Verify OTP -->
-          <div *ngIf="step === 2" class="space-y-6">
-            <div class="flex justify-between gap-2">
-               <input 
-                 *ngFor="let i of [0,1,2,3,4,5]" 
-                 type="text" 
-                 maxlength="1"
-                 [(ngModel)]="otpDigits[i]"
-                 (keyup)="onOtpInput($event, i)"
-                 class="w-12 h-14 bg-ls-bg border-none rounded-xl text-center text-2xl font-black italic text-ls-primary outline-none focus:ring-2 focus:ring-ls-primary/20"
-               >
+            <div *ngIf="!demo.isDemo" class="pt-2">
+              <button 
+                type="submit" 
+                [disabled]="loginForm.invalid || isLoading"
+                class="w-full h-[52px] bg-gw-primary text-white font-black uppercase italic tracking-widest rounded-2xl shadow-lg shadow-gw-primary/20 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:active:scale-100 transition-all font-sans"
+              >
+                {{ isLoading ? 'Sending...' : 'Send OTP' }}
+              </button>
             </div>
-            
-            <button 
-              (click)="verifyOtp()"
-              [disabled]="loading"
-              class="w-full btn-primary h-14 text-lg gap-3"
-            >
-               {{ loading ? 'Validating...' : 'Secure Access' }}
-               <i-lucide *ngIf="!loading" [img]="ShieldIcon" size="20"></i-lucide>
-            </button>
 
-            <button 
-              (click)="step = 1"
-              class="w-full text-xs font-black uppercase tracking-widest text-ls-text-muted hover:text-ls-primary transition-all underline decoration-ls-accent"
-            >
-              Change Mobile Number
-            </button>
-          </div>
+            <!-- Demo Mode Sections -->
+            <div *ngIf="demo.isDemo" class="space-y-4 pt-2">
+              <div class="relative py-2">
+                <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gw-card-border"></div></div>
+                <div class="relative flex justify-center text-[10px] uppercase"><span class="px-2 bg-gw-card-bg text-gw-text-muted font-black tracking-widest">Demo Quick Roles</span></div>
+              </div>
+              
+              <div class="grid grid-cols-2 gap-4">
+                <button 
+                  type="button" 
+                  (click)="loginAsDemoUser()"
+                  class="h-[52px] border-2 border-gw-primary text-gw-primary font-black uppercase italic tracking-widest rounded-2xl hover:bg-gw-primary/5 active:scale-95 transition-all text-[10px]"
+                >
+                  Login as User
+                </button>
+                <button 
+                  type="button" 
+                  (click)="loginAsDemoAdmin()"
+                  class="h-[52px] border-2 border-gw-text text-gw-text font-black uppercase italic tracking-widest rounded-2xl hover:bg-gw-text/5 active:scale-95 transition-all text-[10px]"
+                >
+                  Login as Admin
+                </button>
+              </div>
+            </div>
+          </form>
 
-          <div class="flex items-center gap-2 pt-4 justify-center">
-             <i-lucide [img]="SparkleIcon" size="14" class="text-ls-accent"></i-lucide>
-             <span class="text-[10px] font-black uppercase tracking-widest text-ls-text-muted">Proudly Crafted for Families</span>
+          <div class="mt-8 text-center border-t border-gw-bg pt-6">
+            <p class="text-sm font-medium text-gw-text-muted">
+              New to GoWithFlow? 
+              <br>
+              <a routerLink="/auth/register" class="text-gw-accent font-bold hover:underline">Register here</a>
+            </p>
           </div>
         </div>
       </div>
     </div>
   `,
-  styles: []
+  styles: [`
+    :host { display: block; }
+    .card { @apply bg-white border border-gw-card-border rounded-3xl p-8 shadow-sm; }
+  `]
 })
 export class LoginComponent {
-  readonly PhoneIcon = Phone;
-  readonly ShieldIcon = ShieldCheck;
-  readonly SparkleIcon = Sparkles;
-  readonly NextIcon = ArrowRight;
+  private fb = inject(FormBuilder);
+  private auth = inject(AuthService);
+  private router = inject(Router);
+  public demo = inject(DemoService);
 
-  step = 1;
-  loading = false;
-  mobileNumber = '';
-  otpDigits = ['', '', '', '', '', ''];
+  loginForm = this.fb.group({
+    mobileNumber: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]]
+  });
 
-  constructor(private auth: AuthService, private router: Router) {}
+  isLoading = false;
 
-  requestOtp() {
-    this.loading = true;
-    this.auth.requestOtp(this.mobileNumber).subscribe({
-      next: () => {
-        this.step = 2;
-        this.loading = false;
-      },
-      error: () => this.loading = false
-    });
-  }
-
-  onOtpInput(event: any, index: number) {
-    if (event.key >= 0 && event.key <= 9 && index < 5) {
-      const nextInput = event.target.nextElementSibling;
-      if (nextInput) nextInput.focus();
+  onSubmit() {
+    if (this.loginForm.valid) {
+      this.isLoading = true;
+      const mobile = this.loginForm.get('mobileNumber')?.value!;
+      this.auth.requestOtp(mobile).subscribe({
+        next: (res) => {
+          this.isLoading = false;
+          this.router.navigate(['/auth/otp-verify'], { queryParams: { mobile } });
+        },
+        error: () => this.isLoading = false
+      });
     }
   }
 
-  verifyOtp() {
-    this.loading = true;
-    const code = this.otpDigits.join('');
-    this.auth.verifyOtp(this.mobileNumber, code).subscribe({
-      next: (res) => {
-        this.loading = false;
-        
-        // Handle new user registration flow
-        if (res.isRegistrationRequired) {
-          sessionStorage.setItem('temp_reg_mobile', this.mobileNumber);
-          this.router.navigate(['/auth/register']);
-          return;
-        }
+  loginAsDemoUser() {
+    this.auth.loginAsDemo(this.demo.getUsers()[1]);
+    this.router.navigate(['/user/dashboard']);
+  }
 
-        if (res.user?.role === 'ADMIN') {
-          this.router.navigate(['/admin/dashboard']);
-        } else {
-          this.router.navigate(['/user/dashboard']);
-        }
-      },
-      error: () => this.loading = false
-    });
+  loginAsDemoAdmin() {
+    this.auth.loginAsDemo(this.demo.getUsers()[0]);
+    this.router.navigate(['/admin/dashboard']);
   }
 }

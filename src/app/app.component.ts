@@ -1,72 +1,66 @@
-import { Component } from '@angular/core';
+// File: src/app/app.component.ts
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet, RouterModule } from '@angular/router';
-import { environment } from '@env/environment';
-import { LucideAngularModule, LayoutDashboard, Users, FileBarChart, LogOut, Settings, BookOpen, Play } from 'lucide-angular';
-import { AuthService } from '@core/services/auth.service';
+import { RouterOutlet, Router, NavigationEnd, RouterModule } from '@angular/router';
+import { HeaderComponent } from '@shared/components/header/header.component';
+import { BottomNavComponent } from '@shared/components/bottom-nav/bottom-nav.component';
+import { DemoBannerComponent } from '@shared/components/demo-banner/demo-banner.component';
 import { ToastComponent } from '@shared/components/toast/toast.component';
+import { LoaderComponent } from '@shared/components/loader/loader.component';
+import { filter } from 'rxjs';
+import { AuthService } from '@core/services/auth.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, RouterModule, LucideAngularModule, ToastComponent],
+  imports: [
+    CommonModule, 
+    RouterOutlet, 
+    RouterModule,
+    HeaderComponent, 
+    BottomNavComponent, 
+    DemoBannerComponent, 
+    ToastComponent, 
+    LoaderComponent
+  ],
   template: `
-    <div class="min-h-screen flex text-ls-text bg-ls-bg">
+    <div class="min-h-screen bg-gw-bg flex flex-col font-sans">
+      <app-demo-banner></app-demo-banner>
+      
+      @if (showHeader()) {
+        <app-header></app-header>
+      }
+
+      <div class="flex flex-1 overflow-hidden">
+        @if (isAdminLayout()) {
+          <aside class="hidden md:flex w-64 bg-white border-r border-gw-card-border flex-col shrink-0">
+             <div class="p-8 border-b border-gw-bg">
+                <span class="text-2xl font-black text-gw-primary italic">GoWithFlow</span>
+                <p class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted mt-1 italic">Admin Console</p>
+             </div>
+             <nav class="p-6 space-y-2 flex-1">
+                <a routerLink="/admin/dashboard" routerLinkActive="bg-gw-bg text-gw-primary font-bold" class="flex items-center gap-4 px-4 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-gw-text-muted hover:bg-gw-bg transition-all">Dashboard</a>
+                <a routerLink="/admin/users" routerLinkActive="bg-gw-bg text-gw-primary font-bold" class="flex items-center gap-4 px-4 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-gw-text-muted hover:bg-gw-bg transition-all">Users</a>
+                <a routerLink="/admin/scripts" routerLinkActive="bg-gw-bg text-gw-primary font-bold" class="flex items-center gap-4 px-4 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-gw-text-muted hover:bg-gw-bg transition-all">Scripts</a>
+                <a routerLink="/admin/reports" routerLinkActive="bg-gw-bg text-gw-primary font-bold" class="flex items-center gap-4 px-4 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-gw-text-muted hover:bg-gw-bg transition-all">Reports</a>
+             </nav>
+             <div class="p-6 border-t border-gw-bg">
+                <button (click)="logout()" class="w-full h-12 border-2 border-gw-error text-gw-error rounded-xl font-black uppercase tracking-widest text-[10px] hover:bg-gw-error hover:text-white transition-all">Logout</button>
+             </div>
+          </aside>
+        }
+
+        <main class="flex-1 overflow-y-auto">
+          <div [class.max-w-[480px]="isMobileView()" class="mx-auto min-h-full p-4 md:p-6 lg:p-8">
+            <router-outlet></router-outlet>
+          </div>
+        </main>
+      </div>
+
+      <app-bottom-nav></app-bottom-nav>
+      
       <app-toast></app-toast>
-      <!-- Admin Sidebar -->
-      <aside *ngIf="isAdmin" class="admin-sidebar shadow-2xl shadow-black/5 z-50">
-        <div class="h-20 flex items-center px-8 border-b border-ls-card-border gap-3">
-          <div class="w-8 h-8 bg-ls-primary rounded-lg flex items-center justify-center">
-            <span class="text-white font-black italic text-xl">F</span>
-          </div>
-          <span class="font-black italic text-xl tracking-tighter uppercase">GoWithFlow</span>
-        </div>
-
-        <nav class="p-6 space-y-2">
-          <a routerLink="/admin/dashboard" routerLinkActive="bg-ls-bg text-ls-primary" class="flex items-center gap-4 px-4 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-ls-text-muted hover:bg-ls-bg transition-all">
-            <i-lucide [img]="DashIcon" size="18"></i-lucide>
-            Dashboard
-          </a>
-          <a routerLink="/admin/users" routerLinkActive="bg-ls-bg text-ls-primary" class="flex items-center gap-4 px-4 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-ls-text-muted hover:bg-ls-bg transition-all">
-            <i-lucide [img]="UsersIcon" size="18"></i-lucide>
-            Members
-          </a>
-          <a routerLink="/admin/reports" routerLinkActive="bg-ls-bg text-ls-primary" class="flex items-center gap-4 px-4 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-ls-text-muted hover:bg-ls-bg transition-all">
-            <i-lucide [img]="ReportIcon" size="18"></i-lucide>
-            Reports
-          </a>
-          <a routerLink="/scripts/manage" routerLinkActive="bg-ls-bg text-ls-primary" class="flex items-center gap-4 px-4 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-ls-text-muted hover:bg-ls-bg transition-all">
-            <i-lucide [img]="BookIcon" size="18"></i-lucide>
-            Scripts
-          </a>
-          <a routerLink="/session/join" routerLinkActive="bg-ls-bg text-ls-primary" class="flex items-center gap-4 px-4 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-ls-text-muted hover:bg-ls-bg transition-all">
-            <i-lucide [img]="PlayIcon" size="18"></i-lucide>
-            Play Session
-          </a>
-          <div class="pt-8 pb-4">
-             <span class="px-4 text-[10px] font-black uppercase tracking-[0.3em] text-ls-text-muted/50">Maintenance</span>
-          </div>
-          <a routerLink="/admin/settings" class="flex items-center gap-4 px-4 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-ls-text-muted hover:bg-ls-bg transition-all">
-            <i-lucide [img]="SettingsIcon" size="18"></i-lucide>
-            Settings
-          </a>
-        </nav>
-
-        <div class="absolute bottom-0 left-0 right-0 p-6 border-t border-ls-card-border">
-          <button (click)="logout()" class="w-full flex items-center gap-4 px-4 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-ls-error hover:bg-red-50 transition-all">
-            <i-lucide [img]="LogoutIcon" size="18"></i-lucide>
-            Sign Out
-          </button>
-        </div>
-      </aside>
-
-      <!-- Main Content -->
-      <main class="flex-1 overflow-y-auto" [class.md:pl-[240px]]="isAdmin">
-        <router-outlet></router-outlet>
-      </main>
-
-      <!-- Demo Banner -->
-      <div *ngIf="isDemo" class="fixed top-0 left-0 right-0 h-[3px] bg-ls-accent z-[100] shadow-[0_0_10px_#E07B39]"></div>
+      <app-loader></app-loader>
     </div>
   `,
   styles: [`
@@ -74,19 +68,35 @@ import { ToastComponent } from '@shared/components/toast/toast.component';
   `]
 })
 export class AppComponent {
-  readonly DashIcon = LayoutDashboard;
-  readonly UsersIcon = Users;
-  readonly ReportIcon = FileBarChart;
-  readonly BookIcon = BookOpen;
-  readonly LogoutIcon = LogOut;
-  readonly SettingsIcon = Settings;
+  private router = inject(Router);
+  private auth = inject(AuthService);
+  
+  currentUrl = signal('');
 
-  get isDemo() { return environment.isDemo; }
-  get isAdmin() { 
-    return this.auth.currentUser?.role === 'ADMIN'; 
+  constructor() {
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe((event: any) => {
+      this.currentUrl.set(event.url);
+      window.scrollTo(0, 0);
+    });
   }
 
-  constructor(private auth: AuthService) {}
+  showHeader(): boolean {
+    const hideOn = ['/auth', '/live-session', '/repractice'];
+    return !hideOn.some(path => this.currentUrl().includes(path)) && !this.currentUrl().includes('/admin');
+  }
 
-  logout() { this.auth.logout(); }
+  isAdminLayout(): boolean {
+    return this.auth.currentUser?.role === 'ADMIN' && this.currentUrl().includes('/admin');
+  }
+
+  isMobileView(): boolean {
+    const mobileRoutes = ['/join', '/lobby', '/speaker-screen', '/listener-screen', '/room', '/report'];
+    return mobileRoutes.some(path => this.currentUrl().includes(path));
+  }
+
+  logout() {
+    this.auth.logout();
+  }
 }

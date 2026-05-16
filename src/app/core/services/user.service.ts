@@ -1,111 +1,69 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of, delay } from 'rxjs';
 import { environment } from '@env/environment';
-
-export interface UserProfile {
-  id: string;
-  name: string;
-  email: string;
-  mobile: string;
-  role: 'ADMIN' | 'USER';
-  streak: number;
-  sessionsCount: number;
-  avatarUrl?: string;
-}
+import { UserProfile, ImprovementData, StreakData, UserBadge } from '@core/models/user.model';
+import { SessionDetail } from '@core/models/session.model';
+import { DUMMY_USER_PROFILE, DUMMY_IMPROVEMENT_DATA, DUMMY_STREAK_DATA, DUMMY_BADGES } from '@data/dummy/user.dummy';
+import { DUMMY_SESSION_DETAIL } from '@data/dummy/session.dummy';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserService {
+  private http = inject(HttpClient);
+  private apiBase = environment.apiBaseUrl;
   private baseUrl = `${environment.apiBaseUrl}/users`;
 
-  constructor(private http: HttpClient) {}
+  getProfile(): Observable<UserProfile> {
+    if (environment.isDemo) {
+      return of(DUMMY_USER_PROFILE as UserProfile).pipe(delay(500));
+    }
+    return this.http.get<UserProfile>(`${this.baseUrl}/profile`);
+  }
 
-  updateProfile(payload: any): Observable<UserProfile> {
-    if (environment.isDemo) return of({ ...payload, id: 'U001', streak: 7, sessionsCount: 23 }).pipe(delay(800));
+  updateProfile(payload: Partial<UserProfile>): Observable<UserProfile> {
+    if (environment.isDemo) {
+      return of({ ...DUMMY_USER_PROFILE, ...payload } as UserProfile).pipe(delay(800));
+    }
     return this.http.put<UserProfile>(`${this.baseUrl}/profile`, payload);
   }
 
-  uploadAvatar(file: File): Observable<any> {
-    if (environment.isDemo) return of({ url: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Demo' }).pipe(delay(1000));
+  uploadAvatar(file: File): Observable<{avatarUrl: string}> {
+    if (environment.isDemo) {
+      return of({ avatarUrl: 'https://api.dicebear.com/7.x/avataaars/svg?seed=updated' }).pipe(delay(1000));
+    }
     const formData = new FormData();
-    formData.append('file', file);
-    return this.http.post(`${this.baseUrl}/profile/avatar`, formData);
+    formData.append('avatar', file);
+    return this.http.post<{avatarUrl: string}>(`${this.baseUrl}/profile/avatar`, formData);
   }
 
-  getImprovementData(): Observable<any> {
+  getSessionDetail(sessionId: string): Observable<SessionDetail> {
     if (environment.isDemo) {
-      return of({
-        weeklyProgress: [
-          { day: 'Mon', score: 65 },
-          { day: 'Tue', score: 72 },
-          { day: 'Wed', score: 68 },
-          { day: 'Thu', score: 85 },
-          { day: 'Fri', score: 90 },
-          { day: 'Sat', score: 88 },
-          { day: 'Sun', score: 94 }
-        ],
-        totalImprovement: '+28%'
-      }).pipe(delay(600));
+      return of(DUMMY_SESSION_DETAIL as SessionDetail).pipe(delay(600));
     }
-    return this.http.get(`${this.baseUrl}/progress`);
+    return this.http.get<SessionDetail>(`${this.baseUrl}/sessions/${sessionId}/detail`);
   }
 
-  getStreak(): Observable<any> {
-    if (environment.isDemo) return of({ streak: 7, lastActivity: '2024-03-15' }).pipe(delay(300));
-    return this.http.get(`${this.baseUrl}/streak`);
-  }
-
-  getBadges(): Observable<any[]> {
+  getImprovementData(): Observable<ImprovementData> {
     if (environment.isDemo) {
-      return of([
-        { id: 'B1', name: 'Early Bird', icon: 'Sun', description: 'Practice before 8 AM' },
-        { id: 'B2', name: 'Streak Master', icon: 'Flame', description: '7-day streak achieved' },
-        { id: 'B3', name: 'Polite Speaker', icon: 'Smile', description: 'Used "Please" and "Thank you" 50 times' }
-      ]).pipe(delay(500));
+      return of(DUMMY_IMPROVEMENT_DATA as ImprovementData).pipe(delay(700));
     }
-    return this.http.get<any[]>(`${this.baseUrl}/badges`);
+    return this.http.get<ImprovementData>(`${this.baseUrl}/progress`);
   }
 
-  getGrammarProgress(): Observable<any[]> {
+  getStreakData(): Observable<StreakData> {
     if (environment.isDemo) {
-      return of([
-        { label: 'Have Been', progress: 75 },
-        { label: 'Was/Were', progress: 90 },
-        { label: 'Did/Didn\'t', progress: 60 }
-      ]).pipe(delay(500));
+      return of(DUMMY_STREAK_DATA as StreakData).pipe(delay(400));
     }
-    return this.http.get<any[]>(`${this.baseUrl}/grammar-progress`);
+    return this.http.get<StreakData>(`${this.baseUrl}/streak`);
   }
 
-  getRepracticeHistory(): Observable<any[]> {
+  getBadges(): Observable<UserBadge[]> {
     if (environment.isDemo) {
-      return of([
-        { id: 'R1', title: 'Office Basics', date: '2024-03-15', score: 85 },
-        { id: 'R2', title: 'Kitchen Talk', date: '2024-03-14', score: 92 }
-      ]).pipe(delay(500));
+      return of(DUMMY_BADGES as UserBadge[]).pipe(delay(500));
     }
-    return this.http.get<any[]>(`${this.baseUrl}/repractice-history`);
-  }
-
-  getSessionDetail(sessionId: string): Observable<any> {
-    if (environment.isDemo) {
-      return of({
-        id: sessionId,
-        title: 'Family Grammar Practice',
-        date: '2024-03-15',
-        duration: '15:20',
-        score: 88,
-        fluencyScore: 88,
-        confidenceScore: 92,
-        speakingSpeedWpm: 120,
-        pauseCount: 4,
-        mistakesCount: 3,
-        members: ['Ravi', 'Priya', 'Arjun']
-      }).pipe(delay(500));
-    }
-    return this.http.get(`${this.baseUrl}/sessions/${sessionId}/detail`);
+    return this.http.get<UserBadge[]>(`${this.baseUrl}/badges`);
   }
 
   getDashboard(): Observable<any> {

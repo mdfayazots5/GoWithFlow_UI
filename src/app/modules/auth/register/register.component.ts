@@ -1,125 +1,201 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
-import { LucideAngularModule, User, Mail, Globe, Save } from 'lucide-angular';
-import { AuthService } from '@core/services/auth.service';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../auth.service';
+import { DemoService } from '@core/services/demo.service';
+import { ToastService } from '@core/services/toast.service';
+import { LucideAngularModule, User, Mail, Phone, ChevronDown } from 'lucide-angular';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, LucideAngularModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink, LucideAngularModule],
   template: `
-    <div class="min-h-screen flex items-center justify-center p-6 bg-ls-bg">
-      <div class="w-full max-w-md space-y-8 animate-in fade-in duration-700">
-        <div class="card p-8 space-y-8 shadow-2xl shadow-black/5 bg-white">
-          <div class="space-y-2">
-            <h2 class="text-2xl font-black italic text-ls-text uppercase tracking-tight">Complete Profile</h2>
-            <p class="text-ls-text-muted text-xs font-semibold">Tell us a bit about yourself to get started</p>
-          </div>
+    <div class="min-h-screen flex flex-col items-center justify-center p-6 bg-gw-bg py-12 font-sans">
+      <div class="w-full max-w-md space-y-8 animate-in fade-in duration-500">
+        <div class="text-center">
+          <h1 class="text-3xl font-black text-gw-primary italic tracking-tight">Create Account</h1>
+          <p class="text-gw-text-muted font-medium mt-2">Join GoWithFlow to start speaking</p>
+        </div>
 
+        <div class="card bg-gw-card-bg border-gw-card-border shadow-sm p-8 rounded-3xl">
           <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-6">
+            <!-- Full Name -->
             <div class="space-y-2">
-              <label class="text-[10px] font-black uppercase tracking-widest text-ls-text-muted px-1">Full Name</label>
+              <label class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted px-1">Full Name</label>
               <div class="relative">
-                <i-lucide [img]="UserIcon" size="20" class="absolute left-4 top-1/2 -translate-y-1/2 text-ls-text-muted"></i-lucide>
+                <i-lucide [img]="UserIcon" size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-gw-text-muted"></i-lucide>
                 <input 
                   type="text" 
                   formControlName="fullName"
-                  placeholder="John Doe"
-                  class="input-field pl-12 h-14 font-bold"
+                  class="w-full h-14 bg-gw-bg/50 border border-gw-card-border rounded-2xl pl-12 pr-4 font-bold text-gw-text focus:border-gw-primary outline-none transition-all placeholder:font-normal"
+                  placeholder="Official Name"
                 >
               </div>
+              <p *ngIf="registerForm.get('fullName')?.touched && registerForm.get('fullName')?.errors?.['required']" class="text-[10px] font-bold text-gw-error px-1 italic uppercase tracking-wider">
+                Full name is required
+              </p>
+              <p *ngIf="registerForm.get('fullName')?.touched && (registerForm.get('fullName')?.errors?.['minlength'] || registerForm.get('fullName')?.errors?.['maxlength'])" class="text-[10px] font-bold text-gw-error px-1 italic uppercase tracking-wider">
+                Name must be 2-60 chars
+              </p>
             </div>
 
+            <!-- Mobile -->
             <div class="space-y-2">
-              <label class="text-[10px] font-black uppercase tracking-widest text-ls-text-muted px-1">Email (Optional)</label>
+              <label class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted px-1">Mobile Number</label>
               <div class="relative">
-                <i-lucide [img]="MailIcon" size="20" class="absolute left-4 top-1/2 -translate-y-1/2 text-ls-text-muted"></i-lucide>
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gw-text-muted font-bold text-sm">+91</span>
+                <input 
+                  type="tel" 
+                  formControlName="mobileNumber"
+                  class="w-full h-14 bg-gw-bg/50 border border-gw-card-border rounded-2xl pl-14 pr-4 font-bold text-gw-text focus:border-gw-primary outline-none transition-all"
+                  placeholder="10-digit number"
+                  maxlength="10"
+                >
+              </div>
+              <p *ngIf="registerForm.get('mobileNumber')?.touched && registerForm.get('mobileNumber')?.errors" class="text-[10px] font-bold text-gw-error px-1 italic uppercase tracking-wider">
+                Enter valid 10-digit number
+              </p>
+            </div>
+
+            <!-- Email -->
+            <div class="space-y-2">
+              <label class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted px-1">Email Address (Optional)</label>
+              <div class="relative">
+                <i-lucide [img]="MailIcon" size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-gw-text-muted"></i-lucide>
                 <input 
                   type="email" 
                   formControlName="email"
-                  placeholder="john@example.com"
-                  class="input-field pl-12 h-14 font-bold"
+                  class="w-full h-14 bg-gw-bg/50 border border-gw-card-border rounded-2xl pl-12 pr-4 font-bold text-gw-text focus:border-gw-primary outline-none transition-all placeholder:font-normal"
+                  placeholder="you@example.com"
                 >
               </div>
             </div>
 
-            <div class="space-y-2">
-              <label class="text-[10px] font-black uppercase tracking-widest text-ls-text-muted px-1">Native Language</label>
-              <div class="relative">
-                <i-lucide [img]="GlobeIcon" size="20" class="absolute left-4 top-1/2 -translate-y-1/2 text-ls-text-muted"></i-lucide>
-                <select 
-                  formControlName="language"
-                  class="input-field pl-12 h-14 font-bold appearance-none bg-white"
-                >
-                  <option value="Telugu">Telugu</option>
-                  <option value="Hindi">Hindi</option>
-                  <option value="Tamil">Tamil</option>
-                  <option value="Kannada">Kannada</option>
-                  <option value="None">English Only</option>
-                </select>
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Age Group -->
+              <div class="space-y-2">
+                <label class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted px-1">Age Group</label>
+                <div class="relative">
+                  <select 
+                    formControlName="ageGroup"
+                    class="w-full h-14 bg-gw-bg/50 border border-gw-card-border rounded-2xl px-4 font-bold text-gw-text focus:border-gw-primary outline-none appearance-none transition-all"
+                  >
+                    <option value="Child (6-12)">Child (6-12)</option>
+                    <option value="Teen (13-17)">Teen (13-17)</option>
+                    <option value="Adult (18+)">Adult (18+)</option>
+                  </select>
+                  <i-lucide [img]="DownIcon" size="16" class="absolute right-4 top-1/2 -translate-y-1/2 text-gw-text-muted pointer-events-none"></i-lucide>
+                </div>
               </div>
+
+              <!-- Language -->
+              <div class="space-y-2">
+                <label class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted px-1">Hint Language</label>
+                <div class="relative">
+                  <select 
+                    formControlName="preferredHintLanguage"
+                    class="w-full h-14 bg-gw-bg/50 border border-gw-card-border rounded-2xl px-4 font-bold text-gw-text focus:border-gw-primary outline-none appearance-none transition-all"
+                  >
+                    <option value="Telugu">Telugu</option>
+                    <option value="Hindi">Hindi</option>
+                    <option value="Tamil">Tamil</option>
+                    <option value="Kannada">Kannada</option>
+                    <option value="None">None</option>
+                  </select>
+                  <i-lucide [img]="DownIcon" size="16" class="absolute right-4 top-1/2 -translate-y-1/2 text-gw-text-muted pointer-events-none"></i-lucide>
+                </div>
+              </div>
+            </div>
+
+            <!-- Avatar Picker -->
+            <div class="space-y-4 pt-2">
+               <label class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted px-1">Choose Avatar</label>
+               <div class="flex justify-between">
+                  @for (seed of avatarSeeds; track seed) {
+                    <button 
+                      type="button"
+                      (click)="setAvatar(seed)"
+                      class="w-[64px] h-[64px] rounded-full overflow-hidden border-4 transition-all"
+                      [class]="selectedAvatar() === seed ? 'border-gw-primary scale-110 shadow-lg' : 'border-transparent opacity-60 hover:opacity-100'"
+                    >
+                      <img [src]="'https://api.dicebear.com/7.x/avataaars/svg?seed=' + seed" class="w-full h-full object-cover">
+                    </button>
+                  }
+               </div>
             </div>
 
             <button 
-              type="submit"
-              [disabled]="loading || registerForm.invalid"
-              class="w-full btn-primary h-14 text-lg gap-3"
+              type="submit" 
+              [disabled]="registerForm.invalid || isLoading"
+              class="w-full h-[52px] bg-gw-primary text-white font-black uppercase italic tracking-widest rounded-2xl shadow-lg shadow-gw-primary/20 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:active:scale-100 transition-all mt-4"
             >
-               {{ loading ? 'Saving...' : 'Finish Registration' }}
-               <i-lucide *ngIf="!loading" [img]="SaveIcon" size="20"></i-lucide>
+              {{ isLoading ? 'Processing...' : 'Create Account' }}
             </button>
           </form>
+
+          <div class="mt-8 text-center border-t border-gw-card-border pt-6">
+            <p class="text-sm font-medium text-gw-text-muted">
+              Already have an account? 
+              <br>
+              <a routerLink="/auth/login" class="text-gw-primary font-bold hover:underline">Login</a>
+            </p>
+          </div>
         </div>
       </div>
     </div>
   `,
-  styles: []
+  styles: [`
+    :host { display: block; }
+    .card { @apply bg-white border border-gw-card-border rounded-3xl p-8 shadow-sm; }
+  `]
 })
-export class RegisterComponent implements OnInit {
+export class RegisterComponent {
+  private fb = inject(FormBuilder);
+  private auth = inject(AuthService);
+  private router = inject(Router);
+  public demo = inject(DemoService);
+  private toast = inject(ToastService);
+
   readonly UserIcon = User;
   readonly MailIcon = Mail;
-  readonly GlobeIcon = Globe;
-  readonly SaveIcon = Save;
+  readonly PhoneIcon = Phone;
+  readonly DownIcon = ChevronDown;
 
-  registerForm: FormGroup;
-  loading = false;
-  mobileNumber = '';
+  avatarSeeds = ['Felix', 'Aneka', 'Caleb', 'Bella'];
+  selectedAvatar = signal<string>('Felix');
 
-  constructor(
-    private fb: FormBuilder,
-    private auth: AuthService,
-    private router: Router
-  ) {
-    this.registerForm = this.fb.group({
-      fullName: ['', [Validators.required, Validators.minLength(2)]],
-      email: ['', [Validators.email]],
-      language: ['Telugu', [Validators.required]]
-    });
-  }
+  registerForm = this.fb.group({
+    fullName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(60)]],
+    mobileNumber: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]],
+    email: ['', [Validators.email]],
+    ageGroup: ['Adult (18+)', Validators.required],
+    preferredHintLanguage: ['Telugu', Validators.required]
+  });
 
-  ngOnInit() {
-    this.mobileNumber = sessionStorage.getItem('temp_reg_mobile') || '';
-    if (!this.mobileNumber) {
-      this.router.navigate(['/auth/login']);
-    }
+  isLoading = false;
+
+  setAvatar(seed: string) {
+    this.selectedAvatar.set(seed);
   }
 
   onSubmit() {
     if (this.registerForm.valid) {
-      this.loading = true;
+      this.isLoading = true;
       const payload = {
         ...this.registerForm.value,
-        mobileNumber: this.mobileNumber
+        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${this.selectedAvatar()}`
       };
 
-      // In a real app, this would call authService.register(payload)
-      // For now, we simulate success
-      setTimeout(() => {
-        this.loading = false;
-        this.router.navigate(['/user/dashboard']);
-      }, 1000);
+      this.auth.register(payload).subscribe({
+        next: () => {
+          this.isLoading = false;
+          this.toast.success('Account created!');
+          this.router.navigate(['/auth/login']);
+        },
+        error: () => this.isLoading = false
+      });
     }
   }
 }

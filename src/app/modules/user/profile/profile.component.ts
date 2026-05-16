@@ -1,119 +1,246 @@
-import { Component } from '@angular/core';
+// File: src/app/modules/user/profile/profile.component.ts
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, LogOut, Settings, Bell, Shield, HelpCircle, ChevronRight, Activity, TrendingUp } from 'lucide-angular';
-import { HeaderComponent } from '@shared/components/header/header.component';
-import { BottomNavComponent } from '@shared/components/bottom-nav/bottom-nav.component';
-import { DemoBannerComponent } from '@shared/components/demo-banner/demo-banner.component';
+import { UserService } from '@core/services/user.service';
+import { UserProfile } from '@core/models/user.model';
+import { LucideAngularModule, User, Mail, Smartphone, Calendar, Award, Target, Flame, Edit2, LogOut, Camera, Check } from 'lucide-angular';
 import { AuthService } from '@core/services/auth.service';
-import { Router, RouterLink } from '@angular/router';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { ToastService } from '@core/services/toast.service';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, HeaderComponent, BottomNavComponent, DemoBannerComponent, RouterLink],
+  imports: [CommonModule, LucideAngularModule, ReactiveFormsModule],
   template: `
-    <div class="min-h-screen bg-ls-bg pb-24">
-      <app-demo-banner></app-demo-banner>
-      <app-header title="Profile" subtitle="Manage your account & progress"></app-header>
+    <div class="space-y-10 animate-in fade-in duration-500 pb-32">
+      <!-- Profile Header -->
+      <div class="flex flex-col items-center gap-6 relative">
+         <div class="relative group">
+            <div class="w-32 h-32 rounded-[48px] overflow-hidden border-4 border-white shadow-xl bg-gw-bg">
+               <img [src]="profile()?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + profile()?.fullName" class="w-full h-full object-cover">
+            </div>
+            <label class="absolute -bottom-2 -right-2 w-10 h-10 bg-gw-primary text-white rounded-2xl flex items-center justify-center cursor-pointer shadow-lg hover:scale-110 active:scale-95 transition-all">
+               <i-lucide [img]="CameraIcon" size="18"></i-lucide>
+               <input type="file" class="hidden" (change)="onAvatarChange($event)">
+            </label>
+         </div>
 
-      <main class="p-6 space-y-8 animate-in slide-in-from-right-4">
-        <!-- User Info -->
-        <div class="flex flex-col items-center gap-4 py-4">
-           <div class="w-32 h-32 rounded-[40px] border-4 border-white shadow-2xl relative">
-              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Ravi" alt="avatar" class="w-full h-full object-cover rounded-[36px]">
-              <a routerLink="/user/settings" class="absolute -bottom-2 -right-2 bg-ls-primary text-white p-2 rounded-xl shadow-lg border-2 border-white hover:scale-110 transition-all">
-                 <i-lucide [img]="SettingsIcon" size="16"></i-lucide>
-              </a>
+         <div class="text-center space-y-2">
+            @if (!isEditing()) {
+              <div class="flex items-center justify-center gap-3">
+                 <h2 class="text-3xl font-black text-gw-text italic uppercase tracking-tighter">{{ profile()?.fullName }}</h2>
+                 <button (click)="toggleEdit()" class="text-gw-text-muted hover:text-gw-primary transition-colors">
+                    <i-lucide [img]="EditIcon" size="18"></i-lucide>
+                 </button>
+              </div>
+            } @else {
+              <div class="flex flex-col gap-4">
+                 <form [formGroup]="editForm" (ngSubmit)="saveProfile()" class="space-y-4">
+                    <input 
+                      formControlName="fullName"
+                      class="w-full h-12 bg-white border-2 border-gw-card-border rounded-xl px-4 text-lg font-bold italic focus:border-gw-primary outline-none text-center"
+                      placeholder="Full Name"
+                    >
+                    <div class="flex gap-2">
+                       <button type="button" (click)="toggleEdit()" class="flex-1 h-10 border border-gw-card-border rounded-xl text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Cancel</button>
+                       <button type="submit" [disabled]="editForm.invalid || isLoading()" class="flex-1 h-10 bg-gw-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
+                          @if (isLoading()) { <div class="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> }
+                          Save
+                       </button>
+                    </div>
+                 </form>
+              </div>
+            }
+            <div class="flex gap-2 justify-center">
+               <span class="px-3 py-1 bg-gw-accent/10 text-gw-accent rounded-lg text-[8px] font-black uppercase tracking-widest italic">{{ profile()?.ageGroup }}</span>
+               <span class="px-3 py-1 bg-gw-primary/10 text-gw-primary rounded-lg text-[8px] font-black uppercase tracking-widest italic">{{ profile()?.preferredHintLanguage }} Hint</span>
+               <span class="px-3 py-1 bg-[#F59E0B]/10 text-[#F59E0B] rounded-lg text-[8px] font-black uppercase tracking-widest italic flex items-center gap-1">
+                  <i-lucide [img]="FlameIcon" size="10"></i-lucide>
+                  {{ profile()?.dailyStreakCount }} Streak
+               </span>
+            </div>
+         </div>
+      </div>
+
+      <!-- Quick Stats -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        @for (stat of stats; track stat.label) {
+          <div class="bg-white p-6 rounded-[32px] border border-gw-card-border shadow-sm space-y-1">
+             <span class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">{{ stat.label }}</span>
+             <p class="text-2xl font-black text-gw-text italic">{{ stat.value }}</p>
+          </div>
+        }
+      </div>
+
+      <!-- Account Info -->
+      <div class="bg-white p-8 rounded-[40px] border border-gw-card-border shadow-sm space-y-8">
+         <div class="flex items-center gap-4 text-gw-text-muted">
+            <div class="w-10 h-10 bg-gw-bg rounded-xl flex items-center justify-center">
+               <i-lucide [img]="SmartphoneIcon" size="18"></i-lucide>
+            </div>
+            <div class="flex-1">
+               <p class="text-[8px] font-black uppercase tracking-widest italic">Mobile Number</p>
+               <p class="font-bold italic">{{ profile()?.mobileNumber }}</p>
+            </div>
+         </div>
+
+         <div class="flex items-center gap-4 text-gw-text-muted">
+            <div class="w-10 h-10 bg-gw-bg rounded-xl flex items-center justify-center">
+               <i-lucide [img]="MailIcon" size="18"></i-lucide>
+            </div>
+            <div class="flex-1">
+               <p class="text-[8px] font-black uppercase tracking-widest italic">Email Address</p>
+               <p class="font-bold italic">{{ profile()?.email || 'Not provided' }}</p>
+            </div>
+         </div>
+
+         <div class="flex items-center gap-4 text-gw-text-muted">
+            <div class="w-10 h-10 bg-gw-bg rounded-xl flex items-center justify-center">
+               <i-lucide [img]="CalendarIcon" size="18"></i-lucide>
+            </div>
+            <div class="flex-1">
+               <p class="text-[8px] font-black uppercase tracking-widest italic">Member Since</p>
+               <p class="font-bold italic">{{ profile()?.registrationDate | date:'MMMM yyyy' }}</p>
+            </div>
+         </div>
+      </div>
+
+      <!-- Preferences -->
+      <div class="space-y-6">
+        <h3 class="text-lg font-black text-gw-text italic uppercase tracking-widest border-l-4 border-gw-accent pl-4">Update Preferences</h3>
+        <div class="grid gap-4">
+           <div class="bg-white p-6 rounded-3xl border border-gw-card-border flex items-center justify-between">
+              <span class="text-xs font-bold text-gw-text-muted uppercase tracking-widest italic">Hint Language</span>
+              <select 
+                [value]="profile()?.preferredHintLanguage"
+                (change)="updatePreference('preferredHintLanguage', $any($event.target).value)"
+                class="bg-gw-bg px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border-none outline-none"
+              >
+                 <option value="Telugu">Telugu</option>
+                 <option value="Hindi">Hindi</option>
+                 <option value="Tamil">Tamil</option>
+                 <option value="Kannada">Kannada</option>
+                 <option value="None">None</option>
+              </select>
            </div>
            
-           <div class="text-center">
-              <h2 class="text-2xl font-black italic uppercase tracking-tighter text-ls-text">Ravi Kumar</h2>
-              <p class="text-xs font-black uppercase tracking-widest text-ls-text-muted mt-1 italic">Active Explorer • Rank 1,243</p>
+           <div class="bg-white p-6 rounded-3xl border border-gw-card-border flex items-center justify-between">
+              <span class="text-xs font-bold text-gw-text-muted uppercase tracking-widest italic">Age Group</span>
+              <select 
+                [value]="profile()?.ageGroup"
+                (change)="updatePreference('ageGroup', $any($event.target).value)"
+                class="bg-gw-bg px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border-none outline-none"
+              >
+                 <option value="Child (6-12)">Child (6-12)</option>
+                 <option value="Teen (13-17)">Teen (13-17)</option>
+                 <option value="Adult (18+)">Adult (18+)</option>
+              </select>
            </div>
         </div>
+      </div>
 
-        <!-- Menu Section -->
-        <div class="space-y-4">
-           <h3 class="text-xs font-black uppercase tracking-[0.2em] text-ls-text-muted px-1">Engagement</h3>
-           <div class="card p-0 overflow-hidden divide-y divide-ls-card-border">
-              <a routerLink="/user/progress" class="p-5 flex items-center justify-between hover:bg-ls-bg transition-all cursor-pointer group">
-                 <div class="flex items-center gap-4">
-                    <i-lucide [img]="TrendIcon" size="20" class="text-ls-text-muted"></i-lucide>
-                    <span class="text-xs font-bold text-ls-text uppercase tracking-tight">Improvement Tracker</span>
-                 </div>
-                 <i-lucide [img]="ChevronIcon" size="16" class="text-ls-card-border group-hover:text-ls-primary transition-all"></i-lucide>
-              </a>
+      <!-- Actions -->
+      <div class="pt-6">
+         <button 
+           (click)="logout()"
+           class="w-full h-16 border-2 border-gw-error text-gw-error font-black uppercase tracking-widest italic rounded-2xl flex items-center justify-center gap-3 hover:bg-gw-error hover:text-white transition-all shadow-lg shadow-gw-error/5"
+         >
+            <i-lucide [img]="LogoutIcon" size="20"></i-lucide>
+            Log Out
+         </button>
+      </div>
 
-              <a routerLink="/session/history" class="p-5 flex items-center justify-between hover:bg-ls-bg transition-all cursor-pointer group">
-                 <div class="flex items-center gap-4">
-                    <i-lucide [img]="HistoryIcon" size="20" class="text-ls-text-muted"></i-lucide>
-                    <span class="text-xs font-bold text-ls-text uppercase tracking-tight">Session History</span>
-                 </div>
-                 <i-lucide [img]="ChevronIcon" size="16" class="text-ls-card-border group-hover:text-ls-primary transition-all"></i-lucide>
-              </a>
-
-              <div class="p-5 flex items-center justify-between hover:bg-ls-bg transition-all cursor-pointer group">
-                 <div class="flex items-center gap-4">
-                    <i-lucide [img]="BellIcon" size="20" class="text-ls-text-muted"></i-lucide>
-                    <span class="text-xs font-bold text-ls-text uppercase tracking-tight">Notifications</span>
-                 </div>
-                 <div class="flex items-center gap-3">
-                    <span class="px-2 py-0.5 bg-ls-accent text-white text-[8px] font-black rounded-full">3 NEW</span>
-                    <i-lucide [img]="ChevronIcon" size="16" class="text-ls-card-border group-hover:text-ls-primary transition-all"></i-lucide>
-                 </div>
-              </div>
-
-              <div class="p-5 flex items-center justify-between hover:bg-ls-bg transition-all cursor-pointer group">
-                 <div class="flex items-center gap-4">
-                    <i-lucide [img]="ShieldIcon" size="20" class="text-ls-text-muted"></i-lucide>
-                    <span class="text-xs font-bold text-ls-text uppercase tracking-tight">Privacy & Safety</span>
-                 </div>
-                 <i-lucide [img]="ChevronIcon" size="16" class="text-ls-card-border group-hover:text-ls-primary transition-all"></i-lucide>
-              </div>
-           </div>
-        </div>
-
-        <div class="space-y-4">
-           <h3 class="text-xs font-black uppercase tracking-[0.2em] text-ls-text-muted px-1">Support</h3>
-           <div class="card p-0 overflow-hidden divide-y divide-ls-card-border">
-              <div class="p-5 flex items-center justify-between hover:bg-ls-bg transition-all cursor-pointer group">
-                 <div class="flex items-center gap-4">
-                    <i-lucide [img]="HelpIcon" size="20" class="text-ls-text-muted"></i-lucide>
-                    <span class="text-xs font-bold text-ls-text uppercase tracking-tight">Help Center</span>
-                 </div>
-                 <i-lucide [img]="ChevronIcon" size="16" class="text-ls-card-border group-hover:text-ls-primary transition-all"></i-lucide>
-              </div>
-           </div>
-        </div>
-
-        <button 
-          (click)="logout()"
-          class="w-full h-16 bg-white border border-ls-error/10 text-ls-error font-black uppercase tracking-widest text-[10px] rounded-2xl flex items-center justify-center gap-3 active:scale-[0.98] transition-all hover:bg-red-50"
-        >
-           <i-lucide [img]="LogoutIcon" size="18"></i-lucide>
-           Sign Out
-        </button>
-      </main>
-
-      <app-bottom-nav></app-bottom-nav>
+      <!-- Hidden File Input for Avatar is handled via label -->
     </div>
   `,
-  styles: []
+  styles: [`
+    :host { display: block; }
+  `]
 })
-export class ProfileComponent {
-  readonly SettingsIcon = Settings;
-  readonly BellIcon = Bell;
-  readonly ShieldIcon = Shield;
-  readonly HelpIcon = HelpCircle;
-  readonly ChevronIcon = ChevronRight;
-  readonly LogoutIcon = LogOut;
-  readonly HistoryIcon = Activity;
-  readonly TrendIcon = TrendingUp;
+export class ProfileComponent implements OnInit {
+  private userService = inject(UserService);
+  private authService = inject(AuthService);
+  private fb = inject(FormBuilder);
+  private toast = inject(ToastService);
 
-  constructor(private auth: AuthService, private router: Router) {}
+  readonly CameraIcon = Camera;
+  readonly EditIcon = Edit2;
+  readonly FlameIcon = Flame;
+  readonly SmartphoneIcon = Smartphone;
+  readonly MailIcon = Mail;
+  readonly CalendarIcon = Calendar;
+  readonly LogoutIcon = LogOut;
+
+  profile = signal<UserProfile | null>(null);
+  isEditing = signal(false);
+  isLoading = signal(false);
+  stats: any[] = [];
+
+  editForm = this.fb.group({
+    fullName: ['', [Validators.required, Validators.minLength(2)]]
+  });
+
+  ngOnInit() {
+    this.loadProfile();
+  }
+
+  loadProfile() {
+    this.userService.getProfile().subscribe(res => {
+      this.profile.set(res);
+      this.editForm.patchValue({ fullName: res.fullName });
+      this.stats = [
+        { label: 'Sessions', value: res.totalSessionsPlayed },
+        { label: 'Avg Fluency', value: res.avgFluencyScore + '%' },
+        { label: 'Mistakes Fixed', value: res.mistakesFixed },
+        { label: 'Streak', value: res.dailyStreakCount }
+      ];
+    });
+  }
+
+  toggleEdit() {
+    this.isEditing.set(!this.isEditing());
+  }
+
+  saveProfile() {
+    if (this.editForm.invalid) return;
+    this.isLoading.set(true);
+    const fullName = this.editForm.value.fullName as string;
+    
+    this.userService.updateProfile({ fullName }).subscribe({
+      next: (res) => {
+        this.profile.set(res);
+        this.isEditing.set(false);
+        this.isLoading.set(false);
+        this.toast.success('Profile updated successfully');
+      },
+      error: () => this.isLoading.set(false)
+    });
+  }
+
+  onAvatarChange(event: any) {
+    const file = event.target.files[0];
+    if (file) {
+      this.isLoading.set(true);
+      this.userService.uploadAvatar(file).subscribe({
+        next: (res) => {
+          this.profile.update(p => p ? ({ ...p, avatar: res.avatarUrl }) : null);
+          this.isLoading.set(false);
+          this.toast.success('Avatar updated');
+        },
+        error: () => this.isLoading.set(false)
+      });
+    }
+  }
+
+  updatePreference(key: string, value: any) {
+    this.userService.updateProfile({ [key]: value }).subscribe(res => {
+      this.profile.set(res);
+      this.toast.success('Preference updated');
+    });
+  }
 
   logout() {
-    this.auth.logout();
-    this.router.navigate(['/auth/login']);
+    this.authService.logout();
   }
 }
