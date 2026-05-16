@@ -1,0 +1,153 @@
+import { Mistake, RepracticeSession } from '@/types';
+
+export const DUMMY_MISTAKES: Mistake[] = [
+  {
+    id: 'm1',
+    userId: 'U001',
+    sessionId: 'S001',
+    utteranceId: 101,
+    scriptId: 'scr1',
+    utteranceText: "I have been working here for two years.",
+    spokenText: "I have been work here for two years.",
+    mistakeType: 'GRAMMAR',
+    mistakeDetail: "Used 'work' instead of 'working' with 'have been'.",
+    grammarTag: "Present Perfect Continuous",
+    practiceCount: 2,
+    resolved: false,
+    firstOccurrence: "2024-05-01T10:00:00Z",
+    lastAttempt: "2024-05-02T11:00:00Z"
+  },
+  {
+    id: 'm2',
+    userId: 'U001',
+    sessionId: 'S001',
+    utteranceId: 102,
+    scriptId: 'scr1',
+    utteranceText: "He has been living in London since January.",
+    spokenText: "He have been living in London since January.",
+    mistakeType: 'GRAMMAR',
+    mistakeDetail: "Used 'have' instead of 'has' for third person singular.",
+    grammarTag: "Subject-Verb Agreement",
+    practiceCount: 1,
+    resolved: false,
+    firstOccurrence: "2024-05-01T10:05:00Z",
+    lastAttempt: "2024-05-01T10:05:00Z"
+  },
+  {
+    id: 'm3',
+    userId: 'U001',
+    sessionId: 'S002',
+    utteranceId: 201,
+    scriptId: 'scr2',
+    utteranceText: "I really appreciate your help.",
+    spokenText: "I um really appreciate uh your help.",
+    mistakeType: 'HESITATION',
+    mistakeDetail: "Detected 'um' and 'uh' fillers.",
+    practiceCount: 0,
+    resolved: false,
+    firstOccurrence: "2024-05-03T14:00:00Z",
+    lastAttempt: "2024-05-03T14:00:00Z"
+  },
+  {
+    id: 'm4',
+    userId: 'U001',
+    sessionId: 'S002',
+    utteranceId: 202,
+    scriptId: 'scr2',
+    utteranceText: "The reality is often different.",
+    spokenText: "The re-al-ty is often different.",
+    mistakeType: 'PRONUNCIATION',
+    mistakeDetail: "Mispronounced 'reality'. Stress should be on the second syllable.",
+    practiceCount: 3,
+    resolved: false,
+    firstOccurrence: "2024-05-03T14:05:00Z",
+    lastAttempt: "2024-05-04T09:00:00Z"
+  },
+  {
+    id: 'm5',
+    userId: 'U001',
+    sessionId: 'S003',
+    utteranceId: 301,
+    scriptId: 'scr3',
+    utteranceText: "Could you please repeat that?",
+    spokenText: "Could you...",
+    mistakeType: 'INCOMPLETE',
+    mistakeDetail: "Sentence was cut off before completion.",
+    practiceCount: 0,
+    resolved: false,
+    firstOccurrence: "2024-05-05T16:00:00Z",
+    lastAttempt: "2024-05-05T16:00:00Z"
+  },
+  {
+    id: 'm6',
+    userId: 'U001',
+    sessionId: 'S001',
+    utteranceId: 103,
+    scriptId: 'scr1',
+    utteranceText: "They have been studying for hours.",
+    spokenText: "They has been studying for hours.",
+    mistakeType: 'GRAMMAR',
+    mistakeDetail: "Used 'has' instead of 'have' for plural subject.",
+    grammarTag: "Subject-Verb Agreement",
+    practiceCount: 0,
+    resolved: false,
+    firstOccurrence: "2024-05-01T10:10:00Z",
+    lastAttempt: "2024-05-01T10:10:00Z"
+  },
+  {
+    id: 'm7',
+    userId: 'U001',
+    sessionId: 'S001',
+    utteranceId: 104,
+    scriptId: 'scr1',
+    utteranceText: "We have been waiting for the bus.",
+    spokenText: "We have-have been waiting for-for the bus.",
+    mistakeType: 'HESITATION',
+    mistakeDetail: "Repeated words detected ('have', 'for').",
+    practiceCount: 1,
+    resolved: false,
+    firstOccurrence: "2024-05-01T10:15:00Z",
+    lastAttempt: "2024-05-01T10:15:00Z"
+  },
+  {
+    id: 'm8',
+    userId: 'U001',
+    sessionId: 'S004',
+    utteranceId: 401,
+    scriptId: 'scr4',
+    utteranceText: "That was an excellent performance.",
+    spokenText: "That was an egg-cellent per-for-mance.",
+    mistakeType: 'PRONUNCIATION',
+    mistakeDetail: "Mispronounced 'excellent'. Check the 'xc' sound.",
+    practiceCount: 0,
+    resolved: false,
+    firstOccurrence: "2024-05-07T11:00:00Z",
+    lastAttempt: "2024-05-07T11:00:00Z"
+  }
+];
+
+export const DUMMY_REPRACTICE: RepracticeSession = {
+  id: 'rp1',
+  userId: 'U001',
+  sourceSessionId: 'S001',
+  generatedDate: "2024-05-08T00:00:00Z",
+  mistakeIds: ['m1', 'm2', 'm6', 'm7'],
+  totalMistakes: 4,
+  completedRounds: 1,
+  improvementPercentage: 45,
+  status: 'IN_PROGRESS',
+  utterances: [
+    {
+      originalUtteranceId: 101,
+      englishText: "I have been working here for two years.",
+      hintText: "నేను ఇక్కడ రెండు సంవత్సరాలుగా పనిచేస్తున్నాను.",
+      mistakeType: 'GRAMMAR',
+      mistakeDetail: "Used 'work' instead of 'working' with 'have been'.",
+      correctionNote: "Use 'going' not 'go' with 'have been'",
+      attemptCount: 1,
+      bestScore: 75,
+      lastScore: 75,
+      resolved: false
+    }
+  ]
+};

@@ -1,0 +1,172 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Registered user profile",
+      "type": "object",
+      "properties": {
+        "fullName": { "type": "string" },
+        "mobile": { "type": "string" },
+        "email": { "type": "string" },
+        "ageGroup": { "type": "string", "enum": ["Child (6–12)", "Teen (13–17)", "Adult (18+)"] },
+        "avatar": { "type": "string" },
+        "preferredHintLanguage": { "type": "string" },
+        "groupCode": { "type": "string" },
+        "dailyStreakCount": { "type": "integer" },
+        "totalSessionsPlayed": { "type": "integer" },
+        "active": { "type": "boolean" },
+        "registrationDate": { "type": "string", "format": "date-time" }
+      },
+      "required": ["fullName", "mobile", "ageGroup"]
+    },
+    "Session": {
+      "title": "Session",
+      "description": "Active or planned practice session",
+      "type": "object",
+      "properties": {
+        "sessionName": { "type": "string" },
+        "joinCode": { "type": "string" },
+        "sessionMode": { "type": "string" },
+        "maxMembers": { "type": "integer" },
+        "sessionDuration": { "type": "integer" },
+        "hostId": { "type": "string" },
+        "scriptSource": { "type": "string" },
+        "status": { "type": "string", "enum": ["LOBBY", "ACTIVE", "COMPLETED", "EXPIRED"] },
+        "createdDate": { "type": "string", "format": "date-time" },
+        "roomExpiry": { "type": "integer" },
+        "activeSpeakerId": { "type": "string" },
+        "turnIndex": { "type": "integer" },
+        "currentTranscript": { "type": "string" },
+        "lastEvaluation": {
+          "type": "object",
+          "properties": {
+            "score": { "type": "number" },
+            "feedback": { "type": "string" },
+            "transcript": { "type": "string" },
+            "phoneticGuidance": { "type": "string" },
+            "mispronouncedWords": { "type": "array", "items": { "type": "string" } },
+            "alternativePhrasings": { "type": "array", "items": { "type": "string" } },
+            "phonemeTips": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "scriptId": { "type": "string" }
+      },
+      "required": ["sessionName", "joinCode", "hostId", "status"]
+    },
+    "Member": {
+      "title": "Member",
+      "description": "User joined to a specific session",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "avatar": { "type": "string" },
+        "slot": { "type": "integer" },
+        "role": { "type": "string" },
+        "ready": { "type": "boolean" },
+        "joinedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "slot"]
+    },
+    "Script": {
+      "title": "Script",
+      "description": "Set of utterances for a session",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "grammarFocus": { "type": "string" },
+        "context": { "type": "string" },
+        "complexity": { "type": "integer" },
+        "utterances": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "sequenceId": { "type": "integer" },
+              "speakerName": { "type": "string" },
+              "englishText": { "type": "string" },
+              "teluguHint": { "type": "string" },
+              "grammarTag": { "type": "string" },
+              "contextTag": { "type": "string" }
+            }
+          }
+        }
+      },
+      "required": ["title", "utterances"]
+    },
+    "Assessment": {
+      "title": "Assessment",
+      "description": "Rating and feedback for a turn or session",
+      "type": "object",
+      "properties": {
+        "sessionId": { "type": "string" },
+        "candidateMemberId": { "type": "string" },
+        "interviewerMemberId": { "type": "string" },
+        "turnIndex": { "type": "integer" },
+        "transcript": { "type": "string" },
+        "aiFeedback": { "type": "string" },
+        "phoneticGuidance": { "type": "string" },
+        "mispronouncedWords": { "type": "array", "items": { "type": "string" } },
+        "phonemeTips": { "type": "array", "items": { "type": "string" } },
+        "alternativePhrasings": { "type": "array", "items": { "type": "string" } },
+        "ratings": {
+          "type": "object",
+          "properties": {
+            "fluency": { "type": "integer" },
+            "confidence": { "type": "integer" },
+            "accuracy": { "type": "integer" },
+            "pronunciationScore": { "type": "number" },
+            "technicalAccuracy": { "type": "integer" },
+            "grammar": { "type": "integer" },
+            "clarity": { "type": "integer" }
+          }
+        },
+        "avgRating": { "type": "number" },
+        "quickTags": { "type": "array", "items": { "type": "string" } },
+        "interviewerNotes": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["candidateMemberId", "interviewerMemberId"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Chat message in a session",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "senderAvatar": { "type": "string" },
+        "text": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["senderId", "senderName", "text"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/sessions/{sessionId}": {
+      "schema": "Session",
+      "description": "Main session document"
+    },
+    "/sessions/{sessionId}/members/{memberId}": {
+      "schema": "Member",
+      "description": "Members in a session"
+    },
+    "/sessions/{sessionId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Chat messages in a session"
+    },
+    "/scripts/{scriptId}": {
+      "schema": "Script",
+      "description": "Stored scripts"
+    },
+    "/assessments/{assessmentId}": {
+      "schema": "Assessment",
+      "description": "Session assessments"
+    }
+  }
+}

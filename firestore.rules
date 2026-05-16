@@ -1,0 +1,162 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // --- 1. GLOBAL HELPERS ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+    function incoming() {
+      return request.resource.data;
+    }
+    function existing() {
+      return resource.data;
+    }
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function isAdmin() {
+      // Use get with default to avoid crashes if doc is missing
+      return isSignedIn() && (
+        request.auth.uid == 'U000' || 
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', 'USER') == 'ADMIN')
+      );
+    }
+
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- 2. USERS ---
+    match /users/{userId} {
+      function isValidUser(data) {
+        return (data.get('fullName', '') is string && data.get('fullName', '').size() <= 100) &&
+               (!('role' in data) || data.role in ['ADMIN', 'USER']);
+      }
+      function isDemoUser(id) {
+        return id in ['guru_demo', 'mate_demo'];
+      }
+
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && (isOwner(userId) || isAdmin()) && isValidUser(incoming());
+      allow update: if isSignedIn() && (isOwner(userId) || isAdmin()) && 
+                    (!incoming().diff(existing()).affectedKeys().hasAny(['role']) || isAdmin());
+      allow delete: if isAdmin();
+    }
+
+    // --- 3. SESSIONS ---
+    match /sessions/{sessionId} {
+      function isValidSession(data) {
+        return data.get('sessionName', '') is string && 
+               data.get('joinCode', '') is string &&
+               data.get('status', 'LOBBY') in ['LOBBY', 'ACTIVE', 'IN_PROGRESS', 'COMPLETED', 'EXPIRED', 'ABANDONED'];
+      }
+
+      allow get: if isSignedIn() && isValidId(sessionId);
+      allow list: if isSignedIn() && (resource.data.get('memberIds', []).hasAny([request.auth.uid]) || isAdmin());
+      
+      allow create: if isSignedIn() && isValidSession(incoming()) && (incoming().get('hostId', '') == request.auth.uid || isAdmin());
+      
+      allow update: if isSignedIn() && isValidSession(incoming()) && (
+        isAdmin() ||
+        (existing().hostId == request.auth.uid) || 
+        
+        // Action: Join/Leave (Directly modifying memberIds)
+        (incoming().diff(existing()).affectedKeys().hasOnly(['memberIds'])) ||
+
+        // Action: Member Activity (Live Transcript & AI Eval)
+        (existing().status == "ACTIVE" && 
+         (exists(/databases/$(database)/documents/sessions/$(sessionId)/members/$(request.auth.uid)) || existing().hostId == request.auth.uid) &&
+         incoming().diff(existing()).affectedKeys().hasOnly([
+           'activeSpeakerId', 'turnIndex', 'status', 
+           'currentTranscript', 'lastEvaluation', 'startedAt'
+         ]))
+      );
+
+      // --- Members Subcollection ---
+      match /members/{memberId} {
+        function isValidMember(data) {
+          return data.get('userId', '') is string &&
+                 data.get('name', '') is string && 
+                 data.get('slot', 1) is int;
+        }
+        
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && isOwner(incoming().get('userId', '')) && isValidMember(incoming());
+        allow update: if isSignedIn() && isOwner(existing().get('userId', '')) &&
+                      incoming().diff(existing()).affectedKeys().hasOnly(['ready', 'avatar', 'name', 'slot']);
+        allow delete: if isSignedIn() && (isOwner(existing().get('userId', '')) || request.auth.uid == get(/databases/$(database)/documents/sessions/$(sessionId)).data.hostId);
+      }
+
+      // --- Messages Subcollection ---
+      match /messages/{messageId} {
+        function isValidMessage(data) {
+          return data.get('senderId', '') == request.auth.uid &&
+                 data.get('senderName', '') is string &&
+                 data.get('text', '') is string && data.get('text', '').size() <= 1000 &&
+                 data.get('timestamp', request.time) == request.time;
+        }
+
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && isValidMessage(incoming());
+      }
+    }
+
+    // --- 4. SCRIPTS ---
+    match /scripts/{scriptId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin(); 
+    }
+
+    // --- 5. ASSESSMENTS ---
+    match /assessments/{assessmentId} {
+      function isValidAssessment(data) {
+        return data.keys().hasAll(['candidateMemberId', 'interviewerMemberId', 'ratings']) &&
+               (data.get('interviewerMemberId', '') == request.auth.uid || data.get('interviewerMemberId', '') == 'ai-evaluator' || isAdmin());
+      }
+      
+      function isSessionMember(sessionId) {
+        return exists(/databases/$(database)/documents/sessions/$(sessionId)) &&
+               get(/databases/$(database)/documents/sessions/$(sessionId)).data.get('memberIds', []).hasAny([request.auth.uid]);
+      }
+
+      allow read: if isSignedIn() && (
+        resource.data.candidateMemberId == request.auth.uid || 
+        resource.data.interviewerMemberId == request.auth.uid || 
+        isSessionMember(resource.data.sessionId) ||
+        isAdmin()
+      );
+      allow create: if isSignedIn() && isValidAssessment(incoming());
+    }
+
+    // --- 6. MISTAKES ---
+    match /mistakes/{mistakeId} {
+      function isValidMistake(data) {
+        return (data.get('userId', '') == request.auth.uid || isAdmin()) &&
+               data.spokenText is string && data.spokenText.size() <= 2000 &&
+               data.utteranceText is string && data.utteranceText.size() <= 2000;
+      }
+      function isMemberOfSession(sId) {
+        return exists(/databases/$(database)/documents/sessions/$(sId)) &&
+               get(/databases/$(database)/documents/sessions/$(sId)).data.get('memberIds', []).hasAny([request.auth.uid]);
+      }
+
+      allow read: if isSignedIn() && (
+        resource.data.userId == request.auth.uid || 
+        isMemberOfSession(resource.data.sessionId) ||
+        isAdmin()
+      );
+      allow create: if isSignedIn() && isValidMistake(incoming());
+      allow update: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin()) && 
+                    incoming().diff(existing()).affectedKeys().hasOnly(['resolved', 'lastAttempt', 'status']);
+    }
+  }
+}
