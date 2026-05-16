@@ -26,18 +26,13 @@ export class RepracticeService {
 
   constructor(private http: HttpClient) {}
 
-  generate(sourceSessionId?: string): Observable<RepracticeSession> {
+  generate(sourceSessionId?: string): Observable<any> {
     if (environment.isDemo) {
       return of({
-        id: 'RP' + Math.floor(Math.random() * 1000),
-        title: 'Correction Round - Office Basics',
-        utterances: [
-          { id: 'RPU1', originalUtteranceId: 'U1', englishText: 'I have been working here.', hintText: 'నేను ఇక్కడ పనిచేస్తున్నాను.', completed: false },
-          { id: 'RPU2', originalUtteranceId: 'U2', englishText: 'Did you finish it?', hintText: 'మీరు పూర్తి చేసారా?', completed: false }
-        ]
+        repracticeSessionId: 'DEMO-R001'
       }).pipe(delay(1000));
     }
-    return this.http.post<RepracticeSession>(`${this.baseUrl}/generate`, { sourceSessionId });
+    return this.http.post<any>(`${this.baseUrl}/generate`, { sourceSessionId });
   }
 
   getSession(id: string): Observable<RepracticeSession> {

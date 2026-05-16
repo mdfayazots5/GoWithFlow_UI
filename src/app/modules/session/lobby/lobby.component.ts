@@ -57,9 +57,9 @@ import { Subscription } from 'rxjs';
                         <i-lucide [img]="CheckIcon" size="10"></i-lucide>
                      </div>
                   </div>
-                  <div>
+                   <div>
                      <p class="font-black italic text-ls-text text-lg leading-none">{{ m.name }}</p>
-                     <p class="text-[10px] font-bold text-ls-text-muted uppercase tracking-widest">{{ m.isHost ? 'Session Leader' : 'Participant' }}</p>
+                     <p class="text-[10px] font-bold text-ls-text-muted uppercase tracking-widest">{{ m.slotName }}</p>
                   </div>
                </div>
                
@@ -73,7 +73,7 @@ import { Subscription } from 'rxjs';
             </div>
 
             <!-- Empty Slot -->
-            <div *ngIf="members.length < 4" class="card border-dashed flex items-center justify-center py-6 gap-3 opacity-50">
+            <div *ngIf="members.length < (session?.maxMembers || 4)" class="card border-dashed flex items-center justify-center py-6 gap-3 opacity-50">
                <div class="w-10 h-10 bg-ls-bg rounded-xl flex items-center justify-center text-ls-text-muted/50">
                   <i-lucide [img]="UserIcon" size="20"></i-lucide>
                </div>
@@ -120,7 +120,7 @@ export class LobbyComponent implements OnInit, OnDestroy {
   readonly CopyIcon = Copy;
   readonly ShareIcon = Share2;
 
-  sessionId = '';
+  sessionId = 0;
   session: any;
   members: any[] = [];
   isReady = false;
@@ -138,13 +138,14 @@ export class LobbyComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit() {
-    this.sessionId = this.route.snapshot.paramMap.get('id') || '';
+    const idParam = this.route.snapshot.paramMap.get('sessionId') || '';
+    this.sessionId = parseInt(idParam, 10);
     this.userId = this.auth.currentUser?.id || '';
 
     if (this.sessionId) {
       this.loadLobby();
-      this.ws.connect(this.sessionId);
-      this.ws.invoke('JoinLobby', this.sessionId, this.userId);
+      this.ws.connectLobby(this.sessionId.toString());
+      this.ws.invokeLobby('JoinLobby', this.sessionId, this.userId);
 
       this.setupEvents();
     }
@@ -161,18 +162,23 @@ export class LobbyComponent implements OnInit, OnDestroy {
   }
 
   setupEvents() {
-    this.subs.add(this.ws.onEvent('MEMBER_JOINED').subscribe(data => {
-      if (data) this.members.push(data);
+    this.subs.add(this.ws.onLobby('MEMBER_JOINED').subscribe(data => {
+      if (data) {
+        // Prevent duplicates
+        if (!this.members.find(m => m.userId === data.userId)) {
+          this.members.push(data);
+        }
+      }
     }));
 
-    this.subs.add(this.ws.onEvent('MEMBER_READY').subscribe(data => {
+    this.subs.add(this.ws.onLobby('MEMBER_READY').subscribe(data => {
       if (data) {
         const m = this.members.find(m => m.userId === data.userId);
         if (m) m.ready = data.ready;
       }
     }));
 
-    this.subs.add(this.ws.onEvent('SESSION_STARTED').subscribe(data => {
+    this.subs.add(this.ws.onLobby('SESSION_STARTED').subscribe(data => {
       if (data) {
         this.router.navigate(['/live-session', this.sessionId]);
       }
@@ -181,11 +187,11 @@ export class LobbyComponent implements OnInit, OnDestroy {
 
   toggleReady() {
     this.isReady = !this.isReady;
-    this.ws.invoke('SetReady', this.sessionId, this.userId, this.isReady);
+    this.ws.invokeLobby('SetReady', this.sessionId, this.userId, this.isReady);
   }
 
   startSession() {
-    this.ws.invoke('StartSession', this.sessionId);
+    this.ws.invokeLobby('StartSession', this.sessionId);
   }
 
   get allReady() {
@@ -198,7 +204,7 @@ export class LobbyComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.ws.disconnect();
+    this.ws.disconnectAll();
     this.subs.unsubscribe();
   }
 }

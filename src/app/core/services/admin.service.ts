@@ -6,6 +6,7 @@ import { environment } from '@env/environment';
 export interface DashboardSummary {
   totalUsers: number;
   activeSessions: number;
+  totalMistakesRecorded?: number;
   topMistakes: { type: string; count: number }[];
   recentActivity: any[];
 }
@@ -34,6 +35,7 @@ export class AdminService {
       return of({
         totalUsers: 156,
         activeSessions: 12,
+        totalMistakesRecorded: 842,
         topMistakes: [
           { type: 'GRAMMAR', count: 45 },
           { type: 'PRONUNCIATION', count: 32 },

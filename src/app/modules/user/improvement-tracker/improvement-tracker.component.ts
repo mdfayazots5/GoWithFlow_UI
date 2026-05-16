@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, TrendingUp, Flame, Trophy, Award, Target, ChevronRight } from 'lucide-angular';
+import { LucideAngularModule, TrendingUp, Flame, Trophy, Award, Target, ChevronRight, Inbox, BookOpen, RotateCcw } from 'lucide-angular';
 import { HeaderComponent } from '@shared/components/header/header.component';
 import { BottomNavComponent } from '@shared/components/bottom-nav/bottom-nav.component';
 import { DemoBannerComponent } from '@shared/components/demo-banner/demo-banner.component';
@@ -26,6 +26,29 @@ import { UserService } from '@core/services/user.service';
            <i-lucide [img]="TrendingUpIcon" size="160" class="absolute -right-12 -bottom-12 opacity-10"></i-lucide>
         </div>
 
+        <!-- Grammar Progress -->
+        <div class="space-y-4">
+           <h3 class="text-xs font-black uppercase tracking-[0.2em] text-ls-text-muted px-1">Concept Mastery</h3>
+           
+           <!-- Empty State -->
+           <div *ngIf="grammarProgress.length === 0" class="card py-8 flex flex-col items-center justify-center text-center gap-3 opacity-60">
+              <i-lucide [img]="BookIcon" size="24" class="text-ls-text-muted/30"></i-lucide>
+              <p class="text-[10px] font-bold text-ls-text-muted">Complete sessions to see grammar progress here.</p>
+           </div>
+
+           <div *ngIf="grammarProgress.length > 0" class="card space-y-4">
+              <div *ngFor="let g of grammarProgress" class="space-y-2">
+                 <div class="flex justify-between items-center">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-ls-text">{{ g.label }}</span>
+                    <span class="text-[10px] font-bold text-ls-primary italic">{{ g.progress }}%</span>
+                 </div>
+                 <div class="h-1.5 bg-ls-bg rounded-full overflow-hidden">
+                    <div class="h-full bg-ls-primary" [style.width.%]="g.progress"></div>
+                 </div>
+              </div>
+           </div>
+        </div>
+
         <!-- Weekly Chart (Pure CSS) -->
         <div class="space-y-4">
            <h3 class="text-xs font-black uppercase tracking-[0.2em] text-ls-text-muted px-1">Daily Mastery %</h3>
@@ -36,6 +59,35 @@ import { UserService } from '@core/services/user.service';
                     <div class="absolute bottom-0 left-0 right-0 bg-ls-primary rounded-t-lg" [style.height.%]="100"></div>
                  </div>
                  <span class="text-[8px] font-black uppercase tracking-widest text-ls-text-muted">{{ d.day }}</span>
+              </div>
+           </div>
+        </div>
+
+        </div>
+
+        <!-- Repractice History -->
+        <div class="space-y-4">
+           <h3 class="text-xs font-black uppercase tracking-[0.2em] text-ls-text-muted px-1">Correction Rounds</h3>
+           
+           <!-- Empty State -->
+           <div *ngIf="repracticeHistory.length === 0" class="card py-8 flex flex-col items-center justify-center text-center gap-3 opacity-60">
+              <i-lucide [img]="HistoryIcon" size="24" class="text-ls-text-muted/30"></i-lucide>
+              <p class="text-[10px] font-bold text-ls-text-muted">No correction rounds yet. Start one from My Mistakes.</p>
+           </div>
+
+           <div *ngFor="let r of repracticeHistory" class="card p-4 flex items-center justify-between">
+              <div class="flex items-center gap-3">
+                 <div class="w-10 h-10 bg-ls-bg rounded-xl flex items-center justify-center text-ls-primary">
+                    <i-lucide [img]="HistoryIcon" size="20"></i-lucide>
+                 </div>
+                 <div>
+                    <h4 class="text-xs font-black uppercase tracking-tight">{{ r.title }}</h4>
+                    <p class="text-[8px] font-bold text-ls-text-muted uppercase">{{ r.date | date }}</p>
+                 </div>
+              </div>
+              <div class="text-right">
+                 <p class="text-xs font-black italic text-ls-primary">{{ r.score }}%</p>
+                 <p class="text-[8px] font-bold text-ls-text-muted uppercase italic">Fluency</p>
               </div>
            </div>
         </div>
@@ -76,17 +128,24 @@ export class ImprovementTrackerComponent implements OnInit {
   readonly AwardIcon = Award;
   readonly TargetIcon = Target;
   readonly CheckIcon = ChevronRight;
+  readonly InboxIcon = Inbox;
+  readonly BookIcon = BookOpen;
+  readonly HistoryIcon = RotateCcw;
 
   improvementData: any;
   badges: any[] = [];
   streak: any;
+  grammarProgress: any[] = [];
+  repracticeHistory: any[] = [];
 
   constructor(private userService: UserService) {}
 
   ngOnInit() {
     this.userService.getImprovementData().subscribe(res => this.improvementData = res);
-    this.userService.getBadges().subscribe(res => this.badges = res);
+    this.userService.getBadges().subscribe(res => this.badges = res || []);
     this.userService.getStreak().subscribe(res => this.streak = res);
+    this.userService.getGrammarProgress().subscribe(res => this.grammarProgress = res || []);
+    this.userService.getRepracticeHistory().subscribe(res => this.repracticeHistory = res || []);
   }
 
   getBadgeIcon(name: string) {

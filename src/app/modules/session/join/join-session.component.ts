@@ -58,15 +58,42 @@ import { Router } from '@angular/router';
                     <p class="text-[10px] font-black uppercase tracking-widest text-ls-text-muted">{{ validatedSession.mode }}</p>
                  </div>
               </div>
+
+               <!-- Slot Selection -->
+               <div class="space-y-3 pt-2">
+                  <p class="text-[10px] font-black uppercase tracking-widest text-ls-text-muted px-1">Choose your role</p>
+                  <div class="grid grid-cols-1 gap-2">
+                     <button 
+                       *ngFor="let slot of availableSlots"
+                       (click)="selectedSlot = slot"
+                       class="flex items-center justify-between p-4 rounded-2xl border-2 transition-all text-left group"
+                       [class.border-ls-primary]="selectedSlot?.slotIndex === slot.slotIndex"
+                       [class.bg-ls-primary/5]="selectedSlot?.slotIndex === slot.slotIndex"
+                       [class.border-ls-card-border]="selectedSlot?.slotIndex !== slot.slotIndex"
+                       [class.bg-white]="selectedSlot?.slotIndex !== slot.slotIndex"
+                     >
+                        <div>
+                           <p class="font-black italic uppercase tracking-tight text-sm" [class.text-ls-primary]="selectedSlot?.slotIndex === slot.slotIndex">{{ slot.slotName }}</p>
+                           <p class="text-[8px] font-bold text-ls-text-muted uppercase tracking-widest">Available Slot</p>
+                        </div>
+                        <div class="w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all"
+                             [class.border-ls-primary]="selectedSlot?.slotIndex === slot.slotIndex"
+                             [class.bg-ls-primary]="selectedSlot?.slotIndex === slot.slotIndex"
+                             [class.border-ls-card-border]="selectedSlot?.slotIndex !== slot.slotIndex">
+                           <i-lucide *ngIf="selectedSlot?.slotIndex === slot.slotIndex" [img]="CheckIcon" size="12" class="text-white"></i-lucide>
+                        </div>
+                     </button>
+                  </div>
+               </div>
            </div>
 
            <button 
              (click)="joinSession()"
-             [disabled]="joining"
+             [disabled]="joining || !selectedSlot"
              class="w-full btn-primary h-16 text-xl gap-3 bg-ls-success shadow-ls-success/20"
            >
-              {{ joining ? 'Securing Slot...' : 'Join Now' }}
-              <i-lucide *ngIf="!joining" [img]="JoinIcon" size="24"></i-lucide>
+               {{ joining ? 'Securing Slot...' : 'Join Now' }}
+               <i-lucide *ngIf="!joining" [img]="JoinIcon" size="24"></i-lucide>
            </button>
 
            <button (click)="validatedSession = null" class="w-full text-xs font-black uppercase tracking-widest text-ls-text-muted hover:text-ls-primary transition-all">
@@ -88,17 +115,23 @@ export class JoinSessionComponent {
   readonly NextIcon = ArrowRight;
   readonly PlayIcon = Play;
   readonly JoinIcon = UserPlus;
+  readonly CheckIcon = CheckCircle;
 
   joinCode = '';
   loading = false;
   joining = false;
   validatedSession: any = null;
+  selectedSlot: any = null;
 
   constructor(
     private sessionService: SessionService,
     private auth: AuthService,
     private router: Router
   ) {}
+
+  get availableSlots() {
+    return this.validatedSession?.slots?.filter((s: any) => !s.isOccupied) || [];
+  }
 
   validateCode() {
     this.loading = true;
@@ -113,17 +146,19 @@ export class JoinSessionComponent {
 
   joinSession() {
     const user = this.auth.currentUser;
-    if (!user) return;
+    if (!user || !this.selectedSlot) return;
 
     this.joining = true;
     this.sessionService.joinSession({
       sessionId: this.validatedSession.id,
       userId: user.id,
-      name: user.name
+      name: user.name,
+      slotIndex: this.selectedSlot.slotIndex
     }).subscribe({
-      next: () => {
+      next: (res) => {
         this.joining = false;
-        this.router.navigate(['/session/lobby', this.validatedSession.id]);
+        // The join API returns LobbyStateResponseDto which includes sessionId (number)
+        this.router.navigate(['/session/lobby', res.sessionId || this.validatedSession.id]);
       },
       error: () => this.joining = false
     });

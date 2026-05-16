@@ -10,7 +10,7 @@ export const SESSION_ROUTES: Routes = [
     loadComponent: () => import('./join/join-session.component').then(m => m.JoinSessionComponent)
   },
   {
-    path: 'lobby/:id',
+    path: 'lobby/:sessionId',
     loadComponent: () => import('./lobby/lobby.component').then(m => m.LobbyComponent)
   },
   {

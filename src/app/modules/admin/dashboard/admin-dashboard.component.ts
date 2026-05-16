@@ -54,8 +54,9 @@ import { Observable } from 'rxjs';
             <i-lucide [img]="AlertIcon" size="24"></i-lucide>
           </div>
           <div>
-            <p class="text-[10px] font-black uppercase tracking-widest text-ls-text-muted">Pending Correction Rounds</p>
-            <p class="text-3xl font-black italic text-ls-text">42</p>
+            <p class="text-[10px] font-black uppercase tracking-widest text-ls-text-muted">Total Mistakes Recorded</p>
+            <p class="text-3xl font-black italic text-ls-text">{{ s.totalMistakesRecorded ?? 0 }}</p>
+            <p class="text-[8px] font-bold text-ls-text-muted mt-1 italic animate-pulse">Updates after Phase 6 is enabled</p>
           </div>
         </div>
       </div>

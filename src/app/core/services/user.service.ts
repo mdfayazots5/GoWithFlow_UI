@@ -68,6 +68,27 @@ export class UserService {
     return this.http.get<any[]>(`${this.baseUrl}/badges`);
   }
 
+  getGrammarProgress(): Observable<any[]> {
+    if (environment.isDemo) {
+      return of([
+        { label: 'Have Been', progress: 75 },
+        { label: 'Was/Were', progress: 90 },
+        { label: 'Did/Didn\'t', progress: 60 }
+      ]).pipe(delay(500));
+    }
+    return this.http.get<any[]>(`${this.baseUrl}/grammar-progress`);
+  }
+
+  getRepracticeHistory(): Observable<any[]> {
+    if (environment.isDemo) {
+      return of([
+        { id: 'R1', title: 'Office Basics', date: '2024-03-15', score: 85 },
+        { id: 'R2', title: 'Kitchen Talk', date: '2024-03-14', score: 92 }
+      ]).pipe(delay(500));
+    }
+    return this.http.get<any[]>(`${this.baseUrl}/repractice-history`);
+  }
+
   getSessionDetail(sessionId: string): Observable<any> {
     if (environment.isDemo) {
       return of({
@@ -76,6 +97,10 @@ export class UserService {
         date: '2024-03-15',
         duration: '15:20',
         score: 88,
+        fluencyScore: 88,
+        confidenceScore: 92,
+        speakingSpeedWpm: 120,
+        pauseCount: 4,
         mistakesCount: 3,
         members: ['Ravi', 'Priya', 'Arjun']
       }).pipe(delay(500));

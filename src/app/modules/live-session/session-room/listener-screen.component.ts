@@ -1,7 +1,9 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, ThumbsUp, MessageSquare, AlertCircle, Sparkles } from 'lucide-angular';
+import { LucideAngularModule, ThumbsUp, MessageSquare, AlertCircle, Sparkles, RotateCcw } from 'lucide-angular';
 import { TurnState, TurnService } from '@core/services/turn.service';
+import { WebsocketService } from '@core/services/websocket.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-listener-screen',
@@ -9,6 +11,14 @@ import { TurnState, TurnService } from '@core/services/turn.service';
   imports: [CommonModule, LucideAngularModule],
   template: `
     <div class="w-full max-w-xl space-y-12 animate-in slide-in-from-bottom-10 duration-700">
+      <!-- Re-read Notice -->
+      <div *ngIf="showReReadNotice" class="fixed top-24 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-top-4">
+         <div class="px-6 py-3 bg-ls-accent text-white rounded-full flex items-center gap-3 shadow-2xl shadow-ls-accent/40 font-black italic uppercase tracking-widest text-sm">
+            <i-lucide [img]="ResetIcon" size="18" class="animate-spin duration-700"></i-lucide>
+            Speaker is re-reading...
+         </div>
+      </div>
+
       <!-- Waiting Visual -->
       <div class="flex flex-col items-center gap-8 text-center">
          <div class="w-24 h-24 bg-white/5 rounded-[40px] flex items-center justify-center text-ls-primary border border-white/10 relative">
@@ -75,15 +85,28 @@ import { TurnState, TurnService } from '@core/services/turn.service';
     }
   `]
 })
-export class ListenerScreenComponent {
+export class ListenerScreenComponent implements OnInit, OnDestroy {
   readonly LikeIcon = ThumbsUp;
   readonly AlertIcon = AlertCircle;
   readonly MessageIcon = MessageSquare;
   readonly SparkleIcon = Sparkles;
+  readonly ResetIcon = RotateCcw;
 
   @Input() state!: TurnState;
+  showReReadNotice = false;
+  private subs = new Subscription();
 
-  constructor(private turnService: TurnService) {}
+  constructor(
+    private turnService: TurnService,
+    private wsService: WebsocketService
+  ) {}
+
+  ngOnInit() {
+    this.subs.add(this.wsService.onLive('RE_READ_REQUESTED').subscribe(() => {
+      this.showReReadNotice = true;
+      setTimeout(() => this.showReReadNotice = false, 3000);
+    }));
+  }
 
   sendFeedback(tag: string) {
     this.turnService.submitListenerFeedback(this.state.sessionId, {
@@ -91,5 +114,9 @@ export class ListenerScreenComponent {
       targetUserId: this.state.activeMemberId,
       feedbackTag: tag
     }).subscribe();
+  }
+
+  ngOnDestroy() {
+    this.subs.unsubscribe();
   }
 }

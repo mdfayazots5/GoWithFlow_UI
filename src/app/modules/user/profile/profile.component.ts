@@ -36,7 +36,7 @@ import { Router, RouterLink } from '@angular/router';
         <div class="space-y-4">
            <h3 class="text-xs font-black uppercase tracking-[0.2em] text-ls-text-muted px-1">Engagement</h3>
            <div class="card p-0 overflow-hidden divide-y divide-ls-card-border">
-              <a routerLink="/user/improvement" class="p-5 flex items-center justify-between hover:bg-ls-bg transition-all cursor-pointer group">
+              <a routerLink="/user/progress" class="p-5 flex items-center justify-between hover:bg-ls-bg transition-all cursor-pointer group">
                  <div class="flex items-center gap-4">
                     <i-lucide [img]="TrendIcon" size="20" class="text-ls-text-muted"></i-lucide>
                     <span class="text-xs font-bold text-ls-text uppercase tracking-tight">Improvement Tracker</span>

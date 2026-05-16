@@ -6,7 +6,7 @@ export const USER_ROUTES: Routes = [
     loadComponent: () => import('./dashboard/user-dashboard.component').then(m => m.UserDashboardComponent)
   },
   {
-    path: 'improvement',
+    path: 'progress',
     loadComponent: () => import('./improvement-tracker/improvement-tracker.component').then(m => m.ImprovementTrackerComponent)
   },
   {

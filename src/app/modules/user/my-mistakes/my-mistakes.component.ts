@@ -5,7 +5,9 @@ import { BottomNavComponent } from '@shared/components/bottom-nav/bottom-nav.com
 import { DemoBannerComponent } from '@shared/components/demo-banner/demo-banner.component';
 import { MistakeService, Mistake } from '@core/services/mistake.service';
 import { RepracticeService } from '@core/services/repractice.service';
-import { LucideAngularModule, AlertCircle, RotateCcw, ChevronRight, Zap, Target } from 'lucide-angular';
+import { LoaderService } from '@core/services/loader.service';
+import { ToastService } from '@core/services/toast.service';
+import { LucideAngularModule, AlertCircle, RotateCcw, ChevronRight, Zap, Target, Inbox } from 'lucide-angular';
 import { Router } from '@angular/router';
 
 @Component({
@@ -18,6 +20,12 @@ import { Router } from '@angular/router';
       <app-header title="Learning Gaps" subtitle="Review and resolve your speaking mistakes"></app-header>
 
       <main class="p-6 space-y-8 animate-in slide-in-from-bottom-4">
+        <!-- Loader Overlay -->
+        <div *ngIf="loader.isLoading()" class="fixed inset-0 bg-ls-bg/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-4">
+           <div class="w-12 h-12 border-4 border-ls-primary border-t-transparent rounded-full animate-spin"></div>
+           <p class="text-[10px] font-black uppercase tracking-[0.3em] text-ls-primary">Preparing Session...</p>
+        </div>
+
         <!-- Summary Dashboard -->
         <div class="grid grid-cols-2 gap-4" *ngIf="summary">
            <div class="card border-none bg-ls-error text-white p-6">
@@ -66,7 +74,18 @@ import { Router } from '@angular/router';
         <!-- Mistake List -->
         <div class="space-y-4">
            <h3 class="text-xs font-black uppercase tracking-[0.2em] text-ls-text-muted px-1">Recent Errors</h3>
-           <div class="space-y-3">
+           
+           <!-- Empty State -->
+           <div *ngIf="mistakes.length === 0" class="card py-12 flex flex-col items-center justify-center text-center gap-4 opacity-60">
+              <div class="w-16 h-16 bg-ls-bg rounded-full flex items-center justify-center text-ls-text-muted/30">
+                 <i-lucide [img]="InboxIcon" size="32"></i-lucide>
+              </div>
+              <p class="text-sm font-bold text-ls-text-muted max-w-[240px]">
+                You have no grammar mistakes yet. Complete a session to see your mistakes here.
+              </p>
+           </div>
+
+           <div *ngIf="mistakes.length > 0" class="space-y-3">
               <div *ngFor="let m of mistakes" class="card bg-white p-5 flex flex-col gap-4 border-l-4 border-l-ls-error">
                  <div class="flex items-center justify-between">
                     <div class="flex items-center gap-2">
@@ -108,6 +127,7 @@ export class MyMistakesComponent implements OnInit {
   readonly NextIcon = ChevronRight;
   readonly ZapIcon = Zap;
   readonly TargetIcon = Target;
+  readonly InboxIcon = Inbox;
 
   summary: any;
   mistakes: Mistake[] = [];
@@ -116,18 +136,33 @@ export class MyMistakesComponent implements OnInit {
   constructor(
     private mistakeService: MistakeService,
     private repracticeService: RepracticeService,
-    private router: Router
+    private router: Router,
+    public loader: LoaderService,
+    private toast: ToastService
   ) {}
 
   ngOnInit() {
     this.mistakeService.getSummary().subscribe(s => this.summary = s);
-    this.mistakeService.getMistakes({ resolved: false }).subscribe(res => this.mistakes = res.items);
-    this.mistakeService.getGrammarProgress().subscribe(p => this.grammarProgress = p);
+    this.mistakeService.getMistakes({ resolved: false }).subscribe(res => this.mistakes = res?.items || []);
+    this.mistakeService.getGrammarProgress().subscribe(p => this.grammarProgress = p || []);
   }
 
   startRepractice() {
-    this.repracticeService.generate().subscribe(res => {
-      this.router.navigate(['/repractice', res.id]);
+    this.loader.show();
+    this.repracticeService.generate().subscribe({
+      next: (res) => {
+        this.loader.hide();
+        const sessionId = res.repracticeSessionId || res.id;
+        if (sessionId) {
+          this.router.navigate(['/repractice', sessionId]);
+        } else {
+          this.toast.error('Could not start correction round');
+        }
+      },
+      error: () => {
+        this.loader.hide();
+        this.toast.error('Could not start correction round');
+      }
     });
   }
 }

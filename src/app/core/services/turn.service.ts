@@ -63,8 +63,14 @@ export class TurnService {
   }
 
   shiftTurn(sessionId: string): Observable<any> {
-    if (environment.isDemo) return of({ success: true }).pipe(delay(500));
-    return this.http.post(`${this.baseUrl}/${sessionId}/shift`, {});
+    if (environment.isDemo) {
+      return of({ 
+        success: true,
+        turnIndex: 5,
+        totalTurns: 5 
+      }).pipe(delay(500));
+    }
+    return this.http.post<any>(`${this.baseUrl}/${sessionId}/shift`, {});
   }
 
   submitListenerFeedback(sessionId: string, feedback: { turnIndex: number, targetUserId: string, feedbackTag: string }): Observable<any> {

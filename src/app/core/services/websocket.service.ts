@@ -1,115 +1,131 @@
 import { Injectable } from '@angular/core';
-import { Subject, Observable, interval, map } from 'rxjs';
-import { webSocket, WebSocketSubject } from 'rxjs/webSocket';
+import { Subject, Observable, interval, map, filter, EMPTY } from 'rxjs';
 import { environment } from '@env/environment';
-import { AuthService } from './auth.service';
 import * as signalR from '@microsoft/signalr';
 
 @Injectable({
   providedIn: 'root'
 })
 export class WebsocketService {
-  private hubConnection?: signalR.HubConnection;
-  private rawWsSubject?: WebSocketSubject<any>;
-  private messageSubject = new Subject<any>();
+  private lobbyConnection: signalR.HubConnection | null = null;
+  private liveConnection: signalR.HubConnection | null = null;
+  private demoSubject = new Subject<{type: string, data: any}>();
 
-  constructor(private auth: AuthService) {}
-
-  async connect(sessionId: string, hubPath: string = 'session') {
+  constructor() {
     if (environment.isDemo) {
-      this.startDemoMode(hubPath);
-      return;
-    }
-
-    // Primary: SignalR
-    try {
-      this.hubConnection = new signalR.HubConnectionBuilder()
-        .withUrl(`${environment.signalRHubUrl}/${hubPath}?sessionId=${sessionId}`, {
-          accessTokenFactory: () => localStorage.getItem('gwf_token') || ''
-        })
-        .withAutomaticReconnect()
-        .build();
-
-      const events = ['TURN_SHIFT', 'MEMBER_JOINED', 'MEMBER_READY', 'SESSION_STARTED', 'SESSION_ENDED', 'LISTENER_TAG'];
-      events.forEach(evt => {
-        this.hubConnection?.on(evt, (data: any) => {
-          this.messageSubject.next({ type: evt, data });
-        });
-      });
-
-      await this.hubConnection.start();
-      console.log('SignalR Connected');
-    } catch (err) {
-      console.error('SignalR Start Error, falling back to raw WS:', err);
-      this.connectRaw(sessionId, hubPath);
+      this.startDemoMode();
     }
   }
 
-  private connectRaw(sessionId: string, hubPath: string) {
-    const token = localStorage.getItem('gwf_token');
-    const wsUrl = `${environment.wsBaseUrl}/${hubPath}?sessionId=${sessionId}&token=${token}`;
-    this.rawWsSubject = webSocket(wsUrl);
-    this.rawWsSubject.subscribe({
-      next: (msg: any) => this.messageSubject.next(msg),
-      error: (err) => console.error('Raw WebSocket Error:', err),
-      complete: () => console.log('Raw WebSocket Closed')
+  connectLobby(sessionId: string): void {
+    if (environment.isDemo) return;
+
+    this.lobbyConnection = new signalR.HubConnectionBuilder()
+      .withUrl(`${environment.signalRHubUrl}/hubs/session?sessionId=${sessionId}`, {
+        accessTokenFactory: () => localStorage.getItem('accessToken') || ''
+      })
+      .withAutomaticReconnect()
+      .build();
+
+    this.lobbyConnection.start().catch(err => console.error('Lobby Connection Error:', err));
+  }
+
+  connectLive(sessionId: string): void {
+    if (environment.isDemo) return;
+
+    this.liveConnection = new signalR.HubConnectionBuilder()
+      .withUrl(`${environment.signalRHubUrl}/hubs/live-session?sessionId=${sessionId}`, {
+        accessTokenFactory: () => localStorage.getItem('accessToken') || ''
+      })
+      .withAutomaticReconnect()
+      .build();
+
+    this.liveConnection.start().catch(err => console.error('Live Connection Error:', err));
+  }
+
+  onLobby(event: string): Observable<any> {
+    if (environment.isDemo) {
+      return this.demoSubject.asObservable().pipe(
+        filter(msg => msg.type === event),
+        map(msg => msg.data)
+      );
+    }
+
+    return new Observable(observer => {
+      this.lobbyConnection?.on(event, (data) => observer.next(data));
     });
   }
 
-  private startDemoMode(hubPath: string) {
-    if (hubPath === 'live-session') {
-      interval(15000).subscribe(i => {
-         this.messageSubject.next({ 
-           type: 'TURN_SHIFT', 
-           data: { 
-             newActiveMemberId: i % 2 === 0 ? 'U002' : 'U001', 
-             slotIndex: i % 2 === 0 ? 1 : 0, 
-             turnIndex: i + 1,
-             nextUtterance: {
-               sequenceId: i + 2,
-               speakerLabel: i % 2 === 0 ? 'Priya' : 'Ravi',
-               englishText: i % 2 === 0 ? 'That is a long time! How do you like it?' : 'It is great, the team is very supportive.',
-               hintText: i % 2 === 0 ? 'అది చాలా కాలం! మీకు అది ఎలా అనిపిస్తుంది?' : 'బాగుంది, టీం చాలా సపోర్టివ్‌గా ఉంటారు.'
-             }
-           } 
-         });
-      });
-    } else {
-      interval(10000).subscribe(i => {
-        if (i === 1) {
-          this.messageSubject.next({ type: 'MEMBER_JOINED', data: { userId: 'U003', name: 'Arjun Kumar', slotIndex: 2 } });
-        }
-      });
-    }
-  }
-
-  onEvent(type: string): Observable<any> {
-    return this.messageSubject.asObservable().pipe(
-      map(msg => msg?.type === type ? msg.data : null)
-    );
-  }
-
-  async invoke(method: string, ...args: any[]) {
+  onLive(event: string): Observable<any> {
     if (environment.isDemo) {
-      console.log(`[WS-DEMO] Invoking ${method} with args:`, args);
-      if (method === 'SetReady') {
-         this.messageSubject.next({ type: 'MEMBER_READY', data: { userId: args[1], ready: args[2] } });
+      return this.demoSubject.asObservable().pipe(
+        filter(msg => msg.type === event),
+        map(msg => msg.data)
+      );
+    }
+
+    return new Observable(observer => {
+      this.liveConnection?.on(event, (data) => observer.next(data));
+    });
+  }
+
+  invokeLobby(method: string, ...args: any[]): void {
+    if (environment.isDemo) {
+      console.log(`[Demo Lobby] Invoke ${method}`, args);
+      if (method === 'JoinLobby') {
+        // Echo back for demo
       }
       return;
     }
-    
-    if (this.hubConnection) {
-      try {
-        await this.hubConnection.invoke(method, ...args);
-      } catch (err) {
-        console.error(`SignalR Invoke Error (${method}):`, err);
-      }
-    }
+    this.lobbyConnection?.invoke(method, ...args).catch(err => console.error(`Invoke Lobby Error (${method}):`, err));
   }
 
-  async disconnect() {
-    if (this.hubConnection) {
-      await this.hubConnection.stop();
+  invokeLive(method: string, ...args: any[]): void {
+    if (environment.isDemo) {
+      console.log(`[Demo Live] Invoke ${method}`, args);
+      return;
     }
+    this.liveConnection?.invoke(method, ...args).catch(err => console.error(`Invoke Live Error (${method}):`, err));
+  }
+
+  disconnectAll(): void {
+    this.lobbyConnection?.stop();
+    this.liveConnection?.stop();
+    this.lobbyConnection = null;
+    this.liveConnection = null;
+  }
+
+  private startDemoMode() {
+    // Keep some simulation for demo mode so the UI is testable
+    interval(15000).subscribe(i => {
+      this.demoSubject.next({
+        type: 'TURN_SHIFT',
+        data: {
+          newActiveMemberId: i % 2 === 0 ? 'U002' : 'U001',
+          slotIndex: i % 2 === 0 ? 1 : 0,
+          turnIndex: i + 1,
+          nextUtterance: {
+            sequenceId: i + 2,
+            speakerLabel: i % 2 === 0 ? 'Priya' : 'Ravi',
+            englishText: i % 2 === 0 ? 'Have you been working here long?' : 'No, I just started last week.',
+            hintText: i % 2 === 0 ? 'మీరు ఇక్కడ చాలా కాలం నుండి పని చేస్తున్నారా?' : 'లేదు, నేను పోయిన వారమే ప్రారంభించాను.'
+          }
+        }
+      });
+    });
+
+    interval(10000).subscribe(i => {
+      if (i === 1) {
+        this.demoSubject.next({
+          type: 'MEMBER_JOINED',
+          data: { userId: 'U003', name: 'Arjun Kumar', slotIndex: 2, slotName: 'Daughter' }
+        });
+      }
+    });
+    
+    // Simulate RE_READ_REQUESTED
+    setTimeout(() => {
+      this.demoSubject.next({ type: 'RE_READ_REQUESTED', data: {} });
+    }, 8000);
   }
 }

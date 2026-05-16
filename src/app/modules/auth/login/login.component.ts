@@ -132,7 +132,15 @@ export class LoginComponent {
     this.auth.verifyOtp(this.mobileNumber, code).subscribe({
       next: (res) => {
         this.loading = false;
-        if (res.user.role === 'ADMIN') {
+        
+        // Handle new user registration flow
+        if (res.isRegistrationRequired) {
+          sessionStorage.setItem('temp_reg_mobile', this.mobileNumber);
+          this.router.navigate(['/auth/register']);
+          return;
+        }
+
+        if (res.user?.role === 'ADMIN') {
           this.router.navigate(['/admin/dashboard']);
         } else {
           this.router.navigate(['/user/dashboard']);

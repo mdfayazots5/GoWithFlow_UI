@@ -80,6 +80,7 @@ export class SpeakerScreenComponent {
 
   @Input() state!: TurnState;
   @Output() completed = new EventEmitter<void>();
+  @Output() sessionEnded = new EventEmitter<void>();
 
   isRecording = false;
   analysisResult: any = null;
@@ -110,7 +111,14 @@ export class SpeakerScreenComponent {
   }
 
   submitTurn() {
-    this.completed.emit();
+    this.turnService.shiftTurn(this.state.sessionId).subscribe(res => {
+      // If turnIndex equals totalTurns, it's the last turn
+      if (res && res.turnIndex >= res.totalTurns) {
+        this.sessionEnded.emit();
+      } else {
+        this.completed.emit();
+      }
+    });
     this.analysisResult = null;
   }
 }

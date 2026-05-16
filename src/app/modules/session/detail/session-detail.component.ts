@@ -36,18 +36,33 @@ import { UserService } from '@core/services/user.service';
         </div>
 
         <!-- Major Stats -->
-        <div class="grid grid-cols-3 gap-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
            <div class="card p-4 text-center">
-              <p class="text-[8px] font-black uppercase tracking-widest text-ls-text-muted">Mastery</p>
-              <p class="text-xl font-black italic text-ls-primary">{{ detail.score }}%</p>
+              <p class="text-[8px] font-black uppercase tracking-widest text-ls-text-muted">Fluency</p>
+              <p class="text-xl font-black italic text-ls-primary">{{ detail.fluencyScore !== null && detail.fluencyScore !== undefined ? detail.fluencyScore + '%' : '—' }}</p>
            </div>
            <div class="card p-4 text-center">
+              <p class="text-[8px] font-black uppercase tracking-widest text-ls-text-muted">Confidence</p>
+              <p class="text-xl font-black italic text-emerald-600">{{ detail.confidenceScore !== null && detail.confidenceScore !== undefined ? detail.confidenceScore + '%' : '—' }}</p>
+           </div>
+           <div class="card p-4 text-center">
+              <p class="text-[8px] font-black uppercase tracking-widest text-ls-text-muted">Speed (WPM)</p>
+              <p class="text-xl font-black italic text-ls-accent">{{ detail.speakingSpeedWpm !== null && detail.speakingSpeedWpm !== undefined ? detail.speakingSpeedWpm : '—' }}</p>
+           </div>
+           <div class="card p-4 text-center">
+              <p class="text-[8px] font-black uppercase tracking-widest text-ls-text-muted">Pauses</p>
+              <p class="text-xl font-black italic text-ls-warning">{{ detail.pauseCount !== null && detail.pauseCount !== undefined ? detail.pauseCount : '—' }}</p>
+           </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+           <div class="card p-4 text-center">
               <p class="text-[8px] font-black uppercase tracking-widest text-ls-text-muted">Mistakes</p>
-              <p class="text-xl font-black italic text-ls-error">{{ detail.mistakesCount }}</p>
+              <p class="text-xl font-black italic text-ls-error">{{ detail.mistakesCount ?? '—' }}</p>
            </div>
            <div class="card p-4 text-center">
               <p class="text-[8px] font-black uppercase tracking-widest text-ls-text-muted">Members</p>
-              <p class="text-xl font-black italic text-ls-accent">{{ detail.members?.length }}</p>
+              <p class="text-xl font-black italic text-ls-text">{{ detail.members?.length ?? 0 }}</p>
            </div>
         </div>
 

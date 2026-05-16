@@ -40,10 +40,5 @@ export const routes: Routes = [
     path: 'repractice',
     canActivate: [authGuard],
     loadChildren: () => import('./modules/repractice/repractice.routes').then(m => m.REPRACTICE_ROUTES)
-  },
-  {
-    path: 'scripts',
-    canActivate: [authGuard],
-    loadChildren: () => import('./modules/scripts/scripts.routes').then(m => m.SCRIPTS_ROUTES)
   }
 ];

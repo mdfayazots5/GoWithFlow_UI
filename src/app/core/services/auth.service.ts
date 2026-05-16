@@ -27,19 +27,27 @@ export class AuthService {
 
   verifyOtp(mobileNumber: string, code: string): Observable<any> {
     if (environment.isDemo) {
-      return of({
+      // Simulate existing USER for demo mode
+      const res = {
         accessToken: 'dummy-jwt',
         refreshToken: 'dummy-refresh',
-        user: { id: 'U000', name: 'GoWithFlow Admin', role: 'ADMIN' }
-      }).pipe(delay(500), tap(res => this.setSession(res)));
+        user: { id: 'U001', name: 'Ravi Kumar', role: 'USER' }
+      };
+      this.setSession(res);
+      return of(res).pipe(delay(500));
     }
-    return this.http.post(`${environment.apiBaseUrl}/auth/verify-otp`, { mobileNumber, code }).pipe(
-      tap(res => this.setSession(res))
+    return this.http.post<any>(`${environment.apiBaseUrl}/auth/verify-otp`, { mobileNumber, code }).pipe(
+      tap(res => {
+        if (!res.isRegistrationRequired) {
+          this.setSession(res);
+        }
+      })
     );
   }
 
   private setSession(res: any) {
     localStorage.setItem('gwf_token', res.accessToken);
+    localStorage.setItem('accessToken', res.accessToken); // Added for SignalR compatibility
     localStorage.setItem('gwf_refresh_token', res.refreshToken);
     localStorage.setItem('gwf_user', JSON.stringify(res.user));
   }

@@ -33,7 +33,14 @@ import { RouterLink } from '@angular/router';
                           <i-lucide [img]="CalendarIcon" size="10"></i-lucide>
                           {{ s.date | date:'MMM d, y' }}
                        </span>
-                       <span class="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 bg-ls-primary/10 text-ls-primary rounded">Score: {{ s.score }}%</span>
+                       <span class="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
+                          [class]="s.fluencyScore !== null && s.fluencyScore !== undefined ? 'bg-ls-primary/10 text-ls-primary' : 'bg-ls-bg text-ls-text-muted'"
+                       >
+                          Score: {{ s.fluencyScore !== null && s.fluencyScore !== undefined ? s.fluencyScore + '%' : '—' }}
+                       </span>
+                       <span *ngIf="s.mistakesCount === 0 && (s.fluencyScore === null || s.fluencyScore === undefined)" class="text-[8px] font-bold text-ls-text-muted italic opacity-60 ml-2">
+                          Not analyzed yet
+                       </span>
                     </div>
                  </div>
               </div>

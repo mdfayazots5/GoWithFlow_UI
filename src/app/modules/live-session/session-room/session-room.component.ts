@@ -5,6 +5,7 @@ import { LucideAngularModule, LogOut, Settings, Info, MessageSquare } from 'luci
 import { TurnService, TurnState } from '@core/services/turn.service';
 import { WebsocketService } from '@core/services/websocket.service';
 import { AuthService } from '@core/services/auth.service';
+import { LiveSessionService } from '@core/services/live-session.service';
 import { Subscription } from 'rxjs';
 import { SpeakerScreenComponent } from './speaker-screen.component';
 import { ListenerScreenComponent } from './listener-screen.component';
@@ -44,7 +45,8 @@ import { ListenerScreenComponent } from './listener-screen.component';
           <app-speaker-screen 
             *ngIf="isMyTurn" 
             [state]="turnState" 
-            (completed)="onTurnComplete()">
+            (completed)="onTurnComplete()"
+            (sessionEnded)="completeAndNavigate()">
           </app-speaker-screen>
           
           <app-listener-screen 
@@ -56,6 +58,12 @@ import { ListenerScreenComponent } from './listener-screen.component';
         <div *ngIf="!turnState" class="flex flex-col items-center gap-4">
            <div class="w-12 h-12 border-4 border-ls-primary border-t-transparent rounded-full animate-spin"></div>
            <p class="text-xs font-black uppercase tracking-[0.3em] text-white/30">Loading State...</p>
+        </div>
+        
+        <!-- Completion Loading -->
+        <div *ngIf="isCompleting" class="fixed inset-0 bg-[#1A1A2E]/90 backdrop-blur-sm z-50 flex flex-col items-center justify-center gap-4">
+           <div class="w-16 h-16 border-4 border-ls-accent border-t-transparent rounded-full animate-spin"></div>
+           <p class="text-xs font-black uppercase tracking-[0.4em] text-ls-accent">Finalizing Report...</p>
         </div>
       </main>
 
@@ -77,6 +85,7 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
   sessionId = '';
   turnState?: TurnState;
   userId = '';
+  isCompleting = false;
   private subs = new Subscription();
 
   constructor(
@@ -84,7 +93,8 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
     private router: Router,
     private turnService: TurnService,
     private ws: WebsocketService,
-    private auth: AuthService
+    private auth: AuthService,
+    private liveSession: LiveSessionService
   ) {}
 
   ngOnInit() {
@@ -93,7 +103,7 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
 
     if (this.sessionId) {
       this.loadTurn();
-      this.ws.connect(this.sessionId, 'live-session');
+      this.ws.connectLive(this.sessionId);
       this.setupEvents();
     }
   }
@@ -105,7 +115,7 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
   }
 
   setupEvents() {
-    this.subs.add(this.ws.onEvent('TURN_SHIFT').subscribe(data => {
+    this.subs.add(this.ws.onLive('TURN_SHIFT').subscribe(data => {
       if (data) {
         this.turnState = {
           sessionId: this.sessionId,
@@ -118,9 +128,9 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
       }
     }));
 
-    this.subs.add(this.ws.onEvent('SESSION_ENDED').subscribe(data => {
+    this.subs.add(this.ws.onLive('SESSION_ENDED').subscribe(data => {
       if (data) {
-        this.router.navigate(['/session/report', this.sessionId]);
+        this.completeAndNavigate();
       }
     }));
   }
@@ -130,7 +140,25 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
   }
 
   onTurnComplete() {
-    this.turnService.shiftTurn(this.sessionId).subscribe();
+    // Turn shifting is now handled by speaker-screen component
+  }
+
+  completeAndNavigate() {
+    if (this.isCompleting) return;
+    this.isCompleting = true;
+    this.liveSession.completeSession(this.sessionId).subscribe({
+      next: (summary) => {
+        // Navigate to report and pass summary via state
+        this.router.navigate(['/session/report', this.sessionId], {
+          state: { summary }
+        });
+      },
+      error: () => {
+        this.isCompleting = false;
+        // Fallback navigation even on error
+        this.router.navigate(['/session/report', this.sessionId]);
+      }
+    });
   }
 
   quitSession() {
@@ -140,7 +168,7 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    this.ws.disconnect();
+    this.ws.disconnectAll();
     this.subs.unsubscribe();
   }
 }
