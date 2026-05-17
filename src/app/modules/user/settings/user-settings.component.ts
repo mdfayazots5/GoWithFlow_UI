@@ -4,17 +4,15 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { LucideAngularModule, User, Mail, Phone, Camera, Save, CheckCircle } from 'lucide-angular';
 import { HeaderComponent } from '@shared/components/header/header.component';
 import { BottomNavComponent } from '@shared/components/bottom-nav/bottom-nav.component';
-import { DemoBannerComponent } from '@shared/components/demo-banner/demo-banner.component';
 import { UserService } from '@core/services/user.service';
 import { AuthService } from '@core/services/auth.service';
 
 @Component({
   selector: 'app-user-settings',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, HeaderComponent, BottomNavComponent, DemoBannerComponent],
+  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, HeaderComponent, BottomNavComponent],
   template: `
     <div class="min-h-screen bg-ls-bg pb-24">
-      <app-demo-banner></app-demo-banner>
       <app-header title="Account Settings" [showBack]="true"></app-header>
 
       <main class="p-6 space-y-8 animate-in slide-in-from-bottom-4">

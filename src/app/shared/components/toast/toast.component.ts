@@ -27,7 +27,7 @@ import { LucideAngularModule, CheckCircle, XCircle, Info, AlertTriangle, X } fro
           
           <p class="text-[13px] font-bold text-gw-text italic flex-1 leading-tight">{{ toast.message }}</p>
           
-          <button (click)="toastService.toasts.set(toasts().filter(t => t !== toast))" class="text-gw-text-muted hover:text-gw-text shrink-0">
+          <button (click)="removeToast(toast)" class="text-gw-text-muted hover:text-gw-text shrink-0">
              <i-lucide [img]="CloseIcon" size="16"></i-lucide>
           </button>
         </div>
@@ -47,4 +47,8 @@ export class ToastComponent {
   readonly InfoIcon = Info;
   readonly WarnIcon = AlertTriangle;
   readonly CloseIcon = X;
+
+  removeToast(toast: Toast) {
+    this.toastService.toasts.update(current => current.filter(t => t !== toast));
+  }
 }

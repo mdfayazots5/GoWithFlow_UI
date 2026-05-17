@@ -1,4 +1,3 @@
-// File: src/app/modules/live-session/session-room/session-room.component.ts
 import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -9,7 +8,6 @@ import { SpeakerScreenComponent } from '../speaker-screen/speaker-screen.compone
 import { ListenerScreenComponent } from '../listener-screen/listener-screen.component';
 import { LucideAngularModule, LogOut, Clock, Activity } from 'lucide-angular';
 import { TurnState } from '@core/models/voice.model';
-import { environment } from '@env/environment';
 
 @Component({
   selector: 'app-session-room',
@@ -34,7 +32,7 @@ import { environment } from '@env/environment';
                <i-lucide [img]="TimerIcon" size="14" class="text-gw-accent"></i-lucide>
                <span class="text-xs font-black italic tabular-nums">{{ sessionTime() }}</span>
             </div>
-            
+
             <button (click)="confirmLeave()" class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/40 hover:text-gw-error hover:bg-gw-error/10 transition-all">
                <i-lucide [img]="LeaveIcon" size="20"></i-lucide>
             </button>
@@ -50,8 +48,8 @@ import { environment } from '@env/environment';
                 <p class="text-xs font-black uppercase tracking-widest italic text-white/40">Synchronizing session...</p>
              </div>
            } @else if (isSpeaker()) {
-             <app-speaker-screen 
-               [turnState]="turnState()!" 
+             <app-speaker-screen
+               [turnState]="turnState()!"
                (turnShifted)="onTurnShifted()"
              ></app-speaker-screen>
            } @else {
@@ -88,11 +86,8 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
   showReReadBanner = signal(false);
   listenerTagFlash = signal<string | null>(null);
 
-  private readonly DEMO_USERS = ['U001', 'U002', 'U003'];
-  private demoUserIndex = 0;
   private timeSeconds = 0;
   private timerInterval: any;
-  private demoInterval: any;
 
   ngOnInit() {
     this.route.params.subscribe(params => {
@@ -107,20 +102,16 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     if (this.timerInterval) clearInterval(this.timerInterval);
-    if (this.demoInterval) clearInterval(this.demoInterval);
     this.ws.disconnect();
   }
 
   private initSession(sessionId: string) {
     this.isLoading.set(true);
     const user = this.authService.currentUser;
-    
-    // Connect to websocket
-    this.ws.connect(sessionId, user?.id || '', 'live-session');
 
+    this.ws.connect(sessionId, user?.id || '', 'live-session');
     this.loadCurrentTurn(sessionId);
 
-    // Listen for real-time events
     this.ws.on('TURN_SHIFT').subscribe(newState => {
       this.updateState(newState);
     });
@@ -138,19 +129,6 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
     this.ws.on('SESSION_ENDED').subscribe(() => {
       this.router.navigate(['/session/report', sessionId]);
     });
-
-    // isDemo: simulate TURN_SHIFT every 10s cycling through DUMMY_USERS
-    if (environment.isDemo) {
-      this.demoInterval = setInterval(() => {
-        const current = this.turnState();
-        if (current) {
-          this.demoUserIndex = (this.demoUserIndex + 1) % this.DEMO_USERS.length;
-          const nextMemberId = this.DEMO_USERS[this.demoUserIndex];
-          this.turnState.set({ ...current, activeMemberId: nextMemberId, turnIndex: current.turnIndex + 1 });
-          this.isSpeaker.set(nextMemberId === localStorage.getItem('gwf_userId'));
-        }
-      }, 10000);
-    }
   }
 
   private loadCurrentTurn(sessionId: string) {

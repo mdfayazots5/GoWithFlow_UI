@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
-import { DemoService } from '@core/services/demo.service';
 import { LucideAngularModule, ChevronLeft } from 'lucide-angular';
 import { interval, Subscription } from 'rxjs';
 
@@ -27,7 +26,7 @@ import { interval, Subscription } from 'rxjs';
         <div class="card bg-gw-card-bg border-gw-card-border shadow-sm p-8 rounded-3xl">
           <form (ngSubmit)="onSubmit()" class="space-y-8">
             <div class="flex justify-between gap-2">
-              <input 
+              <input
                 *ngFor="let digit of [0,1,2,3,4,5]; let i = index"
                 #otpBox
                 type="text"
@@ -46,7 +45,7 @@ import { interval, Subscription } from 'rxjs';
                 <p class="text-[10px] font-black uppercase tracking-[0.2em] text-gw-text-muted">Wait for code</p>
               </div>
 
-              <button 
+              <button
                 type="button"
                 [disabled]="timeLeft() > 0"
                 class="text-xs font-black uppercase tracking-widest text-gw-accent disabled:text-gw-text-muted transition-colors hover:scale-105 active:scale-95"
@@ -56,8 +55,12 @@ import { interval, Subscription } from 'rxjs';
               </button>
             </div>
 
-            <button 
-              type="submit" 
+            <p *ngIf="errorMessage()" class="text-xs font-bold text-gw-error text-center uppercase tracking-wider italic">
+              {{ errorMessage() }}
+            </p>
+
+            <button
+              type="submit"
               [disabled]="!isOtpComplete() || isLoading"
               class="w-full h-[52px] bg-gw-primary text-white font-black uppercase italic tracking-widest rounded-2xl shadow-lg shadow-gw-primary/20 hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:active:scale-100 transition-all"
             >
@@ -79,15 +82,15 @@ export class OtpVerifyComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private auth = inject(AuthService);
-  public demo = inject(DemoService);
 
   readonly BackIcon = ChevronLeft;
 
   mobileNumber = signal<string>('');
-  timeLeft = signal<number>(300); // 5 minutes (300s)
+  timeLeft = signal<number>(300);
+  errorMessage = signal<string>('');
   isLoading = false;
   otpDigits: string[] = ['', '', '', '', '', ''];
-  
+
   private timerSub?: Subscription;
 
   ngOnInit() {
@@ -100,8 +103,7 @@ export class OtpVerifyComponent implements OnInit, OnDestroy {
     });
 
     this.startTimer();
-    
-    // Auto focus first box after view init
+
     setTimeout(() => {
       this.otpBoxes.first?.nativeElement.focus();
     }, 500);
@@ -131,10 +133,9 @@ export class OtpVerifyComponent implements OnInit, OnDestroy {
 
   onInput(event: any, index: number) {
     const val = event.target.value;
-    // Keep only the last digit if multiple entered (e.g. paste)
     const cleaned = val.replace(/[^0-9]/g, '').slice(-1);
     event.target.value = cleaned;
-    
+
     if (cleaned) {
       this.otpDigits[index] = cleaned;
       if (index < 5) {
@@ -168,19 +169,34 @@ export class OtpVerifyComponent implements OnInit, OnDestroy {
   }
 
   onSubmit() {
-    if (this.isOtpComplete() || this.demo.isDemo) {
+    if (this.isOtpComplete()) {
       this.isLoading = true;
+      this.errorMessage.set('');
       const otp = this.otpDigits.join('');
       this.auth.verifyOtp(this.mobileNumber(), otp).subscribe({
         next: (res) => {
           this.isLoading = false;
-          if (res.role === 'ADMIN') {
-            this.router.navigate(['/admin/dashboard']);
+          const data = res.data;
+          if (data?.isRegistrationRequired) {
+            this.router.navigate(['/auth/register'], { queryParams: { mobile: this.mobileNumber() } });
           } else {
-            this.router.navigate(['/user/dashboard']);
+            this.auth.setSession(data);
+            if (data?.role === 'ADMIN') {
+              this.router.navigate(['/admin/dashboard']);
+            } else {
+              this.router.navigate(['/user/dashboard']);
+            }
           }
         },
-        error: () => this.isLoading = false
+        error: (err: any) => {
+          this.isLoading = false;
+          const body = err?.error;
+          const msg = (body?.errors && body.errors[0]) || body?.message || 'Invalid OTP. Please try again.';
+          this.errorMessage.set(msg);
+          this.otpDigits = ['', '', '', '', '', ''];
+          this.otpBoxes.forEach(box => (box.nativeElement.value = ''));
+          setTimeout(() => this.otpBoxes.first?.nativeElement.focus(), 0);
+        }
       });
     }
   }

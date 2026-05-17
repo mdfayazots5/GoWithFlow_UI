@@ -1,7 +1,5 @@
 export const environment = {
   production: true,
-  isDemo: false,
-  apiBaseUrl: 'https://api.gowithflow.app/api/v1',
-  wsBaseUrl: 'wss://api.gowithflow.app',
-  signalRHubUrl: 'https://api.gowithflow.app'
+  apiBaseUrl: 'https://api.gowithflow.app/api',
+  wsBaseUrl: 'wss://api.gowithflow.app'
 };

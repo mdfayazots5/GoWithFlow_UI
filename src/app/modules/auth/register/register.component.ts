@@ -1,11 +1,10 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthService } from '../auth.service';
-import { DemoService } from '@core/services/demo.service';
 import { ToastService } from '@core/services/toast.service';
-import { LucideAngularModule, User, Mail, Phone, ChevronDown } from 'lucide-angular';
+import { LucideAngularModule, User, Mail, ChevronDown } from 'lucide-angular';
 
 @Component({
   selector: 'app-register',
@@ -151,16 +150,15 @@ import { LucideAngularModule, User, Mail, Phone, ChevronDown } from 'lucide-angu
     .card { @apply bg-white border border-gw-card-border rounded-3xl p-8 shadow-sm; }
   `]
 })
-export class RegisterComponent {
+export class RegisterComponent implements OnInit {
   private fb = inject(FormBuilder);
   private auth = inject(AuthService);
   private router = inject(Router);
-  public demo = inject(DemoService);
+  private route = inject(ActivatedRoute);
   private toast = inject(ToastService);
 
   readonly UserIcon = User;
   readonly MailIcon = Mail;
-  readonly PhoneIcon = Phone;
   readonly DownIcon = ChevronDown;
 
   avatarSeeds = ['Felix', 'Aneka', 'Caleb', 'Bella'];
@@ -176,6 +174,14 @@ export class RegisterComponent {
 
   isLoading = false;
 
+  ngOnInit() {
+    this.route.queryParams.subscribe(params => {
+      if (params['mobile']) {
+        this.registerForm.patchValue({ mobileNumber: params['mobile'] });
+      }
+    });
+  }
+
   setAvatar(seed: string) {
     this.selectedAvatar.set(seed);
   }
@@ -188,11 +194,12 @@ export class RegisterComponent {
         avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${this.selectedAvatar()}`
       };
 
+      const mobile = this.registerForm.get('mobileNumber')?.value ?? '';
       this.auth.register(payload).subscribe({
         next: () => {
           this.isLoading = false;
-          this.toast.success('Account created!');
-          this.router.navigate(['/auth/login']);
+          this.toast.success('Account created! Please log in.');
+          this.router.navigate(['/auth/login'], { queryParams: { mobile } });
         },
         error: () => this.isLoading = false
       });

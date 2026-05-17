@@ -4,7 +4,6 @@ import { CommonModule } from '@angular/common';
 import { RouterOutlet, Router, NavigationEnd, RouterModule } from '@angular/router';
 import { HeaderComponent } from '@shared/components/header/header.component';
 import { BottomNavComponent } from '@shared/components/bottom-nav/bottom-nav.component';
-import { DemoBannerComponent } from '@shared/components/demo-banner/demo-banner.component';
 import { ToastComponent } from '@shared/components/toast/toast.component';
 import { LoaderComponent } from '@shared/components/loader/loader.component';
 import { filter } from 'rxjs';
@@ -14,19 +13,16 @@ import { AuthService } from '@core/services/auth.service';
   selector: 'app-root',
   standalone: true,
   imports: [
-    CommonModule, 
-    RouterOutlet, 
+    CommonModule,
+    RouterOutlet,
     RouterModule,
-    HeaderComponent, 
-    BottomNavComponent, 
-    DemoBannerComponent, 
-    ToastComponent, 
+    HeaderComponent,
+    BottomNavComponent,
+    ToastComponent,
     LoaderComponent
   ],
   template: `
     <div class="min-h-screen bg-gw-bg flex flex-col font-sans">
-      <app-demo-banner></app-demo-banner>
-      
       @if (showHeader()) {
         <app-header></app-header>
       }

@@ -142,7 +142,7 @@ import { ToastService } from '@core/services/toast.service';
             >
               <i-lucide [img]="MicIcon" size="20" class="text-gw-accent"></i-lucide>
               {{ isPracticing() ? 'PREPARING...' : 'PRACTICE ALL MISTAKES' }}
-              <span class="bg-gw-accent text-white px-2 py-0.5 rounded-lg text-[10px] ml-2">{{ DUMMY_SUMMARY().pendingPractice }}</span>
+              <span class="bg-gw-accent text-white px-2 py-0.5 rounded-lg text-[10px] ml-2">{{ summary()?.pendingMistakes ?? 0 }}</span>
             </button>
          </div>
       </div>
@@ -173,8 +173,6 @@ export class MyMistakesComponent implements OnInit {
   summary = signal<MistakeSummary | null>(null);
   isLoading = signal(true);
   isPracticing = signal(false);
-
-  DUMMY_SUMMARY = signal<any>({ pendingPractice: 5 });
 
   summaryItems = [
     { label: 'Total Mistakes', value: 0, icon: AlertCircle, key: 'totalMistakes' },

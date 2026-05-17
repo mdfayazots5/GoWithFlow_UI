@@ -3,17 +3,15 @@ import { CommonModule } from '@angular/common';
 import { LucideAngularModule, Search, Calendar, ChevronRight, Activity } from 'lucide-angular';
 import { HeaderComponent } from '@shared/components/header/header.component';
 import { BottomNavComponent } from '@shared/components/bottom-nav/bottom-nav.component';
-import { DemoBannerComponent } from '@shared/components/demo-banner/demo-banner.component';
 import { SessionService } from '@core/services/session.service';
 import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-session-history',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, HeaderComponent, BottomNavComponent, DemoBannerComponent, RouterLink],
+  imports: [CommonModule, LucideAngularModule, HeaderComponent, BottomNavComponent, RouterLink],
   template: `
     <div class="min-h-screen bg-ls-bg pb-24">
-      <app-demo-banner></app-demo-banner>
       <app-header title="Session History" subtitle="Your past practice records"></app-header>
 
       <main class="p-6 space-y-6">

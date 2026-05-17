@@ -1,7 +1,7 @@
 // File: src/app/modules/session/lobby/lobby.component.ts
 import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { SessionService } from '@core/services/session.service';
 import { AuthService } from '@core/services/auth.service';
 import { WebsocketService } from '@core/services/websocket.service';
@@ -23,12 +23,11 @@ import {
   ArrowRight
 } from 'lucide-angular';
 import { LobbyState, LobbyMember } from '@core/models/session.model';
-import { environment } from '@env/environment';
 
 @Component({
   selector: 'app-lobby',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, RouterLink],
+  imports: [CommonModule, LucideAngularModule],
   template: `
     <div class="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500 pb-24">
       <!-- Session Header -->
@@ -202,7 +201,6 @@ export class LobbyComponent implements OnInit, OnDestroy {
   isHost = signal(false);
   showScript = signal(false);
 
-  private pollInterval: any;
   private sessionId = '';
   private hasLeft = false;
 
@@ -212,20 +210,15 @@ export class LobbyComponent implements OnInit, OnDestroy {
       if (this.sessionId) {
         this.loadLobby(this.sessionId);
 
-        if (environment.isDemo) {
-          this.pollInterval = setInterval(() => this.loadLobby(this.sessionId), 5000);
-        } else {
-          const userId = localStorage.getItem('gwf_userId') ?? '';
-          this.wsService.connect(this.sessionId, userId, 'session');
-          this.subscribeToLobbyEvents();
-        }
+        const userId = localStorage.getItem('gwf_userId') ?? '';
+        this.wsService.connect(this.sessionId, userId, 'session');
+        this.subscribeToLobbyEvents();
       }
     });
   }
 
   ngOnDestroy() {
-    if (this.pollInterval) clearInterval(this.pollInterval);
-    if (!this.hasLeft && this.sessionId && !environment.isDemo) {
+    if (!this.hasLeft && this.sessionId) {
       this.sessionService.leaveSession(this.sessionId).subscribe();
     }
     this.wsService.disconnect();

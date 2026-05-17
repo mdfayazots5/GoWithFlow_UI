@@ -1,5 +1,4 @@
 import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
-import { environment } from '@env/environment';
 import { inject } from '@angular/core';
 import { AuthService } from '@core/services/auth.service';
 import { ToastService } from '@core/services/toast.service';
@@ -8,8 +7,6 @@ import { catchError, switchMap, throwError } from 'rxjs';
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
   const toastService = inject(ToastService);
-  
-  if (environment.isDemo) return next(req);
 
   const token = localStorage.getItem('gwf_token');
   let authReq = req;
@@ -21,7 +18,8 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
       // Handle 401 - Unauthorized (Token expired)
-      if (error.status === 401 && !authReq.url.includes('/auth/refresh-token') && !authReq.url.includes('/auth/login')) {
+      const isAuthEndpoint = authReq.url.includes('/auth/send-otp') || authReq.url.includes('/auth/verify-otp');
+      if (error.status === 401 && !isAuthEndpoint && !authReq.url.includes('/auth/refresh-token') && !authReq.url.includes('/auth/login')) {
         return authService.refreshToken().pipe(
           switchMap((res: any) => {
             const newAuthReq = req.clone({ setHeaders: { Authorization: `Bearer ${res.accessToken}` } });

@@ -60,7 +60,7 @@ export class HeaderComponent {
   readonly BackIcon = ChevronLeft;
   readonly StreakIcon = Flame;
 
-  user = signal(this.auth.currentUser);
+  user = signal<any>(this.auth.currentUser);
 
   showBack = signal(false);
   pageTitle = signal('');

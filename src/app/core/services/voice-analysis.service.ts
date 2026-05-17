@@ -1,7 +1,5 @@
-// File: src/app/core/services/voice-analysis.service.ts
-import { Injectable, signal } from '@angular/core';
-import { Observable, Subject, of, delay } from 'rxjs';
-import { environment } from '@env/environment';
+import { Injectable } from '@angular/core';
+import { Observable, Subject } from 'rxjs';
 import { VoiceAnalysis, VoiceMistake } from '@core/models/voice.model';
 
 @Injectable({
@@ -48,22 +46,16 @@ export class VoiceAnalysisService {
     if (this.recognition) {
       this.recognition.stop();
     }
-    return ''; // The final transcript will be handled via the last observable emission normally, 
-    // but we'll return a placeholder here as per instructions to stop and then analyze.
+    return '';
   }
 
   analyzeTranscript(spoken: string, expected: string): VoiceAnalysis {
-    if (environment.isDemo) {
-      return this.getMockAnalysis(spoken, expected);
-    }
-
-    const spokenClean = spoken.toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "").trim();
-    const expectedClean = expected.toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, "").trim();
+    const spokenClean = spoken.toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, '').trim();
+    const expectedClean = expected.toLowerCase().replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, '').trim();
 
     const spokenWords = spokenClean.split(/\s+/);
     const expectedWords = expectedClean.split(/\s+/);
 
-    // Simple word match score
     let matches = 0;
     expectedWords.forEach(word => {
       if (spokenWords.includes(word)) matches++;
@@ -71,11 +63,8 @@ export class VoiceAnalysisService {
 
     const fluencyScore = Math.round((matches / expectedWords.length) * 100);
     const hesitations = spokenWords.filter(w => ['um', 'uh', 'err', 'like'].includes(w));
-    
-    // Confidence is hard to measure without native API support for it on all browsers,
-    // so we'll simulate it based on hesitations.
     const confidenceScore = Math.max(0, 100 - (hesitations.length * 15));
-    
+
     const mistakes: VoiceMistake[] = [];
     if (fluencyScore < 80) {
       mistakes.push({
@@ -91,25 +80,10 @@ export class VoiceAnalysisService {
       expectedText: expected,
       fluencyScore,
       confidenceScore,
-      speedWpm: Math.round(spokenWords.length / 0.1), // Mock speed
+      speedWpm: Math.round(spokenWords.length / 0.1),
       hesitations,
       mistakes,
       isPassed: fluencyScore >= 80
     };
   }
-
-  private getMockAnalysis(spoken: string, expected: string): VoiceAnalysis {
-    return {
-      transcript: spoken || "I have been working here for three years.",
-      expectedText: expected,
-      fluencyScore: 85,
-      confidenceScore: 90,
-      speedWpm: 120,
-      hesitations: [],
-      mistakes: [],
-      isPassed: true
-    };
-  }
-
-  // Placeholder for saving analysis if needed here, but usually handled in LiveSessionService
 }

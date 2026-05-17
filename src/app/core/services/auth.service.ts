@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of, tap, delay, map } from 'rxjs';
+import { Observable, tap, map } from 'rxjs';
 import { environment } from '@env/environment';
 import { Router } from '@angular/router';
 
@@ -25,21 +25,10 @@ export class AuthService {
   }
 
   requestOtp(mobileNumber: string): Observable<any> {
-    if (environment.isDemo) return of({ message: 'OTP Sent' }).pipe(delay(500));
-    return this.http.post(`${environment.apiBaseUrl}/auth/request-otp`, { mobileNumber });
+    return this.http.post(`${environment.apiBaseUrl}/auth/send-otp`, { mobileNumber });
   }
 
   verifyOtp(mobileNumber: string, code: string): Observable<any> {
-    if (environment.isDemo) {
-      // Simulate existing USER for demo mode
-      const res = {
-        accessToken: 'dummy-jwt',
-        refreshToken: 'dummy-refresh',
-        user: { id: 'U001', fullName: 'Ravi Kumar', role: 'USER', mobileNumber: '+919876543210' }
-      };
-      this.setSession(res);
-      return of(res).pipe(delay(500));
-    }
     return this.http.post<any>(`${environment.apiBaseUrl}/auth/verify-otp`, { mobileNumber, otpCode: code }).pipe(
       tap(res => {
         if (res.data && !res.data.isRegistrationRequired) {
@@ -51,7 +40,6 @@ export class AuthService {
 
   private setSession(res: any) {
     localStorage.setItem('gwf_token', res.accessToken);
-    localStorage.setItem('accessToken', res.accessToken);
     localStorage.setItem('gwf_refreshToken', res.refreshToken);
     localStorage.setItem('gwf_userId', String(res.userId ?? res.user?.id ?? ''));
     localStorage.setItem('gwf_role', res.role ?? res.user?.role ?? '');
