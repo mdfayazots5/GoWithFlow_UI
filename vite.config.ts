@@ -12,11 +12,11 @@ export default defineConfig(() => {
         nitro: {
           devProxy: {
             '/api': {
-              target: 'http://localhost:5088/api',
+              target: 'https://localhost:44378/api',
               changeOrigin: true,
             },
             '/hubs': {
-              target: 'http://localhost:5088/hubs',
+              target: 'wss://localhost:44378/hubs',
               changeOrigin: true,
             },
           },
@@ -28,6 +28,7 @@ export default defineConfig(() => {
       alias: {
         '@': path.resolve(__dirname, './src'),
         '@core': path.resolve(__dirname, './src/app/core'),
+        '@modules': path.resolve(__dirname, './src/app/modules'),
         '@shared': path.resolve(__dirname, './src/app/shared'),
         '@env': path.resolve(__dirname, './src/app/environments'),
       },
@@ -37,13 +38,6 @@ export default defineConfig(() => {
       strictPort: true,
       host: '0.0.0.0',
       hmr: process.env['DISABLE_HMR'] !== 'true',
-      proxy: {
-        '/hubs': {
-          target: 'ws://localhost:5088',
-          changeOrigin: true,
-          ws: true,
-        },
-      },
     },
   };
 });

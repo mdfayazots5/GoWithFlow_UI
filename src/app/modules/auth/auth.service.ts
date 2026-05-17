@@ -19,16 +19,8 @@ export class AuthService {
   private readonly ROLE_KEY = 'gwf_role';
   private readonly PROFILE_KEY = 'gwf_user_profile';
 
-  requestOtp(mobile: string): Observable<{sent: boolean, expiresIn: number}> {
-    return this.http.post<{sent: boolean, expiresIn: number}>(`${environment.apiBaseUrl}/auth/send-otp`, { mobileNumber: mobile });
-  }
-
-  verifyOtp(mobile: string, otp: string): Observable<any> {
-    return this.http.post<any>(`${environment.apiBaseUrl}/auth/verify-otp`, { mobileNumber: mobile, otpCode: otp });
-  }
-
-  loginWithPassword(mobile: string, password: string): Observable<any> {
-    return this.http.post<any>(`${environment.apiBaseUrl}/auth/login-with-password`, { mobileNumber: mobile, password }).pipe(
+  login(mobile: string, password: string): Observable<any> {
+    return this.http.post<any>(`${environment.apiBaseUrl}/auth/login`, { mobileNumber: mobile, password }).pipe(
       tap(res => this.setSession(res.data))
     );
   }
