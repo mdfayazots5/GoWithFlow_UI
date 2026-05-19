@@ -89,12 +89,14 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
                <div class="flex flex-wrap gap-2 mb-6">
                   <span 
                     class="px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest italic shadow-sm"
-                    [class.bg-gw-primary/10]="script.category === 'Grammar Drill'"
                     [class.text-gw-primary]="script.category === 'Grammar Drill'"
-                    [class.bg-gw-success/10]="script.category === 'Roleplay'"
                     [class.text-gw-success]="script.category === 'Roleplay'"
-                    [class.bg-gw-accent/10]="script.category === 'Interview'"
                     [class.text-gw-accent]="script.category === 'Interview'"
+                    [ngClass]="{
+                      'bg-gw-primary/10': script.category === 'Grammar Drill',
+                      'bg-gw-success/10': script.category === 'Roleplay',
+                      'bg-gw-accent/10': script.category === 'Interview'
+                    }"
                   >
                     {{ script.category }}
                   </span>

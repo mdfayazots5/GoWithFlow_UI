@@ -1,137 +1,221 @@
 // File: src/app/modules/session/join/join-session.component.ts
 import { Component, inject, viewChildren, ElementRef, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { SessionService } from '@core/services/session.service';
 import { ToastService } from '@core/services/toast.service';
-import { LucideAngularModule, Search, ChevronRight, User, Users, Calendar, Clock, BookOpen, AlertCircle } from 'lucide-angular';
+import { LucideAngularModule, Search, ChevronRight, User, Users, Clock, BookOpen, AlertCircle, CheckCircle2, Loader2, Zap } from 'lucide-angular';
 import { SessionPreview } from '@core/models/session.model';
 
 @Component({
   selector: 'app-join-session',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule],
+  imports: [CommonModule, LucideAngularModule],
   template: `
-    <div class="max-w-xl mx-auto space-y-10 pb-20 animate-in fade-in duration-500">
-      <div class="text-center space-y-2">
-        <h2 class="text-3xl font-black text-gw-text italic uppercase tracking-tighter">JOIN A SESSION</h2>
-        <p class="text-sm font-bold text-gw-text-muted uppercase tracking-widest italic">Enter the 6-character code</p>
+    <div class="h-screen bg-gw-bg flex flex-col overflow-hidden text-black">
+
+      <!-- Fixed header -->
+      <div class="flex-none px-5 pt-5 pb-3 text-center">
+        <p class="text-[8px] font-black uppercase tracking-[0.35em] text-black italic mb-0.5">GoWithFlow</p>
+        <h1 class="text-[22px] font-black italic uppercase tracking-tight text-black leading-none">Join a Session</h1>
       </div>
 
-      <!-- Code Input Grid -->
-      <div class="flex justify-center gap-3">
-        @for (i of [0,1,2,3,4,5]; track i) {
-          <input 
-            #digitInput
-            type="text" 
-            maxlength="1"
-            (input)="onInput(i, $event)"
-            (keydown)="onKeyDown(i, $event)"
-            class="w-12 h-16 md:w-16 md:h-20 bg-white border-2 border-gw-card-border rounded-2xl text-center text-2xl md:text-3xl font-black text-gw-text uppercase outline-none focus:border-gw-primary focus:shadow-[0_0_20px_rgba(61,90,153,0.15)] transition-all"
-          >
-        }
-      </div>
+      <!-- Scrollable body -->
+      <div class="flex-1 overflow-y-auto overscroll-contain" [class.pb-32]="preview()">
+        <div class="max-w-md mx-auto px-4 pt-1 pb-6 space-y-3">
 
-      <div class="flex flex-col items-center gap-6">
-        <button 
-          [disabled]="code().length < 6 || isLoading()"
-          (click)="findSession()"
-          class="w-full h-16 bg-gw-text text-white font-black uppercase tracking-widest italic rounded-2xl hover:scale-[1.05] active:scale-95 disabled:opacity-50 transition-all flex items-center justify-center gap-2 shadow-xl shadow-gw-text/20"
-        >
-          {{ isLoading() ? 'SEARCHING...' : 'FIND SESSION' }}
-          <i-lucide [img]="SearchIcon" size="20"></i-lucide>
-        </button>
+          <!-- ── Code Entry Card ── -->
+          <div class="bg-white rounded-3xl border border-gw-card-border shadow-sm p-5">
 
-        @if (error()) {
-          <div class="flex items-center gap-2 text-gw-error animate-in shake duration-300">
-             <i-lucide [img]="ErrorIcon" size="16"></i-lucide>
-             <span class="text-[10px] font-black uppercase tracking-widest italic">{{ error() }}</span>
+            <p class="text-[8px] font-black uppercase tracking-[0.3em] text-black italic text-center mb-4">
+              Enter the 6-character session code
+            </p>
+
+            <!-- Code boxes -->
+            <div class="flex justify-center gap-2 mb-4">
+              @for (idx of [0,1,2,3,4,5]; track idx) {
+                <input
+                  #digitInput
+                  type="text"
+                  inputmode="text"
+                  maxlength="1"
+                  (input)="onInput(idx, $event)"
+                  (keydown)="onKeyDown(idx, $event)"
+                  class="w-11 h-14 bg-gw-bg border-2 rounded-2xl text-center text-xl font-black text-black uppercase outline-none
+                    transition-all duration-150 border-gw-card-border
+                    focus:border-gw-primary focus:bg-white focus:shadow-[0_0_0_3px_rgba(61,90,153,0.10)]"
+                >
+              }
+            </div>
+
+            <!-- Error banner -->
+            @if (error()) {
+              <div class="flex items-start gap-2 bg-red-50 border border-red-100 rounded-2xl px-4 py-3 mb-3 animate-in fade-in duration-200">
+                <i-lucide [img]="ErrorIcon" size="14" class="text-red-500 flex-shrink-0 mt-0.5"></i-lucide>
+                <span class="text-[10px] font-black uppercase tracking-wide text-red-600 italic leading-relaxed">{{ error() }}</span>
+              </div>
+            }
+
+            <!-- Find button -->
+            <button
+              [disabled]="code().length < 6 || isLoading()"
+              (click)="findSession()"
+              class="w-full h-12 rounded-2xl border-2 border-black font-black uppercase tracking-widest italic text-sm text-black
+                flex items-center justify-center gap-2 transition-all duration-150
+                bg-white hover:bg-black/5 active:scale-[0.98]
+                disabled:bg-black/5 disabled:text-black disabled:opacity-100 disabled:cursor-not-allowed"
+            >
+              @if (isLoading()) {
+                <i-lucide [img]="LoaderIcon" size="15" class="animate-spin"></i-lucide>
+                <span>Searching...</span>
+              } @else {
+                <i-lucide [img]="SearchIcon" size="15"></i-lucide>
+                <span>Find Session</span>
+              }
+            </button>
           </div>
-        }
+
+          <!-- ── Session Preview ── -->
+          @if (preview()) {
+            <div class="space-y-3 animate-in slide-in-from-bottom-3 fade-in duration-300">
+
+              <!-- Session Identity Card (blue) -->
+              <div class="bg-white rounded-3xl border border-gw-card-border p-5 shadow-sm">
+
+                <!-- Top row: mode badge + member count -->
+                <div class="flex items-center justify-between mb-3">
+                  <span class="inline-flex items-center gap-1.5 bg-black/5 rounded-xl px-3 py-1">
+                    <i-lucide [img]="ZapIcon" size="10" class="text-black"></i-lucide>
+                    <span class="text-[8px] font-black uppercase tracking-widest text-black italic">{{ preview()?.sessionMode }}</span>
+                  </span>
+                  <div class="text-right">
+                    <div class="text-[8px] font-black uppercase tracking-wider text-black italic">Members</div>
+                    <div class="text-xl font-black text-black italic leading-tight">
+                      {{ preview()?.currentMembers }}<span class="text-sm font-bold text-black">/{{ preview()?.maxMembers }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Session name -->
+                <h2 class="text-[20px] font-black italic uppercase tracking-tight text-black leading-tight mb-4">
+                  {{ preview()?.sessionName }}
+                </h2>
+
+                <!-- Meta chips -->
+                <div class="flex items-center gap-2 flex-wrap">
+                  <div class="flex items-center gap-1.5 bg-black/5 rounded-xl px-3 py-1.5">
+                    <i-lucide [img]="ScriptIcon" size="11" class="text-black"></i-lucide>
+                    <span class="text-[9px] font-black text-black italic uppercase tracking-wide max-w-[130px] truncate">
+                      {{ preview()?.scriptTitle }}
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-1.5 bg-black/5 rounded-xl px-3 py-1.5">
+                    <i-lucide [img]="DurationIcon" size="11" class="text-black"></i-lucide>
+                    <span class="text-[9px] font-black text-black italic uppercase tracking-wide">
+                      {{ preview()?.sessionDuration }} Min
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Role Selection Card -->
+              <div class="bg-white rounded-3xl border border-gw-card-border shadow-sm p-5">
+
+                <div class="flex items-center justify-between mb-3">
+                  <p class="text-[8px] font-black uppercase tracking-[0.3em] text-black italic">Select your role</p>
+                  <span class="text-[8px] font-black uppercase tracking-wide text-black italic bg-gw-bg rounded-lg px-2 py-1">
+                    {{ availableSlotCount() }} open
+                  </span>
+                </div>
+
+                <div class="space-y-2">
+                  @for (slot of preview()?.slots; track slot.slotIndex) {
+                    <button
+                      [disabled]="slot.isOccupied"
+                      (click)="selectedSlot.set(slot.slotIndex)"
+                      class="w-full px-4 py-3.5 rounded-2xl border-2 flex items-center justify-between text-left transition-all duration-150"
+                      [ngClass]="slot.isOccupied
+                        ? 'border-gw-card-border bg-gw-bg cursor-not-allowed'
+                        : selectedSlot() === slot.slotIndex
+                          ? 'border-gw-primary bg-gw-primary/[0.04] shadow-[0_0_0_1px_rgba(61,90,153,0.12)]'
+                          : 'border-gw-card-border bg-white hover:border-gw-primary/40 hover:bg-gw-primary/[0.02] cursor-pointer'"
+                    >
+                      <!-- Left: icon + label -->
+                      <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0 transition-colors duration-150"
+                          [ngClass]="slot.isOccupied
+                            ? 'bg-gw-card-border'
+                            : selectedSlot() === slot.slotIndex
+                              ? 'bg-gw-primary'
+                              : 'bg-gw-bg'">
+                          <i-lucide
+                            [img]="slot.isOccupied ? UserIcon : (selectedSlot() === slot.slotIndex ? CheckIcon : SlotIcon)"
+                            size="15"
+                            class="text-black"
+                          ></i-lucide>
+                        </div>
+                        <div>
+                          <span class="text-[13px] font-black text-black italic block leading-tight">{{ slot.slotName }}</span>
+                          @if (slot.isOccupied) {
+                            <span class="text-[9px] text-black italic">Already taken</span>
+                          } @else if (selectedSlot() === slot.slotIndex) {
+                            <span class="text-[9px] text-black font-bold italic">You'll join as this role</span>
+                          } @else {
+                            <span class="text-[9px] text-black italic">Tap to select</span>
+                          }
+                        </div>
+                      </div>
+
+                      <!-- Right: state badge -->
+                      @if (slot.isOccupied) {
+                        <span class="text-[8px] font-black uppercase tracking-wider text-black italic bg-white border border-gw-card-border px-2.5 py-1 rounded-xl flex-shrink-0">
+                          Taken
+                        </span>
+                      } @else if (selectedSlot() === slot.slotIndex) {
+                        <div class="w-5 h-5 rounded-full bg-gw-primary/15 border border-gw-primary flex items-center justify-center flex-shrink-0">
+                          <i-lucide [img]="CheckIcon" size="10" class="text-black"></i-lucide>
+                        </div>
+                      }
+                    </button>
+                  }
+                </div>
+
+                <div class="pt-4 space-y-2">
+                  <button
+                    [disabled]="selectedSlot() === null || isJoining()"
+                    (click)="joinSession()"
+                    class="w-full h-14 rounded-2xl border-2 border-black font-black uppercase tracking-widest italic text-sm text-black
+                      flex items-center justify-center gap-2 transition-all duration-150
+                      bg-white shadow-sm
+                      hover:bg-black/5 active:scale-[0.98]
+                      disabled:bg-black/5 disabled:text-black disabled:opacity-100 disabled:cursor-not-allowed disabled:shadow-none"
+                  >
+                    @if (isJoining()) {
+                      <i-lucide [img]="LoaderIcon" size="16" class="animate-spin"></i-lucide>
+                      <span>Joining...</span>
+                    } @else {
+                      <span>Confirm & Join</span>
+                      <i-lucide [img]="NextIcon" size="16"></i-lucide>
+                    }
+                  </button>
+                  <p class="text-[9px] font-black uppercase tracking-wider text-black italic text-center transition-opacity duration-200"
+                     [class.opacity-0]="selectedSlot() !== null">
+                    Select a role above to continue
+                  </p>
+                </div>
+              </div>
+
+            </div>
+          }
+
+        </div>
       </div>
 
-      <!-- SESSION PREVIEW CARD -->
-      @if (preview()) {
-        <div class="animate-in slide-in-from-bottom-8 duration-500">
-           <div class="bg-white rounded-[48px] border-2 border-gw-primary p-8 shadow-2xl space-y-8 relative overflow-hidden">
-              <div class="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
-                 <i-lucide [img]="PreviewIcon" size="120"></i-lucide>
-              </div>
-
-              <div class="space-y-4">
-                 <div class="flex justify-between items-start">
-                    <span class="px-3 py-1 bg-gw-primary/10 text-gw-primary rounded-lg text-[10px] font-black uppercase tracking-widest italic">{{ preview()?.sessionMode }}</span>
-                    <span class="text-xs font-black text-gw-text-muted italic">{{ preview()?.currentMembers }}/{{ preview()?.maxMembers }} Members</span>
-                 </div>
-                 <h3 class="text-2xl font-black text-gw-text italic uppercase tracking-tight">{{ preview()?.sessionName }}</h3>
-                 
-                 <div class="grid grid-cols-2 gap-4">
-                    <div class="flex items-center gap-2">
-                       <i-lucide [img]="ScriptIcon" size="14" class="text-gw-text-muted"></i-lucide>
-                       <span class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted italic truncate">{{ preview()?.scriptTitle }}</span>
-                    </div>
-                    <div class="flex items-center gap-2">
-                       <i-lucide [img]="DurationIcon" size="14" class="text-gw-text-muted"></i-lucide>
-                       <span class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted italic">{{ preview()?.sessionDuration }} Min</span>
-                    </div>
-                 </div>
-              </div>
-
-              <div class="space-y-4">
-                 <p class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted px-2 italic">Select your role</p>
-                 <div class="grid gap-2">
-                    @for (slot of preview()?.slots; track slot.slotIndex) {
-                      <button 
-                         [disabled]="slot.isOccupied"
-                         (click)="selectedSlot.set(slot.slotIndex)"
-                         class="w-full p-4 rounded-2xl border-2 flex items-center justify-between transition-all"
-                         [class.bg-gw-primary/5]="selectedSlot() === slot.slotIndex"
-                         [class.border-gw-primary]="selectedSlot() === slot.slotIndex"
-                         [class.border-transparent]="selectedSlot() !== slot.slotIndex"
-                         [class.bg-gw-bg/30]="selectedSlot() !== slot.slotIndex"
-                         [class.opacity-50]="slot.isOccupied"
-                      >
-                         <div class="flex items-center gap-3">
-                            <div class="w-8 h-8 rounded-lg bg-white flex items-center justify-center text-gw-text-muted">
-                               <i-lucide [img]="slot.isOccupied ? UserIcon : SlotIcon" size="16"></i-lucide>
-                            </div>
-                            <span class="text-sm font-bold text-gw-text">{{ slot.slotName }}</span>
-                         </div>
-                         @if (slot.isOccupied) {
-                           <span class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Occupied by {{ slot.userName }}</span>
-                         } @else if (selectedSlot() === slot.slotIndex) {
-                           <div class="w-5 h-5 rounded-full bg-gw-primary flex items-center justify-center">
-                              <i-lucide [img]="NextIcon" size="12" class="text-white"></i-lucide>
-                           </div>
-                         }
-                      </button>
-                    }
-                 </div>
-              </div>
-
-              <button 
-                [disabled]="selectedSlot() === null || isJoining()"
-                (click)="joinSession()"
-                class="w-full h-16 bg-gw-primary text-white font-black uppercase tracking-widest italic rounded-2xl hover:scale-[1.05] transition-all shadow-xl shadow-gw-primary/20"
-              >
-                {{ isJoining() ? 'JOINING...' : 'CONFIRM & JOIN' }}
-              </button>
-           </div>
-        </div>
-      }
     </div>
   `,
   styles: [`
     :host { display: block; }
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-4px); }
-      75% { transform: translateX(4px); }
-    }
-    .animate-in.shake {
-      animation: shake 0.3s ease-in-out;
-    }
+    .pb-safe { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
   `]
 })
 export class JoinSessionComponent implements OnInit {
@@ -143,12 +227,14 @@ export class JoinSessionComponent implements OnInit {
 
   readonly SearchIcon = Search;
   readonly ErrorIcon = AlertCircle;
-  readonly PreviewIcon = Users;
   readonly ScriptIcon = BookOpen;
   readonly DurationIcon = Clock;
   readonly UserIcon = User;
   readonly SlotIcon = Users;
   readonly NextIcon = ChevronRight;
+  readonly CheckIcon = CheckCircle2;
+  readonly LoaderIcon = Loader2;
+  readonly ZapIcon = Zap;
 
   code = signal('');
   isLoading = signal(false);
@@ -157,11 +243,14 @@ export class JoinSessionComponent implements OnInit {
   selectedSlot = signal<number | null>(null);
   isJoining = signal(false);
 
+  availableSlotCount() {
+    return this.preview()?.slots.filter(s => !s.isOccupied).length ?? 0;
+  }
+
   ngOnInit() {
     this.route.queryParams.subscribe(params => {
       const codeParam = params['code'];
       if (codeParam && codeParam.length === 6) {
-        // We can't auto-fill and focus inputs easily here without a small delay
         setTimeout(() => this.fillCode(codeParam), 100);
       }
     });
@@ -170,9 +259,7 @@ export class JoinSessionComponent implements OnInit {
   fillCode(code: string) {
     const inputs = this.elRefs();
     code.split('').forEach((char, i) => {
-      if (inputs[i]) {
-        inputs[i].nativeElement.value = char.toUpperCase();
-      }
+      if (inputs[i]) inputs[i].nativeElement.value = char.toUpperCase();
     });
     this.code.set(code.toUpperCase());
     this.findSession();
@@ -181,12 +268,8 @@ export class JoinSessionComponent implements OnInit {
   onInput(index: number, event: any) {
     const char = event.target.value.toUpperCase();
     event.target.value = char;
-    
     this.updateCode();
-
-    if (char && index < 5) {
-      this.elRefs()[index + 1].nativeElement.focus();
-    }
+    if (char && index < 5) this.elRefs()[index + 1].nativeElement.focus();
   }
 
   onKeyDown(index: number, event: KeyboardEvent) {
@@ -196,14 +279,15 @@ export class JoinSessionComponent implements OnInit {
   }
 
   updateCode() {
-    const code = this.elRefs().map(input => input.nativeElement.value).join('');
+    const code = this.elRefs().map(r => r.nativeElement.value).join('');
     this.code.set(code);
     if (this.error()) this.error.set('');
+    if (this.preview()) this.preview.set(null);
+    this.selectedSlot.set(null);
   }
 
   findSession() {
     if (this.code().length < 6) return;
-
     this.isLoading.set(true);
     this.error.set('');
     this.preview.set(null);
@@ -213,27 +297,31 @@ export class JoinSessionComponent implements OnInit {
         this.isLoading.set(false);
         this.preview.set(res);
       },
-      error: () => {
+      error: (err) => {
         this.isLoading.set(false);
-        this.error.set('Session not found or expired');
+        const msg = err?.error?.errors?.[0] || err?.error?.message || 'Session not found or code expired.';
+        this.error.set(msg);
       }
     });
   }
 
   joinSession() {
     if (this.selectedSlot() === null || !this.preview()) return;
-
     this.isJoining.set(true);
     this.sessionService.joinSession({
       joinCode: this.code(),
       slotIndex: this.selectedSlot()!
     }).subscribe({
-      next: () => {
+      next: (res) => {
         this.isJoining.set(false);
-        this.router.navigate(['/session/lobby', this.preview()!.id]);
+        this.router.navigate(['/session/lobby', res.sessionId]);
         this.toast.success('Joined session!');
       },
-      error: () => this.isJoining.set(false)
+      error: (err) => {
+        this.isJoining.set(false);
+        const msg = err?.error?.errors?.[0] || err?.error?.message || 'Failed to join session. Please try again.';
+        this.toast.error(msg);
+      }
     });
   }
 }

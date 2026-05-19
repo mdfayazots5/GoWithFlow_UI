@@ -1,0 +1,324 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --gwf-primary:        #3D5A99;
+  --gwf-primary-dark:   #2D4580;
+  --gwf-primary-light:  #EAF0FB;
+  --gwf-accent:         #E07B39;
+  --gwf-accent-dark:    #C5622A;
+  --gwf-bg:             #F4F6F9;
+  --gwf-sidebar-bg:     #12192C;
+  --gwf-sidebar-text:   #B8C4D8;
+  --gwf-sidebar-active: #FFFFFF;
+  --gwf-card-bg:        #FFFFFF;
+  --gwf-card-border:    #E0E4EC;
+  --gwf-text:           #1A1A2E;
+  --gwf-text-muted:     #6B7280;
+  --gwf-success:        #2E7D32;
+  --gwf-warning:        #F59E0B;
+  --gwf-error:          #D32F2F;
+  --gwf-focus-bg:       #1A1A2E;
+  --gwf-focus-text:     #EAEAEA;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 15px;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: 'DM Sans', Inter, sans-serif;
+  background-color: var(--gwf-bg);
+  color: var(--gwf-text);
+  line-height: 1.6;
+  overflow: hidden; /* CRITICAL: prevents body-level scroll */
+  margin: 0;
+  padding: 0;
+}
+
+/* 4. ALL Angular Material button MDC overrides */
+.mat-mdc-raised-button.mat-primary,
+.mat-mdc-flat-button.mat-primary {
+  background-color: var(--gwf-primary) !important;
+  color: #FFFFFF !important;
+}
+.mat-mdc-raised-button.mat-primary:hover,
+.mat-mdc-flat-button.mat-primary:hover {
+  background-color: var(--gwf-primary-dark) !important;
+}
+.mat-mdc-raised-button.mat-accent,
+.mat-mdc-flat-button.mat-accent {
+  background-color: var(--gwf-accent) !important;
+  color: #FFFFFF !important;
+}
+.mat-mdc-outlined-button.mat-primary {
+  border-color: var(--gwf-primary) !important;
+  color: var(--gwf-primary) !important;
+}
+.mat-mdc-raised-button.mat-warn,
+.mat-mdc-flat-button.mat-warn {
+  background-color: var(--gwf-error) !important;
+  color: #FFFFFF !important;
+}
+
+.mdc-button--raised,
+.mdc-button--unelevated {
+  --mdc-filled-button-container-color: var(--gwf-primary);
+  --mdc-filled-button-label-text-color: #FFFFFF;
+}
+
+/* 5. Material form field overrides */
+.mdc-text-field {
+  border-radius: 8px !important;
+}
+.mdc-text-field--filled {
+  background-color: #F8F9FC !important;
+}
+.mdc-text-field--focused .mdc-floating-label {
+  color: var(--gwf-primary) !important;
+}
+.mdc-line-ripple::before,
+.mdc-line-ripple::after {
+  border-bottom-color: var(--gwf-primary) !important;
+}
+
+/* 6. Material table overrides */
+.mat-mdc-table {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid var(--gwf-card-border);
+  overflow: hidden;
+}
+.mat-mdc-header-row {
+  background-color: #F8F9FC;
+}
+.mat-mdc-header-cell {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--gwf-text-muted) !important;
+}
+.mat-mdc-row:hover {
+  background-color: var(--gwf-primary-light);
+}
+.mat-mdc-cell {
+  font-size: 14px !important;
+  color: var(--gwf-text) !important;
+}
+
+/* 7. Material paginator override */
+.mat-mdc-paginator {
+  border-top: 1px solid var(--gwf-card-border);
+}
+.mat-mdc-paginator-container {
+  padding: 8px 16px !important;
+}
+
+/* 8. Material chip override */
+.mat-mdc-chip.mat-primary {
+  background-color: var(--gwf-primary-light) !important;
+  color: var(--gwf-primary) !important;
+}
+
+/* 9. Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 3px;
+}
+
+/* 10. Utility classes */
+.text-primary { color: var(--gwf-primary); }
+.text-accent { color: var(--gwf-accent); }
+.text-muted { color: var(--gwf-text-muted); }
+.text-success { color: var(--gwf-success); }
+.text-error { color: var(--gwf-error); }
+.text-warning { color: var(--gwf-warning); }
+
+.gwf-card {
+  background: var(--gwf-card-bg);
+  border: 1px solid var(--gwf-card-border);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.gwf-stat-card {
+  display: flex;
+  flex-direction: column;
+}
+.gwf-stat-card-icon {
+  margin-bottom: 8px;
+}
+.gwf-stat-card-value {
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.gwf-stat-card-label {
+  font-size: 12px;
+  color: var(--gwf-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+@media (max-width: 1024px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.gwf-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.gwf-page-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.badge-success {
+  background-color: rgba(46, 125, 50, 0.1);
+  color: var(--gwf-success);
+}
+.badge-error {
+  background-color: rgba(211, 47, 47, 0.1);
+  color: var(--gwf-error);
+}
+.badge-warning {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: var(--gwf-warning);
+}
+.badge-info {
+  background-color: var(--gwf-primary-light);
+  color: var(--gwf-primary);
+}
+.badge-neutral {
+  background-color: #E2E8F0;
+  color: var(--gwf-text-muted);
+}
+
+.focus-mode {
+  background-color: var(--gwf-focus-bg) !important;
+  color: var(--gwf-focus-text) !important;
+}
+
+.btn-logout {
+  border: 1px solid var(--gwf-error);
+  color: var(--gwf-error);
+  background: transparent;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+.btn-logout:hover {
+  background-color: rgba(211, 47, 47, 0.1);
+}
+
+/* 10b. Angular Material MDC button — accent / warn / outlined color tokens */
+
+[color="accent"].mdc-button--raised,
+[color="accent"].mdc-button--unelevated {
+  --mdc-filled-button-container-color: var(--gwf-accent);
+  --mdc-filled-button-label-text-color: #FFFFFF;
+}
+
+[color="warn"].mdc-button--raised,
+[color="warn"].mdc-button--unelevated {
+  --mdc-filled-button-container-color: var(--gwf-error);
+  --mdc-filled-button-label-text-color: #FFFFFF;
+}
+
+.mdc-button--outlined {
+  --mdc-outlined-button-outline-color: var(--gwf-primary);
+  --mdc-outlined-button-label-text-color: var(--gwf-primary);
+}
+
+/* 10c. Material select color tokens */
+.mat-mdc-select-arrow,
+.mat-mdc-select-value {
+  color: var(--gwf-text);
+}
+.mat-focused .mat-mdc-select-arrow {
+  color: var(--gwf-primary);
+}
+
+/* 11. Pulse animation */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* 12. Fade-in animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 13. Spin animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 14. Mobile override */
+@media (max-width: 480px) {
+  html {
+    font-size: 14px;
+  }
+  .gwf-card {
+    padding: 16px;
+  }
+}

@@ -35,6 +35,9 @@ export interface PagedResult<T> {
 
 export interface ValidationResult {
   isValid: boolean;
+  totalRows: number;
+  validCount: number;
+  errorCount: number;
   rows: Utterance[];
   errors: string[];
 }

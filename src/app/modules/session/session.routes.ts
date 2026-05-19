@@ -18,7 +18,7 @@ export const SESSION_ROUTES: Routes = [
     loadComponent: () => import('./session-list/session-list.component').then(m => m.SessionListComponent)
   },
   {
-    path: ':sessionId/detail',
+    path: 'detail/:sessionId',
     loadComponent: () => import('./session-detail/session-detail.component').then(m => m.SessionDetailComponent)
   },
   {

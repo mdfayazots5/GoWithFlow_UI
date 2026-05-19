@@ -39,10 +39,20 @@ export class AuthService {
   }
 
   private setSession(res: any) {
+    const user = {
+      id: String(res.userId ?? res.user?.id ?? ''),
+      fullName: res.fullName ?? res.user?.fullName ?? '',
+      mobileNumber: res.mobileNumber ?? res.user?.mobileNumber ?? res.mobile ?? res.user?.mobile ?? '',
+      email: res.email ?? res.user?.email ?? '',
+      role: res.role ?? res.user?.role ?? '',
+      avatarUrl: res.avatarUrl ?? res.user?.avatarUrl ?? null
+    };
+
     localStorage.setItem('gwf_token', res.accessToken);
     localStorage.setItem('gwf_refreshToken', res.refreshToken);
-    localStorage.setItem('gwf_userId', String(res.userId ?? res.user?.id ?? ''));
-    localStorage.setItem('gwf_role', res.role ?? res.user?.role ?? '');
+    localStorage.setItem('gwf_userId', user.id);
+    localStorage.setItem('gwf_role', user.role);
+    localStorage.setItem('gwf_user', JSON.stringify(user));
   }
 
   refreshToken(): Observable<any> {
@@ -59,7 +69,8 @@ export class AuthService {
 
   get currentUser(): User | null {
     const user = localStorage.getItem('gwf_user');
-    return user ? JSON.parse(user) : null;
+    const legacyProfile = localStorage.getItem('gwf_user_profile');
+    return JSON.parse(user ?? legacyProfile ?? 'null');
   }
 
   get isLoggedIn(): boolean {

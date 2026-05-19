@@ -25,6 +25,7 @@ export interface TurnState {
   totalTurns: number;
   activeMemberId: string | number;
   activeMemberName: string;
+  activeSlotIndex: number;
   utterance: UtteranceData;
   reReadAllowed: boolean;
   reReadCount: number;

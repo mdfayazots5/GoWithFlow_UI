@@ -27,7 +27,6 @@ import { RouterLink } from '@angular/router';
               [class.bg-gw-text]="activeTab() === tab"
               [class.text-white]="activeTab() === tab"
               [class.text-gw-text-muted]="activeTab() !== tab"
-              [class.hover:bg-gw-bg]="activeTab() !== tab"
             >
               {{ tab }}
             </button>
@@ -50,16 +49,14 @@ import { RouterLink } from '@angular/router';
               class="group bg-white p-6 rounded-[32px] border border-gw-card-border shadow-sm hover:border-gw-primary hover:shadow-xl hover:-translate-x-1 transition-all flex flex-col md:flex-row md:items-center gap-6"
             >
               <!-- Status Icon -->
-              <div 
+              <div
                 class="w-16 h-16 rounded-2xl flex items-center justify-center transition-all group-hover:scale-110"
-                [class.bg-gw-primary/10]="session.status === 'ACTIVE'"
-                [class.text-gw-primary]="session.status === 'ACTIVE'"
-                [class.bg-gw-success/10]="session.status === 'COMPLETED'"
-                [class.text-gw-success]="session.status === 'COMPLETED'"
-                [class.bg-gw-bg]="session.status === 'LOBBY' || session.status === 'PAUSED'"
-                [class.text-gw-text-muted]="session.status === 'LOBBY' || session.status === 'PAUSED'"
-                [class.bg-gw-error/10]="session.status === 'ABANDONED'"
-                [class.text-gw-error]="session.status === 'ABANDONED'"
+                [ngClass]="{
+                  'bg-gw-primary/10 text-gw-primary': session.status === 'ACTIVE',
+                  'bg-gw-success/10 text-gw-success': session.status === 'COMPLETED',
+                  'bg-gw-bg text-gw-text-muted': session.status === 'LOBBY' || session.status === 'PAUSED',
+                  'bg-gw-error/10 text-gw-error': session.status === 'ABANDONED'
+                }"
               >
                 <i-lucide [img]="getStatusIcon(session.status)" size="32"></i-lucide>
               </div>
@@ -68,12 +65,12 @@ import { RouterLink } from '@angular/router';
               <div class="flex-1 space-y-2">
                 <div class="flex flex-wrap items-center gap-3">
                   <span class="px-2 py-0.5 bg-gw-bg text-gw-text-muted rounded text-[8px] font-black uppercase tracking-widest italic">{{ session.sessionMode }}</span>
-                  <span 
+                  <span
                     class="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest italic"
-                    [class.bg-gw-primary/10]="session.status === 'ACTIVE'"
-                    [class.text-gw-primary]="session.status === 'ACTIVE'"
-                    [class.bg-gw-success/10]="session.status === 'COMPLETED'"
-                    [class.text-gw-success]="session.status === 'COMPLETED'"
+                    [ngClass]="{
+                      'bg-gw-primary/10 text-gw-primary': session.status === 'ACTIVE',
+                      'bg-gw-success/10 text-gw-success': session.status === 'COMPLETED'
+                    }"
                   >
                     {{ session.status }}
                   </span>

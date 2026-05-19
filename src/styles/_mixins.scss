@@ -1,0 +1,84 @@
+@use 'variables' as *;
+
+@mixin respond-mobile {
+  @media (max-width: #{$breakpoint-mobile}) {
+    @content;
+  }
+}
+
+@mixin respond-phablet {
+  @media (max-width: #{$breakpoint-phablet}) {
+    @content;
+  }
+}
+
+@mixin respond-tablet {
+  @media (max-width: #{$breakpoint-tablet}) {
+    @content;
+  }
+}
+
+@mixin respond-tabletL {
+  @media (max-width: #{$breakpoint-tabletL}) {
+    @content;
+  }
+}
+
+@mixin respond-desktop {
+  @media (min-width: #{$breakpoint-desktop}) {
+    @content;
+  }
+}
+
+@mixin respond-wide {
+  @media (min-width: #{$breakpoint-wide}) {
+    @content;
+  }
+}
+
+@mixin gwf-card {
+  background: $color-card-bg;
+  border: 1px solid $color-card-border;
+  border-radius: $border-radius-lg;
+  padding: 20px;
+  box-shadow: $shadow-sm;
+}
+
+@mixin gwf-flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin gwf-flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin gwf-truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@mixin gwf-button-primary {
+  background-color: $color-primary;
+  color: #FFFFFF;
+  border: none;
+  border-radius: $border-radius-md;
+  padding: 8px 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: $transition-base;
+
+  &:hover {
+    background-color: $color-primary-dark;
+  }
+
+  &:disabled {
+    background-color: #E2E8F0;
+    color: #94A3B8;
+    cursor: not-allowed;
+  }
+}

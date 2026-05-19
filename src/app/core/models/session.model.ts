@@ -22,9 +22,11 @@ export interface Session {
 }
 
 export interface CreateSessionResponse {
-  id: string;
+  sessionId: string;
+  sessionName: string;
   joinCode: string;
   status: string;
+  scriptTitle: string;
 }
 
 export interface SessionPreview {
@@ -36,6 +38,18 @@ export interface SessionPreview {
   currentMembers: number;
   maxMembers: number;
   slots: SessionSlot[];
+}
+
+export interface JoinSessionResponse {
+  sessionId: string;
+  sessionName: string;
+  joinCode: string;
+  sessionMode: string;
+  scriptTitle: string;
+  maxMembers: number;
+  sessionDuration: number;
+  canStart: boolean;
+  members: LobbyMember[];
 }
 
 export interface SessionSlot {

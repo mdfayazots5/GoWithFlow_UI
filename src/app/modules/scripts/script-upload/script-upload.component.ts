@@ -1,5 +1,5 @@
 // File: src/app/modules/scripts/script-upload/script-upload.component.ts
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ScriptService } from '@core/services/script.service';
@@ -44,7 +44,7 @@ import { RouterLink } from '@angular/router';
               class="flex flex-col items-center justify-center w-full min-h-[320px] bg-white border-4 border-dashed rounded-[40px] transition-all cursor-pointer"
               [class.border-gw-primary]="isDragging() || selectedFile()"
               [class.border-gw-card-border]="!isDragging() && !selectedFile()"
-              [class.bg-gw-primary/5]="isDragging()"
+              [ngClass]="{ 'bg-gw-primary/5': isDragging() }"
             >
               <input type="file" class="hidden" accept=".xlsx" (change)="onFileSelect($event)">
               
@@ -104,7 +104,7 @@ import { RouterLink } from '@angular/router';
               </div>
               <div>
                 <h4 class="font-black text-gw-text uppercase italic tracking-tight">Rows Validated</h4>
-                <p class="text-2xl font-black text-gw-success">{{ validationResult()?.rows?.length || 0 }} rows ready</p>
+                <p class="text-2xl font-black text-gw-success">{{ validatedRowCount() }} rows ready</p>
               </div>
             </div>
 
@@ -128,8 +128,12 @@ import { RouterLink } from '@angular/router';
           <!-- Preview Table -->
           <div class="bg-white rounded-[32px] border border-gw-card-border shadow-sm overflow-hidden">
             <div class="px-8 py-4 border-b border-gw-bg flex justify-between items-center bg-gw-bg/30">
-               <span class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted italic">Lines Preview (Showing 5 of {{ validationResult()?.rows?.length }})</span>
-               <button class="text-[10px] font-black uppercase tracking-widest text-gw-primary italic hover:underline">Show All</button>
+               <span class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted italic">Lines Preview (Showing {{ visiblePreviewCount() }} of {{ validatedRowCount() }})</span>
+               @if (validatedRows().length > previewLimit) {
+                 <button type="button" (click)="togglePreviewRows()" class="text-[10px] font-black uppercase tracking-widest text-gw-primary italic hover:underline">
+                   {{ showAllRows() ? 'Show Less' : 'Show All' }}
+                 </button>
+               }
             </div>
             <div class="overflow-x-auto">
               <table class="w-full text-left">
@@ -142,7 +146,7 @@ import { RouterLink } from '@angular/router';
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gw-bg">
-                  @for (row of validationResult()?.rows?.slice(0, 5); track row.sequenceId) {
+                  @for (row of visibleValidationRows(); track row.sequenceId) {
                     <tr>
                       <td class="px-6 py-4 text-xs font-black italic">{{ row.sequenceId }}</td>
                       <td class="px-6 py-4 text-xs font-bold text-gw-text-muted uppercase tracking-tight">{{ row.speakerLabel }}</td>
@@ -197,14 +201,15 @@ import { RouterLink } from '@angular/router';
                 <div class="flex gap-3">
                   @for (level of [1, 2, 3, 4, 5]; track level) {
                     <button 
+                      type="button"
                       (click)="metadataForm.get('complexityLevel')?.setValue(level)"
                       class="flex-1 h-14 rounded-2xl font-black transition-all border-2"
                       [class.bg-gw-primary]="metadataForm.get('complexityLevel')?.value === level"
                       [class.text-white]="metadataForm.get('complexityLevel')?.value === level"
                       [class.border-gw-primary]="metadataForm.get('complexityLevel')?.value === level"
-                      [class.bg-gw-bg/50]="metadataForm.get('complexityLevel')?.value !== level"
                       [class.text-gw-text-muted]="metadataForm.get('complexityLevel')?.value !== level"
                       [class.border-transparent]="metadataForm.get('complexityLevel')?.value !== level"
+                      [ngClass]="{ 'bg-gw-bg/50': metadataForm.get('complexityLevel')?.value !== level }"
                     >
                       {{ level }}
                     </button>
@@ -217,14 +222,15 @@ import { RouterLink } from '@angular/router';
                 <div class="flex gap-2">
                   @for (age of ['All', 'Child', 'Teen', 'Adult']; track age) {
                     <button 
+                      type="button"
                       (click)="metadataForm.get('targetAgeGroup')?.setValue(age)"
                       class="flex-1 h-12 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2"
                       [class.bg-gw-text]="metadataForm.get('targetAgeGroup')?.value === age"
                       [class.text-white]="metadataForm.get('targetAgeGroup')?.value === age"
                       [class.border-gw-text]="metadataForm.get('targetAgeGroup')?.value === age"
-                      [class.bg-gw-bg/50]="metadataForm.get('targetAgeGroup')?.value !== age"
                       [class.text-gw-text-muted]="metadataForm.get('targetAgeGroup')?.value !== age"
                       [class.border-transparent]="metadataForm.get('targetAgeGroup')?.value !== age"
+                      [ngClass]="{ 'bg-gw-bg/50': metadataForm.get('targetAgeGroup')?.value !== age }"
                     >
                       {{ age }}
                     </button>
@@ -389,8 +395,15 @@ export class ScriptUploadComponent {
   selectedFile = signal<File | null>(null);
   isValidating = signal(false);
   validationResult = signal<any>(null);
+  showAllRows = signal(false);
   isSaving = signal(false);
   uploadResponse = signal<any>(null);
+  readonly previewLimit = 5;
+
+  validatedRows = computed(() => this.validationResult()?.rows ?? []);
+  validatedRowCount = computed(() => this.validationResult()?.validCount ?? this.validatedRows().length);
+  visibleValidationRows = computed(() => this.showAllRows() ? this.validatedRows() : this.validatedRows().slice(0, this.previewLimit));
+  visiblePreviewCount = computed(() => this.visibleValidationRows().length);
 
   metadataForm: FormGroup = this.fb.group({
     scriptTitle: ['', Validators.required],
@@ -446,6 +459,7 @@ export class ScriptUploadComponent {
     if (!file) return;
 
     this.isValidating.set(true);
+    this.showAllRows.set(false);
     this.scriptService.validateExcel(file).subscribe({
       next: (res) => {
         this.isValidating.set(false);
@@ -454,6 +468,10 @@ export class ScriptUploadComponent {
       },
       error: () => this.isValidating.set(false)
     });
+  }
+
+  togglePreviewRows() {
+    this.showAllRows.update(value => !value);
   }
 
   uploadScript() {
@@ -476,6 +494,7 @@ export class ScriptUploadComponent {
     this.step.set(1);
     this.selectedFile.set(null);
     this.validationResult.set(null);
+    this.showAllRows.set(false);
     this.uploadResponse.set(null);
     this.metadataForm.reset({
       category: 'Grammar Drill',

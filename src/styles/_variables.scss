@@ -1,0 +1,40 @@
+$color-primary:        var(--gwf-primary);
+$color-primary-dark:   var(--gwf-primary-dark);
+$color-primary-light:  var(--gwf-primary-light);
+$color-accent:         var(--gwf-accent);
+$color-accent-dark:    var(--gwf-accent-dark);
+$color-bg:             var(--gwf-bg);
+$color-sidebar-bg:     var(--gwf-sidebar-bg);
+$color-sidebar-text:   var(--gwf-sidebar-text);
+$color-sidebar-active: var(--gwf-sidebar-active);
+$color-card-bg:        var(--gwf-card-bg);
+$color-card-border:    var(--gwf-card-border);
+$color-text:           var(--gwf-text);
+$color-text-muted:     var(--gwf-text-muted);
+$color-success:        var(--gwf-success);
+$color-warning:        var(--gwf-warning);
+$color-error:          var(--gwf-error);
+$color-focus-bg:       var(--gwf-focus-bg);
+$color-focus-text:     var(--gwf-focus-text);
+
+$border-radius-sm: 4px;
+$border-radius-md: 8px;
+$border-radius-lg: 12px;
+$border-radius-xl: 16px;
+
+$shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+$shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+
+$transition-base: all 0.2s ease-in-out;
+
+$breakpoint-mobile:   480px;
+$breakpoint-phablet:  640px;
+$breakpoint-tablet:   768px;
+$breakpoint-tabletL:  1024px;
+$breakpoint-desktop:  1025px;
+$breakpoint-wide:     1440px;
+
+$sidebar-width: 260px;
+$topbar-height: 64px;
+$bottomnav-height: 64px;

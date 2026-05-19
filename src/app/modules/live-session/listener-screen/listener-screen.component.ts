@@ -118,13 +118,13 @@ export class ListenerScreenComponent {
 
   sendFeedback(tag: string) {
     this.lastAction.set(tag);
-    this.liveSessionService.submitListenerFeedback(this.turnState.sessionId, {
-      sessionId: this.turnState.sessionId,
-      turnIndex: this.turnState.turnIndex,
-      targetUserId: this.turnState.activeMemberId,
-      feedbackTag: tag
-    }).subscribe(() => {
-      setTimeout(() => this.lastAction.set(null), 300);
+    this.liveSessionService.submitListenerFeedbackRealtime(
+      this.turnState.sessionId,
+      tag,
+      this.turnState.turnIndex
+    ).subscribe({
+      next: () => setTimeout(() => this.lastAction.set(null), 300),
+      error: () => this.lastAction.set(null)
     });
   }
 }

@@ -1,0 +1,56 @@
+<div class="login-page">
+
+  <div class="login-wrapper">
+
+    <!-- Brand — sits on the dark background -->
+    <div class="brand-section">
+      <div class="logo-icon">G</div>
+      <h1 class="brand-name">GoWithFlow</h1>
+      <p class="brand-tagline">Speak. Together. Grow.</p>
+    </div>
+
+    <!-- Form card — white elevated container -->
+    <div class="login-card">
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+
+        <div class="field-group">
+          <label class="field-label">Mobile Number</label>
+          <input
+            type="tel"
+            formControlName="mobileNumber"
+            class="field-input"
+            placeholder="10-digit mobile number"
+            maxlength="10"
+          >
+          <span *ngIf="loginForm.get('mobileNumber')?.touched && loginForm.get('mobileNumber')?.invalid" class="field-error">
+            Enter a valid 10-digit mobile number
+          </span>
+        </div>
+
+        <div class="field-group">
+          <label class="field-label">Password</label>
+          <input
+            type="password"
+            formControlName="password"
+            class="field-input"
+            placeholder="Enter your password"
+          >
+          <span *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.invalid" class="field-error">
+            Password is required
+          </span>
+        </div>
+
+        <div *ngIf="errorMessage()" class="error-banner">
+          {{ errorMessage() }}
+        </div>
+
+        <button type="submit" class="btn-login" [disabled]="isLoading">
+          <span *ngIf="!isLoading">Login</span>
+          <span *ngIf="isLoading" class="btn-spinner"></span>
+        </button>
+
+      </form>
+    </div>
+
+  </div>
+</div>

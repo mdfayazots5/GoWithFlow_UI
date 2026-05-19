@@ -6,8 +6,16 @@ import { AuthService } from '@core/services/auth.service';
 import { WebsocketService } from '@core/services/websocket.service';
 import { SpeakerScreenComponent } from '../speaker-screen/speaker-screen.component';
 import { ListenerScreenComponent } from '../listener-screen/listener-screen.component';
-import { LucideAngularModule, LogOut, Clock, Activity } from 'lucide-angular';
+import { LucideAngularModule, LogOut, Clock, Activity, RefreshCw } from 'lucide-angular';
 import { TurnState } from '@core/models/voice.model';
+import { catchError, of } from 'rxjs';
+
+type TurnShiftEvent = {
+  newActiveMemberId: string | number;
+  slotIndex: number;
+  turnIndex: number;
+  nextUtterance: TurnState['utterance'];
+};
 
 @Component({
   selector: 'app-session-room',
@@ -47,6 +55,21 @@ import { TurnState } from '@core/models/voice.model';
                 <div class="w-12 h-12 border-4 border-gw-primary border-t-transparent rounded-full animate-spin"></div>
                 <p class="text-xs font-black uppercase tracking-widest italic text-white/40">Synchronizing session...</p>
              </div>
+           } @else if (loadError()) {
+             <div class="flex flex-col items-center gap-6 py-20 text-center">
+                <div class="w-14 h-14 rounded-2xl bg-red-500/10 flex items-center justify-center">
+                  <i-lucide [img]="RetryIcon" size="24" class="text-red-400"></i-lucide>
+                </div>
+                <div>
+                  <p class="text-sm font-black uppercase tracking-widest italic text-white/60 mb-2">Session Error</p>
+                  <p class="text-xs text-white/30 italic leading-relaxed max-w-xs">{{ loadError() }}</p>
+                </div>
+                <button (click)="retryLoad()"
+                  class="px-6 py-3 bg-gw-primary rounded-xl font-black text-[10px] uppercase tracking-widest italic text-white flex items-center gap-2 hover:opacity-90 transition-all active:scale-95">
+                  <i-lucide [img]="RetryIcon" size="14"></i-lucide>
+                  Retry
+                </button>
+             </div>
            } @else if (isSpeaker()) {
              <app-speaker-screen
                [turnState]="turnState()!"
@@ -77,9 +100,11 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
   readonly ActivityIcon = Activity;
   readonly TimerIcon = Clock;
   readonly LeaveIcon = LogOut;
+  readonly RetryIcon = RefreshCw;
 
   turnState = signal<TurnState | null>(null);
   isLoading = signal(true);
+  loadError = signal<string | null>(null);
   isSpeaker = signal(false);
   sessionName = signal('Live Session');
   sessionTime = signal('00:00');
@@ -94,10 +119,9 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
       const sessionId = params['sessionId'];
       if (sessionId) {
         this.initSession(sessionId);
+        this.startTimer(sessionId);
       }
     });
-
-    this.startTimer();
   }
 
   ngOnDestroy() {
@@ -112,8 +136,8 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
     this.ws.connect(sessionId, user?.id || '', 'live-session');
     this.loadCurrentTurn(sessionId);
 
-    this.ws.on('TURN_SHIFT').subscribe(newState => {
-      this.updateState(newState);
+    this.ws.on('TURN_SHIFT').subscribe((shiftEvent: TurnShiftEvent) => {
+      this.handleTurnShift(sessionId, shiftEvent);
     });
 
     this.ws.on('LISTENER_TAG').subscribe((tagData: { feedbackTag: string }) => {
@@ -127,15 +151,33 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
     });
 
     this.ws.on('SESSION_ENDED').subscribe(() => {
+      sessionStorage.removeItem(`gwf_session_start_${sessionId}`);
       this.router.navigate(['/session/report', sessionId]);
     });
   }
 
   private loadCurrentTurn(sessionId: string) {
-    this.liveSessionService.getCurrentTurn(sessionId).subscribe(state => {
-      this.updateState(state);
-      this.isLoading.set(false);
+    this.loadError.set(null);
+    this.liveSessionService.getCurrentTurn(sessionId).pipe(
+      catchError(err => {
+        const msg = err?.error?.message || err?.error?.errors?.[0] || 'Failed to load session turn. Please retry.';
+        this.loadError.set(msg);
+        this.isLoading.set(false);
+        return of(null);
+      })
+    ).subscribe(state => {
+      if (state) {
+        this.updateState(state);
+        this.isLoading.set(false);
+      }
     });
+  }
+
+  retryLoad() {
+    this.isLoading.set(true);
+    this.loadError.set(null);
+    const sessionId = this.turnState()?.sessionId ?? this.route.snapshot.params['sessionId'];
+    if (sessionId) this.loadCurrentTurn(String(sessionId));
   }
 
   private updateState(state: TurnState) {
@@ -143,12 +185,41 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
     this.isSpeaker.set(String(state.activeMemberId) === localStorage.getItem('gwf_userId'));
   }
 
+  private handleTurnShift(sessionId: string, shiftEvent: TurnShiftEvent) {
+    const currentState = this.turnState();
+
+    if (currentState) {
+      this.turnState.set({
+        ...currentState,
+        turnIndex: shiftEvent.turnIndex,
+        activeMemberId: shiftEvent.newActiveMemberId,
+        utterance: shiftEvent.nextUtterance,
+        reReadAllowed: true,
+        reReadCount: 0,
+        maxReReads: 2
+      });
+      this.isSpeaker.set(String(shiftEvent.newActiveMemberId) === localStorage.getItem('gwf_userId'));
+    }
+
+    this.loadCurrentTurn(sessionId);
+  }
+
   onTurnShifted() {
     this.isLoading.set(true);
     this.loadCurrentTurn(this.turnState()!.sessionId);
   }
 
-  private startTimer() {
+  private startTimer(sessionId: string) {
+    const storageKey = `gwf_session_start_${sessionId}`;
+    const stored = sessionStorage.getItem(storageKey);
+
+    if (stored) {
+      this.timeSeconds = Math.floor((Date.now() - Number(stored)) / 1000);
+    } else {
+      sessionStorage.setItem(storageKey, String(Date.now()));
+      this.timeSeconds = 0;
+    }
+
     this.timerInterval = setInterval(() => {
       this.timeSeconds++;
       const mins = Math.floor(this.timeSeconds / 60);
@@ -159,6 +230,8 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
 
   confirmLeave() {
     if (confirm('Are you sure you want to leave the live session?')) {
+      const sessionId = this.route.snapshot.params['sessionId'];
+      if (sessionId) sessionStorage.removeItem(`gwf_session_start_${sessionId}`);
       this.router.navigate(['/user/dashboard']);
     }
   }

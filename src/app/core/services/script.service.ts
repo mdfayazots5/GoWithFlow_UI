@@ -24,7 +24,15 @@ export class ScriptService {
         if (filters[key]) params = params.set(key, filters[key]);
       });
     }
-    return this.http.get<any>(this.baseUrl, { params }).pipe(map(res => res.data as PagedResult<Script>));
+    return this.http.get<any>(this.baseUrl, { params }).pipe(
+      map(res => {
+        const data = res.data;
+        return {
+          ...data,
+          items: (data.items ?? []).map((item: any) => ({ ...item, id: String(item.scriptId) }))
+        } as PagedResult<Script>;
+      })
+    );
   }
 
   getScriptById(id: string): Observable<Script> {
@@ -37,6 +45,9 @@ export class ScriptService {
     return this.http.post<any>(`${this.baseUrl}/validate`, formData).pipe(
       map(res => ({
         isValid: res.data.isValid,
+        totalRows: res.data.totalRows,
+        validCount: res.data.validCount,
+        errorCount: res.data.errorCount,
         rows: res.data.validRows,
         errors: (res.data.errorRows ?? []).map((e: any) => `Row ${e.rowNumber} — ${e.columnName}: ${e.errorMessage}`)
       } as ValidationResult))

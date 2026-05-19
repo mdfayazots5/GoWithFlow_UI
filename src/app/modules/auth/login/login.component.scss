@@ -1,0 +1,205 @@
+// ── Page shell ────────────────────────────────────────────────────────────────
+
+.login-page {
+  min-height: 100vh;
+  background: linear-gradient(145deg, #0B1120 0%, #162040 55%, #1E3060 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px;
+}
+
+.login-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 400px;
+  gap: 28px;
+}
+
+// ── Brand (floats on dark bg) ──────────────────────────────────────────────────
+
+.brand-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo-icon {
+  width: 64px;
+  height: 64px;
+  background: #3D5A99;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin-bottom: 4px;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08),
+    0 8px 24px rgba(61, 90, 153, 0.55);
+}
+
+.brand-name {
+  font-size: 28px;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.brand-tagline {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
+  letter-spacing: 0.2px;
+}
+
+// ── Card (white elevated form container) ──────────────────────────────────────
+
+.login-card {
+  width: 100%;
+  background: #FFFFFF;
+  border-radius: 20px;
+  padding: 36px 32px;
+  box-shadow:
+    0 2px 4px rgba(0, 0, 0, 0.04),
+    0 8px 24px rgba(0, 0, 0, 0.18),
+    0 24px 48px rgba(0, 0, 0, 0.22);
+}
+
+// ── Form ──────────────────────────────────────────────────────────────────────
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  color: #6B7280;
+}
+
+.field-input {
+  height: 50px;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 10px;
+  padding: 0 16px;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: inherit;
+  color: #1A1A2E;
+  background: #F9FAFB;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+
+  &::placeholder { color: #C0C8D4; }
+
+  &:focus {
+    border-color: #3D5A99;
+    background: #FFFFFF;
+    box-shadow: 0 0 0 3px rgba(61, 90, 153, 0.12);
+  }
+}
+
+.field-error {
+  font-size: 12px;
+  font-weight: 500;
+  color: #D32F2F;
+}
+
+.error-banner {
+  background: #FEE2E2;
+  border: 1px solid rgba(211, 47, 47, 0.2);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #D32F2F;
+  text-align: center;
+}
+
+// ── Login button ──────────────────────────────────────────────────────────────
+
+.btn-login {
+  width: 100%;
+  height: 52px;
+  background: #3D5A99;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 4px;
+  box-shadow: 0 4px 16px rgba(61, 90, 153, 0.4);
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
+
+  &:hover:not(:disabled) {
+    background: #2D4580;
+    box-shadow: 0 6px 20px rgba(61, 90, 153, 0.5);
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(61, 90, 153, 0.35);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+}
+
+.btn-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2.5px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #FFFFFF;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+// ── Mobile ────────────────────────────────────────────────────────────────────
+
+@media (max-width: 480px) {
+  .login-wrapper {
+    gap: 22px;
+  }
+
+  .logo-icon {
+    width: 54px;
+    height: 54px;
+    font-size: 24px;
+  }
+
+  .brand-name {
+    font-size: 24px;
+  }
+
+  .login-card {
+    padding: 28px 22px;
+    border-radius: 16px;
+  }
+}

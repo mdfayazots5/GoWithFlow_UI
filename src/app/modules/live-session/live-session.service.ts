@@ -1,14 +1,16 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, from, map } from 'rxjs';
 import { environment } from '@env/environment';
 import { TurnState, VoiceAnalysisResponse } from '@core/models/voice.model';
+import { WebsocketService } from '@core/services/websocket.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class LiveSessionService {
   private http = inject(HttpClient);
+  private ws = inject(WebsocketService);
   private readonly baseUrl = `${environment.apiBaseUrl}/turns`;
 
   getCurrentTurn(sessionId: string): Observable<TurnState> {
@@ -33,5 +35,17 @@ export class LiveSessionService {
 
   completeSession(sessionId: string): Observable<any> {
     return this.http.post<{ data: any }>(`${environment.apiBaseUrl}/sessions/${sessionId}/complete`, {}).pipe(map(r => r.data));
+  }
+
+  completeTurnRealtime(sessionId: string | number, memberId: string | number, turnIndex: number, score: number): Observable<void> {
+    return from(this.ws.emit('CompleteTurn', String(sessionId), String(memberId), turnIndex, score));
+  }
+
+  submitListenerFeedbackRealtime(sessionId: string | number, tag: string, targetTurnIndex: number): Observable<void> {
+    return from(this.ws.emit('SubmitListenerFeedback', String(sessionId), tag, targetTurnIndex));
+  }
+
+  requestReReadRealtime(sessionId: string | number, requesterId: string | number): Observable<void> {
+    return from(this.ws.emit('RequestReRead', String(sessionId), String(requesterId)));
   }
 }

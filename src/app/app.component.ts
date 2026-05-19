@@ -7,7 +7,6 @@ import { BottomNavComponent } from '@shared/components/bottom-nav/bottom-nav.com
 import { ToastComponent } from '@shared/components/toast/toast.component';
 import { LoaderComponent } from '@shared/components/loader/loader.component';
 import { filter } from 'rxjs';
-import { AuthService } from '@core/services/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -22,51 +21,83 @@ import { AuthService } from '@core/services/auth.service';
     LoaderComponent
   ],
   template: `
-    <div class="min-h-screen bg-gw-bg flex flex-col font-sans">
-      @if (showHeader()) {
-        <app-header></app-header>
+    <div class="app-shell">
+
+      <!-- Admin routes: full-screen, no shell chrome -->
+      @if (isAdminRoute()) {
+        <router-outlet></router-outlet>
       }
 
-      <div class="flex flex-1 overflow-hidden">
-        <main class="flex-1 overflow-y-auto">
-          <div [ngClass]="{ 'max-w-[480px]': isMobileView() }" class="mx-auto min-h-full p-4 md:p-6 lg:p-8">
-            <router-outlet></router-outlet>
-          </div>
-        </main>
-      </div>
+      <!-- User / auth routes: header + scrollable content + bottom nav -->
+      @if (!isAdminRoute()) {
+        @if (showHeader()) {
+          <app-header></app-header>
+        }
 
-      <app-bottom-nav></app-bottom-nav>
-      
+        <div class="user-content-area" [class.no-bottom-pad]="!showBottomNav()">
+          <router-outlet></router-outlet>
+        </div>
+
+        @if (showBottomNav()) {
+          <app-bottom-nav></app-bottom-nav>
+        }
+      }
+
       <app-toast></app-toast>
       <app-loader></app-loader>
     </div>
   `,
   styles: [`
     :host { display: block; }
+
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      background: var(--gwf-bg);
+    }
+
+    .user-content-area {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 16px;
+      padding-bottom: 80px;
+    }
+
+    .user-content-area.no-bottom-pad {
+      padding-bottom: 16px;
+    }
   `]
 })
 export class AppComponent {
   private router = inject(Router);
-  private auth = inject(AuthService);
-  
-  currentUrl = signal('');
+
+  currentUrl = signal(this.router.url);
 
   constructor() {
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       this.currentUrl.set(event.url);
-      window.scrollTo(0, 0);
     });
   }
 
-  showHeader(): boolean {
-    const hideOn = ['/auth', '/live-session', '/repractice'];
-    return !hideOn.some(path => this.currentUrl().includes(path)) && !this.currentUrl().includes('/admin');
+  isAdminRoute(): boolean {
+    return this.currentUrl().includes('/admin');
   }
 
-  isMobileView(): boolean {
-    const mobileRoutes = ['/join', '/lobby', '/speaker-screen', '/listener-screen', '/room', '/report'];
-    return mobileRoutes.some(path => this.currentUrl().includes(path));
+  showHeader(): boolean {
+    const url = this.currentUrl();
+    if (!url || url === '/') return false;
+    const hideOn = ['/auth', '/live-session', '/repractice'];
+    return !hideOn.some(path => url.includes(path));
+  }
+
+  showBottomNav(): boolean {
+    const url = this.currentUrl();
+    const hideOn = ['/auth', '/live-session', '/repractice'];
+    return !hideOn.some(path => url.includes(path));
   }
 }

@@ -1,0 +1,66 @@
+:host {
+  display: block;
+}
+
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: var(--gwf-card-bg);
+  border-top: 1px solid var(--gwf-card-border);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  z-index: 200;
+  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
+  /* Prevent tap highlight on mobile */
+  -webkit-tap-highlight-color: transparent;
+}
+
+.nav-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  text-decoration: none;
+  color: var(--gwf-text-muted);
+  font-size: 11px;
+  font-weight: 500;
+  padding: 8px 0;
+  position: relative;
+  transition: color 0.15s ease;
+
+  i-lucide {
+    transition: transform 0.15s ease;
+  }
+}
+
+.nav-tab.active {
+  color: var(--gwf-primary);
+
+  i-lucide {
+    transform: scale(1.1);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 28px;
+    height: 3px;
+    background: var(--gwf-primary);
+    border-radius: 2px 2px 0 0;
+  }
+}
+
+@media (max-width: 360px) {
+  .nav-tab {
+    font-size: 10px;
+    gap: 2px;
+  }
+}
