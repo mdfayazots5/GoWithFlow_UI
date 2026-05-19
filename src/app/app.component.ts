@@ -53,7 +53,8 @@ import { filter } from 'rxjs';
     .app-shell {
       display: flex;
       flex-direction: column;
-      height: 100vh;
+      /* dvh accounts for mobile browser chrome (address bar) correctly */
+      height: 100dvh;
       overflow: hidden;
       background: var(--gwf-bg);
     }
@@ -63,7 +64,8 @@ import { filter } from 'rxjs';
       overflow-y: auto;
       overflow-x: hidden;
       padding: 16px;
-      padding-bottom: 80px;
+      /* 64px nav + safe area so content never hides behind the bar */
+      padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
     }
 
     .user-content-area.no-bottom-pad {

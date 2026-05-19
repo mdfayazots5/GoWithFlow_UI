@@ -2,6 +2,7 @@
 import { Component, Inject, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MAT_BOTTOM_SHEET_DATA, MatBottomSheetRef } from '@angular/material/bottom-sheet';
+import { Router } from '@angular/router';
 import { Script } from '@core/models/script.model';
 import { LucideAngularModule, X, Eye, EyeOff, BookOpen, Clock, Layers } from 'lucide-angular';
 
@@ -104,7 +105,7 @@ import { LucideAngularModule, X, Eye, EyeOff, BookOpen, Clock, Layers } from 'lu
       </div>
 
       <div class="pt-8 flex gap-4">
-        <button class="flex-1 h-14 bg-gw-primary text-white font-black uppercase tracking-widest italic rounded-2xl hover:scale-[1.05] transition-all shadow-lg shadow-gw-primary/20">
+        <button (click)="startSession()" style="background:var(--gw-success); box-shadow:0 10px 25px rgba(46,125,50,0.25);" class="flex-1 h-14 text-white font-black uppercase tracking-widest italic rounded-2xl hover:scale-[1.05] transition-all">
           Start Session with this Script
         </button>
         <button (click)="close()" class="h-14 px-8 border-2 border-gw-card-border text-gw-text font-black uppercase tracking-widest italic rounded-2xl hover:bg-gw-bg transition-all">
@@ -122,7 +123,8 @@ import { LucideAngularModule, X, Eye, EyeOff, BookOpen, Clock, Layers } from 'lu
 })
 export class ScriptPreviewComponent {
   private sheetRef = inject(MatBottomSheetRef<ScriptPreviewComponent>);
-  
+  private router = inject(Router);
+
   readonly CloseIcon = X;
   readonly LinesIcon = Layers;
   readonly ClockIcon = Clock;
@@ -136,5 +138,10 @@ export class ScriptPreviewComponent {
 
   close() {
     this.sheetRef.dismiss();
+  }
+
+  startSession() {
+    this.sheetRef.dismiss();
+    this.router.navigate(['/session/create'], { state: { script: this.data } });
   }
 }

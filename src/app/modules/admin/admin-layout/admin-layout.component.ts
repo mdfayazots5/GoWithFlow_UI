@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet, ActivatedRoute, NavigationEnd } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
@@ -20,6 +20,7 @@ export class AdminLayoutComponent {
 
   sidebarOpen = false;
   pageTitle = signal('Dashboard');
+  profileMenuOpen = signal(false);
 
   adminName = 'GoWithFlow Admin';
   adminAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin';
@@ -41,6 +42,19 @@ export class AdminLayoutComponent {
 
   closeSidebar() {
     this.sidebarOpen = false;
+  }
+
+  toggleProfileMenu() {
+    this.profileMenuOpen.update(v => !v);
+  }
+
+  closeProfileMenu() {
+    this.profileMenuOpen.set(false);
+  }
+
+  @HostListener('document:click')
+  onDocumentClick() {
+    this.profileMenuOpen.set(false);
   }
 
   logout() {

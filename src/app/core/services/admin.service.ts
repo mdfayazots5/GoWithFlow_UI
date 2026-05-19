@@ -59,18 +59,20 @@ export class AdminService {
       fromObject: {
         searchTerm: params.search || params.searchTerm || '',
         ageGroup: params.ageGroup || '',
-        isActive: params.activeOnly !== undefined ? String(params.activeOnly) : '',
+        isActive: params.activeOnly === true ? 'true' : '',
         pageNumber: String((params.page ?? 0) + 1),
         pageSize: String(params.size || params.pageSize || 10)
       }
     });
     return this.http.get<any>(`${this.baseUrl}/users`, { params: httpParams }).pipe(
-      map(res => res.data)
+      map(res => ({ ...res.data, total: res.data.totalCount }))
     );
   }
 
   getUserDetail(userId: string): Observable<AdminUserDetail> {
-    return this.http.get<AdminUserDetail>(`${this.baseUrl}/users/${userId}`);
+    return this.http.get<any>(`${this.baseUrl}/users/${userId}`).pipe(
+      map(res => res.data)
+    );
   }
 
   updateUserStatus(payload: { userId: number, isActive: boolean }): Observable<any> {

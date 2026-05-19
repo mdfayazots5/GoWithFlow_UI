@@ -19,12 +19,14 @@ export class AdminDashboardComponent implements OnInit {
   private adminService = inject(AdminService);
   private toast        = inject(ToastService);
 
-  readonly ArrowIcon   = ArrowRight;
+  readonly UsersIcon   = Users;
+  readonly SessionIcon = Play;
+  readonly FileTextIcon = FileText;
   readonly AlertIcon   = AlertTriangle;
+  readonly ArrowIcon   = ArrowRight;
   readonly UploadIcon  = Upload;
   readonly ReportIcon  = BarChart3;
   readonly AddUserIcon = UserPlus;
-  readonly SessionIcon = Play;
 
   stats          = signal<any[]>([]);
   recentActivity = signal<any[]>([]);

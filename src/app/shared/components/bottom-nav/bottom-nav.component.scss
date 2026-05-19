@@ -7,14 +7,16 @@
   bottom: 0;
   left: 0;
   right: 0;
-  height: 64px;
-  background: var(--gwf-card-bg);
-  border-top: 1px solid var(--gwf-card-border);
+  /* Grows to cover the home indicator on iPhone/Android */
+  height: calc(64px + env(safe-area-inset-bottom, 0px));
+  background: #12192C;
+  border-top: none;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
+  /* Tabs sit in the 64px zone; safe area below is filled background only */
+  align-items: start;
   z-index: 200;
-  box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.06);
-  /* Prevent tap highlight on mobile */
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.25);
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -23,44 +25,54 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 3px;
+  gap: 4px;
   cursor: pointer;
   text-decoration: none;
-  color: var(--gwf-text-muted);
-  font-size: 11px;
-  font-weight: 500;
-  padding: 8px 0;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  /* Fixed 64px tap target — safe area is below this zone */
+  height: 64px;
+  padding: 10px 0 6px;
   position: relative;
   transition: color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
 
   i-lucide {
     transition: transform 0.15s ease;
+    flex-shrink: 0;
+  }
+
+  span {
+    line-height: 1;
   }
 }
 
 .nav-tab.active {
-  color: var(--gwf-primary);
+  color: #ffffff;
 
   i-lucide {
-    transform: scale(1.1);
+    transform: scale(1.12);
   }
 
   &::after {
     content: '';
     position: absolute;
-    bottom: 0;
+    top: 0;
     left: 50%;
     transform: translateX(-50%);
-    width: 28px;
+    width: 32px;
     height: 3px;
-    background: var(--gwf-primary);
-    border-radius: 2px 2px 0 0;
+    background: #ffffff;
+    border-radius: 0 0 3px 3px;
   }
 }
 
+/* Extra-small phones (≤ 360px wide) */
 @media (max-width: 360px) {
   .nav-tab {
-    font-size: 10px;
-    gap: 2px;
+    font-size: 9px;
+    gap: 3px;
   }
 }

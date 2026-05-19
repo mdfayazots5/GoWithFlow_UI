@@ -43,18 +43,18 @@ export interface ImprovementData {
     currentStreak: number;
   };
   recentSessions: ScoreTrendPoint[];
-  weeklyScores: { week: string; avgScore: number }[];
+  weeklyScores: { weekLabel: string; avgFluencyScore: number }[];
   grammarProgress: GrammarProgress[];
   repracticeHistory: RepracticeHistoryItem[];
   badgesEarned: UserBadge[];
 }
 
 export interface ScoreTrendPoint {
-  date: string;
+  sessionDate: string;
   sessionName: string;
-  fluency: number;
-  confidence: number;
-  mistakes: number;
+  fluencyScore: number;
+  confidenceScore: number;
+  mistakeCount: number;
 }
 
 export interface GrammarProgress {

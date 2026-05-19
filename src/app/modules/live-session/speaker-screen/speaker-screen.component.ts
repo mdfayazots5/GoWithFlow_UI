@@ -1,11 +1,12 @@
 // File: src/app/modules/live-session/speaker-screen/speaker-screen.component.ts
-import { Component, Input, Output, EventEmitter, inject, signal } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnDestroy, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TurnState, VoiceAnalysis } from '@core/models/voice.model';
 import { LucideAngularModule, Mic, CheckCircle2, ChevronRight, XCircle, RotateCcw, Eye, EyeOff, FastForward } from 'lucide-angular';
 import { VoiceAnalysisService } from '@core/services/voice-analysis.service';
 import { LiveSessionService } from '../live-session.service';
 import { ToastService } from '@core/services/toast.service';
+import { SessionPreferencesService } from '@core/services/session-preferences.service';
 
 @Component({
   selector: 'app-speaker-screen',
@@ -14,13 +15,18 @@ import { ToastService } from '@core/services/toast.service';
   templateUrl: './speaker-screen.component.html',
   styles: [`:host { display: block; }`]
 })
-export class SpeakerScreenComponent {
+export class SpeakerScreenComponent implements OnDestroy {
   @Input({ required: true }) turnState!: TurnState;
   @Output() turnShifted = new EventEmitter<void>();
+
+  ngOnDestroy() {
+    clearTimeout(this.autoStartTimer);
+  }
 
   private voiceService = inject(VoiceAnalysisService);
   private liveSessionService = inject(LiveSessionService);
   private toast = inject(ToastService);
+  private sessionPrefs = inject(SessionPreferencesService);
 
   readonly MicIcon = Mic;
   readonly NoteIcon = CheckCircle2;
@@ -38,10 +44,16 @@ export class SpeakerScreenComponent {
   words = signal<string[]>([]);
   spokenWords = signal<{ text: string, isError: boolean }[]>([]);
 
+  private autoStartTimer: any;
+
   ngOnChanges() {
     if (this.turnState) {
+      clearTimeout(this.autoStartTimer);
       this.words.set(this.turnState.utterance.englishText.split(' '));
       this.resetRecording();
+      if (this.sessionPrefs.prefs.defaultVoiceStarter) {
+        this.autoStartTimer = setTimeout(() => this.startRecording(), 400);
+      }
     }
   }
 
@@ -88,7 +100,7 @@ export class SpeakerScreenComponent {
     const analysisPayload = {
       sessionId: this.turnState.sessionId,
       turnIndex: this.turnState.turnIndex,
-      utteranceId: this.turnState.utterance.sequenceId,
+      utteranceId: this.turnState.utterance.utteranceId,
       transcribedText: this.interimTranscript(),
       expectedText: this.turnState.utterance.englishText,
       fluencyScore: a?.fluencyScore || 0,

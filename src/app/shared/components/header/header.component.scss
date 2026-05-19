@@ -79,6 +79,22 @@
   gap: 2px;
 }
 
+@media (max-width: 768px) {
+  .hide-mobile {
+    display: none !important;
+  }
+
+  .show-mobile {
+    display: flex;
+  }
+}
+
+@media (min-width: 769px) {
+  .show-mobile {
+    display: none;
+  }
+}
+
 @media (max-width: 480px) {
   .header-title {
     max-width: 120px;

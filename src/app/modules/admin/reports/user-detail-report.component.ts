@@ -212,9 +212,9 @@ export class UserDetailReportComponent implements OnInit {
     if (!this.report()) return;
     
     this.isSaving.set(true);
-    this.adminService.addAdminNote({ 
-      userId: this.report().user.id, 
-      note: this.notesControl.value || '' 
+    this.adminService.addAdminNote({
+      targetUserId: this.report().user.id,
+      noteText: this.notesControl.value || ''
     }).subscribe({
       next: () => {
         this.isSaving.set(false);

@@ -1,98 +1,149 @@
 // File: src/app/modules/live-session/listener-screen/listener-screen.component.ts
-import { Component, Input, inject, signal, OnChanges } from '@angular/core';
+import { Component, Input, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TurnState } from '@core/models/voice.model';
-import { LucideAngularModule, Mic, ThumbsUp, HelpCircle, AlertTriangle, MessageCircle, Info } from 'lucide-angular';
+import { LucideAngularModule, Mic, ThumbsUp, HelpCircle, AlertTriangle, MessageCircle } from 'lucide-angular';
 import { LiveSessionService } from '../live-session.service';
-import { ToastService } from '@core/services/toast.service';
 
 @Component({
   selector: 'app-listener-screen',
   standalone: true,
   imports: [CommonModule, LucideAngularModule],
   template: `
-    <div class="space-y-16 animate-in fade-in duration-700">
-      <!-- Speaker Indicator -->
-      <div class="flex flex-col items-center gap-6">
-         <div class="relative">
-            <div class="absolute inset-0 bg-[#3D5A99]/20 rounded-full animate-pulse-slow"></div>
-            <div class="w-24 h-24 rounded-[32px] overflow-hidden border-2 border-gw-primary p-1 bg-[#1A1A2E] relative z-10">
-               <img [src]="'https://api.dicebear.com/7.x/avataaars/svg?seed=' + turnState.activeMemberName" class="w-full h-full object-cover rounded-2xl">
-               <div class="absolute -bottom-2 -right-2 w-8 h-8 bg-gw-primary rounded-full flex items-center justify-center border-4 border-[#1A1A2E]">
-                  <i-lucide [img]="MicIcon" size="14" class="text-white"></i-lucide>
-               </div>
-            </div>
-         </div>
-         
-         <div class="text-center space-y-2">
-            <h3 class="text-2xl font-black text-white italic uppercase tracking-tight">{{ turnState.activeMemberName }} is speaking</h3>
-            <p class="text-[10px] font-black uppercase tracking-widest text-[#E07B39] italic animate-pulse">Live Session Active</p>
-         </div>
+    <div class="flex flex-col gap-5 pb-4 animate-in fade-in duration-500">
+
+      <!-- Turn Progress -->
+      <div class="space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="text-[10px] font-black uppercase tracking-widest text-white/30 italic">
+            Turn {{ turnState.turnIndex }} of {{ turnState.totalTurns }}
+          </span>
+          <span class="px-2.5 py-1 bg-[#E07B39]/15 text-[#E07B39] text-[9px] font-black uppercase tracking-wider rounded-full italic">
+            {{ turnState.utterance.grammarTag }}
+          </span>
+        </div>
+        <div class="h-1 bg-white/8 rounded-full overflow-hidden">
+          <div
+            class="h-full bg-[#3D5A99] rounded-full transition-all duration-700"
+            [style.width.%]="(turnState.turnIndex / turnState.totalTurns) * 100">
+          </div>
+        </div>
       </div>
 
-      <!-- Current Sentence (Dimmed) -->
-      <div class="p-8 bg-white/5 rounded-[40px] border border-white/5 space-y-4">
-         <div class="flex justify-between items-center">
-            <span class="text-[10px] font-black uppercase tracking-widest text-white/20 italic">Currently Reading</span>
-            <span class="text-[10px] font-black uppercase tracking-widest text-white/20 italic">{{ turnState.utterance.grammarTag }}</span>
-         </div>
-         <p class="text-2xl font-black text-white/60 italic leading-relaxed tracking-tight">
-            "{{ turnState.utterance.englishText }}"
-         </p>
+      <!-- Speaker Identity -->
+      <div class="flex flex-col items-center gap-4 py-4">
+        <div class="relative flex items-center justify-center w-32 h-32">
+          <div class="absolute w-32 h-32 rounded-full border border-[#3D5A99]/20 ring-pulse-outer"></div>
+          <div class="absolute w-24 h-24 rounded-full border border-[#3D5A99]/35 ring-pulse-inner"></div>
+          <div class="w-20 h-20 rounded-[28px] overflow-hidden border-2 border-[#3D5A99] relative z-10 shadow-2xl shadow-[#3D5A99]/30">
+            <img
+              [src]="'https://api.dicebear.com/7.x/avataaars/svg?seed=' + turnState.activeMemberName"
+              class="w-full h-full object-cover"
+            >
+          </div>
+          <div class="absolute bottom-1 right-1 z-20 w-7 h-7 bg-[#3D5A99] rounded-full flex items-center justify-center border-2 border-[#1A1A2E]">
+            <i-lucide [img]="MicIcon" size="12" class="text-white"></i-lucide>
+          </div>
+        </div>
+
+        <div class="text-center space-y-1.5">
+          <h2 class="text-2xl font-black text-white italic uppercase tracking-tight leading-none">
+            {{ turnState.activeMemberName }}
+          </h2>
+          <div class="flex items-center justify-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-[#E07B39] animate-pulse"></span>
+            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-[#E07B39] italic">Speaking Now</span>
+          </div>
+        </div>
+
+        <!-- Sound Wave -->
+        <div class="flex items-end gap-1 h-6">
+          <div class="w-1.5 rounded-full bg-[#3D5A99]/70 wave-bar" style="animation-delay:0ms"></div>
+          <div class="w-1.5 rounded-full bg-[#3D5A99]/70 wave-bar" style="animation-delay:160ms"></div>
+          <div class="w-1.5 rounded-full bg-[#3D5A99]/70 wave-bar" style="animation-delay:320ms"></div>
+          <div class="w-1.5 rounded-full bg-[#3D5A99]/80 wave-bar" style="animation-delay:80ms"></div>
+          <div class="w-1.5 rounded-full bg-[#3D5A99]/70 wave-bar" style="animation-delay:240ms"></div>
+          <div class="w-1.5 rounded-full bg-[#3D5A99]/60 wave-bar" style="animation-delay:400ms"></div>
+          <div class="w-1.5 rounded-full bg-[#3D5A99]/70 wave-bar" style="animation-delay:50ms"></div>
+        </div>
       </div>
 
-      <!-- Quick Feedback Panel -->
-      <div class="space-y-6">
-         <p class="text-center text-[10px] font-black uppercase tracking-widest text-white/40 italic">Give Quick Feedback</p>
-         <div class="grid grid-cols-2 gap-4">
-            @for (action of feedbackActions; track action.label) {
-              <button 
-                (click)="sendFeedback(action.tag)"
-                class="flex flex-col items-center justify-center p-6 bg-white/5 rounded-3xl border-2 border-transparent hover:border-gw-primary/20 hover:bg-white/10 active:scale-95 transition-all gap-2 group"
-                [class.flash]="lastAction() === action.tag"
-              >
-                 <div class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/40 group-hover:text-white group-hover:bg-gw-primary/20 transition-all">
-                    <i-lucide [img]="action.icon" size="20"></i-lucide>
-                 </div>
-                 <span class="text-[10px] font-black uppercase tracking-widest text-white/40 group-hover:text-white text-center">{{ action.label }}</span>
-              </button>
-            }
-         </div>
+      <!-- Utterance Card -->
+      <div class="bg-white/5 rounded-[24px] border border-white/8 p-5 space-y-3">
+        <span class="text-[9px] font-black uppercase tracking-widest text-white/25 italic">Currently Reading</span>
+        <p class="text-xl font-black text-white/75 italic leading-relaxed tracking-tight">
+          "{{ turnState.utterance.englishText }}"
+        </p>
       </div>
 
-      <!-- Turn Queue -->
-      <div class="bg-[#12121A] p-6 rounded-3xl border border-white/5 flex items-center justify-between">
-         <div class="flex items-center gap-3">
-            <i-lucide [img]="InfoIcon" size="18" class="text-gw-primary"></i-lucide>
-            <span class="text-[10px] font-black uppercase tracking-widest text-white/40 italic">Waiting...</span>
-         </div>
-         <span class="text-[10px] font-black uppercase tracking-widest text-gw-primary italic">Your turn is next</span>
-      </div>
-
+      <!-- Inline Banners -->
       @if (showReReadBanner) {
-        <div class="p-4 bg-[#E07B39]/10 border border-[#E07B39]/30 rounded-2xl text-center animate-in fade-in duration-300">
-          <span class="text-[10px] font-black uppercase tracking-widest text-[#E07B39] italic">Re-reading...</span>
+        <div class="flex items-center gap-3 px-4 py-3 bg-[#E07B39]/10 border border-[#E07B39]/25 rounded-2xl animate-in slide-in-from-top-2 duration-300">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#E07B39] animate-pulse flex-shrink-0"></span>
+          <span class="text-[10px] font-black uppercase tracking-widest text-[#E07B39] italic">Speaker is re-reading this turn</span>
         </div>
       }
       @if (listenerTagFlash) {
-        <div class="p-4 bg-gw-primary/10 border border-gw-primary/30 rounded-2xl text-center animate-in fade-in duration-300">
-          <span class="text-[10px] font-black uppercase tracking-widest text-gw-primary italic">{{ listenerTagFlash }}</span>
+        <div class="flex items-center justify-center gap-2 px-4 py-3 bg-[#3D5A99]/15 border border-[#3D5A99]/30 rounded-2xl animate-in zoom-in duration-300">
+          <span class="text-[10px] font-black uppercase tracking-widest text-[#3D5A99] italic">Sent: {{ listenerTagFlash }}</span>
         </div>
       }
+
+      <!-- Quick Feedback -->
+      <div class="space-y-3">
+        <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 italic text-center">Give Quick Feedback</p>
+        <div class="grid grid-cols-2 gap-2.5">
+          @for (action of feedbackActions; track action.label) {
+            <button
+              type="button"
+              (click)="sendFeedback(action.tag)"
+              class="flex items-center gap-3 px-4 py-3.5 rounded-2xl border transition-all duration-200 active:scale-95 text-left"
+              [style.borderColor]="lastAction() === action.tag ? action.color : 'rgba(255,255,255,0.07)'"
+              [style.backgroundColor]="lastAction() === action.tag ? action.color + '2a' : 'rgba(255,255,255,0.04)'"
+            >
+              <div
+                class="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors duration-200"
+                [style.backgroundColor]="action.color + '20'"
+                [style.color]="action.color"
+              >
+                <i-lucide [img]="action.icon" size="16"></i-lucide>
+              </div>
+              <span class="text-[10px] font-black uppercase tracking-wider text-white/55 leading-tight">{{ action.label }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <!-- Your Turn Is Next -->
+      <div class="flex items-center gap-3 px-5 py-4 rounded-2xl bg-gradient-to-r from-[#3D5A99]/20 to-transparent border border-[#3D5A99]/25">
+        <span class="w-2 h-2 rounded-full bg-[#3D5A99] animate-pulse flex-shrink-0"></span>
+        <span class="text-[10px] font-black uppercase tracking-widest text-white/35 italic">Waiting...</span>
+        <div class="flex-1"></div>
+        <span class="text-[11px] font-black uppercase tracking-widest text-[#3D5A99] italic">Your Turn Is Next →</span>
+      </div>
+
     </div>
   `,
   styles: [`
     :host { display: block; }
-    @keyframes pulse-slow {
-      0%, 100% { transform: scale(1); opacity: 0.1; }
-      50% { transform: scale(3); opacity: 0; }
+
+    @keyframes ring-out {
+      0%   { transform: scale(0.85); opacity: 0.6; }
+      100% { transform: scale(1.15); opacity: 0; }
     }
-    .animate-pulse-slow {
-      animation: pulse-slow 3s infinite ease-out;
+    .ring-pulse-outer {
+      animation: ring-out 2.8s ease-out infinite;
     }
-    .flash {
-      background-color: rgba(61, 90, 153, 0.4) !important;
-      border-color: #3D5A99 !important;
+    .ring-pulse-inner {
+      animation: ring-out 2.8s ease-out infinite 0.6s;
+    }
+
+    @keyframes wave {
+      0%, 100% { height: 4px; }
+      50%       { height: 22px; }
+    }
+    .wave-bar {
+      animation: wave 1.2s ease-in-out infinite;
     }
   `]
 })
@@ -102,18 +153,16 @@ export class ListenerScreenComponent {
   @Input() listenerTagFlash: string | null = null;
 
   private liveSessionService = inject(LiveSessionService);
-  private toast = inject(ToastService);
 
   readonly MicIcon = Mic;
-  readonly InfoIcon = Info;
-  
+
   lastAction = signal<string | null>(null);
 
   feedbackActions = [
-    { label: 'GOOD', tag: 'Good', icon: ThumbsUp },
-    { label: 'HESITATED', tag: 'Hesitated', icon: HelpCircle },
-    { label: 'MISTAKE', tag: 'Mistake', icon: AlertTriangle },
-    { label: 'UNCLEAR', tag: 'Unclear Pronunciation', icon: MessageCircle }
+    { label: 'GOOD',      tag: 'Good',                 icon: ThumbsUp,      color: '#34d399' },
+    { label: 'HESITATED', tag: 'Hesitated',             icon: HelpCircle,    color: '#fbbf24' },
+    { label: 'MISTAKE',   tag: 'Mistake',               icon: AlertTriangle, color: '#f87171' },
+    { label: 'UNCLEAR',   tag: 'Unclear Pronunciation', icon: MessageCircle, color: '#818cf8' },
   ];
 
   sendFeedback(tag: string) {
@@ -123,7 +172,7 @@ export class ListenerScreenComponent {
       tag,
       this.turnState.turnIndex
     ).subscribe({
-      next: () => setTimeout(() => this.lastAction.set(null), 300),
+      next: () => setTimeout(() => this.lastAction.set(null), 800),
       error: () => this.lastAction.set(null)
     });
   }

@@ -15,11 +15,14 @@ import { filter, map, startWith } from 'rxjs';
        <!-- Left: Logo or Back -->
        <div class="header-left">
           @if (showBack()) {
-            <button (click)="goBack()" class="back-btn w-10 h-10 rounded-xl bg-gw-bg flex items-center justify-center hover:text-gw-primary transition-all border-0 cursor-pointer">
+            <!-- Hidden on mobile; logo takes its place -->
+            <button (click)="goBack()" class="back-btn hide-mobile w-10 h-10 rounded-xl bg-gw-bg flex items-center justify-center hover:text-gw-primary transition-all border-0 cursor-pointer">
                <i-lucide [img]="BackIcon" size="20"></i-lucide>
             </button>
+            <!-- Logo shown only on mobile when back button is suppressed -->
+            <a routerLink="/user/dashboard" class="header-logo show-mobile italic tracking-tighter no-underline">Go With Flow</a>
           } @else {
-            <a routerLink="/user/dashboard" class="header-logo italic tracking-tighter no-underline">GoWithFlow</a>
+            <a routerLink="/user/dashboard" class="header-logo italic tracking-tighter no-underline">Go With Flow</a>
           }
        </div>
 

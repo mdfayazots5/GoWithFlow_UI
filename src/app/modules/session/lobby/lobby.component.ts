@@ -142,6 +142,21 @@ export class LobbyComponent implements OnInit, OnDestroy {
 
   loadLobby(sessionId: string) {
     this.sessionService.getLobbyState(sessionId).subscribe(state => {
+      const status = state.session?.status;
+
+      if (status === 'ACTIVE') {
+        this.hasLeft = true;
+        this.router.navigate(['/live-session/room', sessionId]);
+        return;
+      }
+
+      if (status === 'COMPLETED' || status === 'ABANDONED') {
+        this.hasLeft = true;
+        this.router.navigate(['/user/dashboard']);
+        this.toast.error('This session has already ended.');
+        return;
+      }
+
       this.state.set(state);
       const userId = localStorage.getItem('gwf_userId');
       const myMember = state.members.find(m => String(m.userId) === userId);

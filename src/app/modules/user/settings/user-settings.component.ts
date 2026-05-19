@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { LucideAngularModule, User, Mail, Phone, Camera, Save, CheckCircle } from 'lucide-angular';
+import { LucideAngularModule, User, Mail, Phone, Camera, Save, CheckCircle, Mic } from 'lucide-angular';
 import { HeaderComponent } from '@shared/components/header/header.component';
 import { BottomNavComponent } from '@shared/components/bottom-nav/bottom-nav.component';
 import { UserService } from '@core/services/user.service';
 import { AuthService } from '@core/services/auth.service';
+import { SessionPreferencesService } from '@core/services/session-preferences.service';
 
 @Component({
   selector: 'app-user-settings',
@@ -77,6 +78,44 @@ import { AuthService } from '@core/services/auth.service';
               {{ isSaving ? 'Saving Changes...' : (isSaved ? 'Changes Saved!' : 'Update Profile') }}
            </button>
         </form>
+
+        <!-- Live Session Preferences -->
+        <div class="space-y-4">
+          <h3 class="text-xs font-black uppercase tracking-[0.2em] text-ls-text-muted px-1">Live Session Preferences</h3>
+
+          <div class="bg-white border border-ls-card-border rounded-3xl divide-y divide-ls-card-border shadow-sm">
+
+            <!-- Default Voice Starter -->
+            <div class="flex items-center justify-between px-5 py-4 gap-4">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-2xl bg-[#3D5A99]/10 flex items-center justify-center flex-shrink-0">
+                  <i-lucide [img]="MicIcon" size="18" class="text-ls-primary"></i-lucide>
+                </div>
+                <div class="min-w-0">
+                  <p class="text-sm font-black text-ls-text leading-tight">Default Voice Starter</p>
+                  <p class="text-[11px] text-ls-text-muted mt-0.5 leading-snug">
+                    Auto-start recording when it's your turn to speak
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                (click)="toggleVoiceStarter()"
+                class="relative flex-shrink-0 w-12 h-6 rounded-full transition-colors duration-300 focus:outline-none"
+                [ngClass]="prefs.defaultVoiceStarter ? 'bg-[#3D5A99]' : 'bg-gray-200'"
+                [attr.aria-checked]="prefs.defaultVoiceStarter"
+                role="switch"
+              >
+                <span
+                  class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300"
+                  [ngClass]="prefs.defaultVoiceStarter ? 'translate-x-6' : 'translate-x-0'"
+                ></span>
+              </button>
+            </div>
+
+          </div>
+        </div>
       </main>
 
       <app-bottom-nav></app-bottom-nav>
@@ -95,16 +134,20 @@ export class UserSettingsComponent implements OnInit {
   readonly CameraIcon = Camera;
   readonly SaveIcon = Save;
   readonly CheckIcon = CheckCircle;
+  readonly MicIcon = Mic;
 
   settingsForm!: FormGroup;
   avatarPreview = 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ravi';
   isSaving = false;
   isSaved = false;
 
+  get prefs() { return this.sessionPrefs.prefs; }
+
   constructor(
     private fb: FormBuilder,
     private userService: UserService,
-    private auth: AuthService
+    private auth: AuthService,
+    private sessionPrefs: SessionPreferencesService
   ) {}
 
   ngOnInit() {
@@ -146,5 +189,9 @@ export class UserSettingsComponent implements OnInit {
         error: () => this.isSaving = false
       });
     }
+  }
+
+  toggleVoiceStarter() {
+    this.sessionPrefs.update({ defaultVoiceStarter: !this.prefs.defaultVoiceStarter });
   }
 }

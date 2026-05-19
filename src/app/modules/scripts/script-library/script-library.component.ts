@@ -4,13 +4,13 @@ import { CommonModule } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ScriptService } from '@core/services/script.service';
 import { Script } from '@core/models/script.model';
-import { LucideAngularModule, Search, Filter, BookOpen, Layers, Clock, Eye, Play, Edit3, Trash2, Plus, ArrowRight } from 'lucide-angular';
+import { LucideAngularModule, Search, BookOpen, Layers, Eye, Play, Trash2, Plus } from 'lucide-angular';
 import { MatBottomSheet, MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { ScriptPreviewComponent } from './script-preview.component';
 import { AuthService } from '@core/services/auth.service';
 import { ToastService } from '@core/services/toast.service';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 
 @Component({
@@ -18,157 +18,158 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, MatBottomSheetModule, MatPaginatorModule, RouterLink],
   template: `
-    <div class="space-y-8 animate-in fade-in duration-500 pb-20">
-      <!-- Header Section -->
-      <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div class="space-y-1">
-          <h2 class="text-4xl font-black text-gw-text italic uppercase tracking-tighter">SCRIPT LIBRARY</h2>
-          <p class="text-xs font-bold text-gw-text-muted uppercase tracking-widest italic">Choose a script to start your fluency journey</p>
-        </div>
+    <div class="space-y-6 animate-in fade-in duration-500 pb-24">
 
+      <!-- Header -->
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-2xl font-black text-gw-text uppercase tracking-tight">Script Library</h2>
+          <p class="text-[10px] font-semibold text-gw-text-muted uppercase tracking-widest mt-0.5">Choose a script to start your fluency journey</p>
+        </div>
         @if (isAdmin()) {
-          <a routerLink="/admin/scripts/upload" class="h-14 px-8 bg-gw-text text-white font-black uppercase tracking-widest italic rounded-2xl flex items-center gap-2 hover:scale-[1.05] active:scale-95 transition-all shadow-xl shadow-gw-text/20">
-            <i-lucide [img]="PlusIcon" size="20"></i-lucide>
-            New Script
+          <a routerLink="/admin/scripts/upload"
+             class="h-10 px-4 bg-gw-text text-white text-xs font-bold uppercase tracking-wide rounded-xl flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-md">
+            <i-lucide [img]="PlusIcon" size="16"></i-lucide>
+            <span class="hidden sm:inline">New Script</span>
           </a>
         }
       </div>
 
-      <!-- Filters Row -->
-      <div class="bg-white p-4 rounded-[32px] border border-gw-card-border shadow-sm">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div class="relative group">
-            <i-lucide [img]="SearchIcon" size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-gw-text-muted group-focus-within:text-gw-primary transition-colors"></i-lucide>
-            <input 
-              [formControl]="searchControl"
-              type="text" 
-              placeholder="Search scripts..." 
-              class="w-full h-12 bg-gw-bg/50 border-2 border-transparent focus:border-gw-primary rounded-2xl pl-12 pr-4 font-bold text-gw-text outline-none transition-all placeholder:italic"
-            >
-          </div>
+      <!-- Search -->
+      <div class="relative">
+        <i-lucide [img]="SearchIcon" size="16"
+                  class="absolute left-4 top-1/2 -translate-y-1/2 text-gw-text-muted pointer-events-none"></i-lucide>
+        <input [formControl]="searchControl" type="text" placeholder="Search scripts..."
+               class="w-full h-11 bg-white border border-gw-card-border rounded-xl pl-11 pr-4 text-sm font-medium text-gw-text outline-none focus:border-gw-primary transition-colors shadow-sm placeholder:text-gw-text-muted/60">
+      </div>
 
-          <select [formControl]="categoryControl" class="h-12 bg-gw-bg/50 border-2 border-transparent focus:border-gw-primary rounded-2xl px-4 font-black uppercase text-[10px] tracking-widest italic text-gw-text outline-none appearance-none transition-all cursor-pointer">
-            <option value="">All Categories</option>
-            <option value="Grammar Drill">Grammar Drill</option>
-            <option value="Roleplay">Roleplay</option>
-            <option value="Interview">Interview</option>
-            <option value="Vocabulary">Vocabulary</option>
-            <option value="Fluency Drill">Fluency Drill</option>
-          </select>
+      <!-- Filter chips — horizontal scroll on mobile -->
+      <div class="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+        <select [formControl]="categoryControl"
+                class="shrink-0 h-9 bg-white border border-gw-card-border rounded-xl px-3 text-[11px] font-bold text-gw-text outline-none appearance-none cursor-pointer focus:border-gw-primary transition-colors shadow-sm">
+          <option value="">All Categories</option>
+          <option value="Grammar Drill">Grammar Drill</option>
+          <option value="Roleplay">Roleplay</option>
+          <option value="Interview">Interview</option>
+          <option value="Vocabulary">Vocabulary</option>
+          <option value="Fluency Drill">Fluency Drill</option>
+        </select>
 
-          <select [formControl]="grammarControl" class="h-12 bg-gw-bg/50 border-2 border-transparent focus:border-gw-primary rounded-2xl px-4 font-black uppercase text-[10px] tracking-widest italic text-gw-text outline-none appearance-none transition-all cursor-pointer">
-            <option value="">All Grammar Focus</option>
-            <option value="Have Been">Have Been</option>
-            <option value="Has Been">Has Been</option>
-            <option value="Must Be">Must Be</option>
-            <option value="Should Be">Should Be</option>
-          </select>
+        <select [formControl]="grammarControl"
+                class="shrink-0 h-9 bg-white border border-gw-card-border rounded-xl px-3 text-[11px] font-bold text-gw-text outline-none appearance-none cursor-pointer focus:border-gw-primary transition-colors shadow-sm">
+          <option value="">All Grammar Focus</option>
+          <option value="Have Been">Have Been</option>
+          <option value="Has Been">Has Been</option>
+          <option value="Must Be">Must Be</option>
+          <option value="Should Be">Should Be</option>
+          <option value="Would Have">Would Have</option>
+        </select>
 
-          <select [formControl]="ageControl" class="h-12 bg-gw-bg/50 border-2 border-transparent focus:border-gw-primary rounded-2xl px-4 font-black uppercase text-[10px] tracking-widest italic text-gw-text outline-none appearance-none transition-all cursor-pointer">
-            <option value="">All Age Groups</option>
-            <option value="All">All Ages</option>
-            <option value="Child (6-12)">Child</option>
-            <option value="Teen (13-17)">Teen</option>
-            <option value="Adult (18+)">Adult</option>
-          </select>
-        </div>
+        <select [formControl]="ageControl"
+                class="shrink-0 h-9 bg-white border border-gw-card-border rounded-xl px-3 text-[11px] font-bold text-gw-text outline-none appearance-none cursor-pointer focus:border-gw-primary transition-colors shadow-sm">
+          <option value="">All Ages</option>
+          <option value="Child (6-12)">Child (6–12)</option>
+          <option value="Teen (13-17)">Teen (13–17)</option>
+          <option value="Adult (18+)">Adult (18+)</option>
+        </select>
       </div>
 
       <!-- Scripts Grid -->
       @if (isLoading()) {
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-           @for (i of [1,2,3,4,5,6]; track i) {
-             <div class="h-80 bg-white border border-gw-card-border rounded-[40px] animate-pulse"></div>
-           }
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          @for (i of [1,2,3,4,5,6]; track i) {
+            <div class="h-48 bg-white border border-gw-card-border rounded-2xl animate-pulse"></div>
+          }
+        </div>
+      } @else if (scripts().length === 0) {
+        <div class="bg-white rounded-2xl border border-gw-card-border p-12 flex flex-col items-center gap-3 text-center">
+          <div class="w-14 h-14 bg-gw-bg rounded-2xl flex items-center justify-center">
+            <i-lucide [img]="BookOpenIcon" size="26" class="text-gw-text-muted"></i-lucide>
+          </div>
+          <p class="text-sm font-bold text-gw-text">No scripts found</p>
+          <p class="text-xs text-gw-text-muted">Try adjusting your search or filters.</p>
         </div>
       } @else {
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           @for (script of scripts(); track script.id) {
-            <div class="group bg-white p-8 rounded-[48px] border border-gw-card-border shadow-sm hover:shadow-2xl hover:border-gw-primary hover:-translate-y-1 transition-all duration-500 flex flex-col relative overflow-hidden">
-               <!-- Tags -->
-               <div class="flex flex-wrap gap-2 mb-6">
-                  <span 
-                    class="px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest italic shadow-sm"
-                    [class.text-gw-primary]="script.category === 'Grammar Drill'"
-                    [class.text-gw-success]="script.category === 'Roleplay'"
-                    [class.text-gw-accent]="script.category === 'Interview'"
-                    [ngClass]="{
-                      'bg-gw-primary/10': script.category === 'Grammar Drill',
-                      'bg-gw-success/10': script.category === 'Roleplay',
-                      'bg-gw-accent/10': script.category === 'Interview'
-                    }"
-                  >
+            <div class="group bg-white rounded-2xl border border-gw-card-border shadow-sm hover:shadow-lg hover:border-gw-primary hover:-translate-y-0.5 transition-all duration-300 flex flex-col overflow-hidden relative">
+
+              <!-- Top color bar based on category -->
+              <div class="h-1 w-full"
+                   [style.background]="categoryColor(script.category)"></div>
+
+              <div class="p-5 flex flex-col flex-1 gap-4">
+
+                <!-- Tags row -->
+                <div class="flex flex-wrap gap-1.5">
+                  <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider"
+                        [style.background]="categoryBg(script.category)"
+                        [style.color]="categoryColor(script.category)">
                     {{ script.category }}
                   </span>
-                  @if (script.grammarFocusTag !== 'None') {
-                    <span class="px-3 py-1 bg-gw-accent/5 text-gw-accent rounded-lg text-[8px] font-black uppercase tracking-widest italic border border-gw-accent/10">
+                  @if (script.grammarFocusTag && script.grammarFocusTag !== 'None') {
+                    <span class="px-2 py-0.5 bg-amber-50 text-amber-600 rounded-md text-[9px] font-black uppercase tracking-wider border border-amber-100">
                       {{ script.grammarFocusTag }}
                     </span>
                   }
-               </div>
+                </div>
 
-               <h3 class="text-2xl font-black text-gw-text leading-tight italic uppercase tracking-tight group-hover:text-gw-primary transition-colors">{{ script.scriptTitle }}</h3>
-               
-               <div class="mt-8 grid grid-cols-2 gap-4">
-                  <div class="flex items-center gap-2">
-                     <div class="p-2 bg-gw-bg rounded-xl text-gw-text-muted">
-                        <i-lucide [img]="LinesIcon" size="14"></i-lucide>
-                     </div>
-                     <div>
-                        <p class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted">Lines</p>
-                        <p class="text-sm font-black italic">{{ script.utteranceCount }}</p>
-                     </div>
-                  </div>
-                  <div class="flex items-center gap-2">
-                     <div class="p-2 bg-gw-bg rounded-xl text-gw-text-muted">
-                        <i-lucide [img]="ClockIcon" size="14"></i-lucide>
-                     </div>
-                     <div>
-                        <p class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted">Level</p>
-                        <div class="flex gap-0.5 mt-0.5">
-                           @for (i of [1,2,3,4,5]; track i) {
-                             <div class="w-1.5 h-1.5 rounded-full" [class.bg-gw-accent]="i <= script.complexityLevel" [class.bg-gw-bg]="i > script.complexityLevel"></div>
-                           }
-                        </div>
-                     </div>
-                  </div>
-               </div>
+                <!-- Title -->
+                <h3 class="text-base font-black text-gw-text uppercase tracking-tight leading-tight group-hover:text-gw-primary transition-colors line-clamp-2">
+                  {{ script.scriptTitle }}
+                </h3>
 
-               <div class="mt-auto pt-8 flex items-center justify-between">
-                  <button (click)="previewScript(script)" class="h-12 px-6 bg-gw-bg text-gw-text font-black uppercase tracking-widest text-[10px] italic rounded-2xl hover:bg-gw-primary/10 hover:text-gw-primary transition-all flex items-center gap-2">
-                    <i-lucide [img]="PreviewIcon" size="14"></i-lucide>
+                <!-- Meta row -->
+                <div class="flex items-center gap-4 mt-auto">
+                  <div class="flex items-center gap-1.5 text-gw-text-muted">
+                    <i-lucide [img]="LinesIcon" size="13"></i-lucide>
+                    <span class="text-xs font-bold">{{ script.utteranceCount }} lines</span>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    @for (dot of [1,2,3,4,5]; track dot) {
+                      <div class="w-2 h-2 rounded-full transition-colors"
+                           [style.background]="dot <= (script.complexityLevel || 0) ? categoryColor(script.category) : '#E0E4EC'"></div>
+                    }
+                  </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex items-center gap-2 pt-1 border-t border-gw-bg">
+                  <button (click)="previewScript(script)"
+                          class="flex-1 h-9 bg-gw-bg text-gw-text text-xs font-bold rounded-xl hover:bg-gw-primary/10 hover:text-gw-primary transition-all flex items-center justify-center gap-1.5">
+                    <i-lucide [img]="PreviewIcon" size="13"></i-lucide>
                     Preview
                   </button>
-                  <button class="w-12 h-12 bg-gw-text text-white rounded-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all shadow-lg shadow-gw-text/20">
-                    <i-lucide [img]="PlayIcon" size="20"></i-lucide>
+                  <button (click)="startSession(script)" style="background:var(--gw-primary);" class="w-9 h-9 text-white rounded-xl flex items-center justify-center hover:opacity-90 active:scale-95 transition-all shadow-sm">
+                    <i-lucide [img]="PlayIcon" size="16"></i-lucide>
                   </button>
-               </div>
-
-               @if (isAdmin()) {
-                 <div class="absolute top-4 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 duration-300">
-                    <button class="p-2 bg-white border border-gw-card-border rounded-lg text-gw-text-muted hover:text-gw-primary transition-colors">
-                      <i-lucide [img]="EditIcon" size="14"></i-lucide>
-                    </button>
-                    <button (click)="deactivateScript(script)" class="p-2 bg-white border border-gw-card-border rounded-lg text-gw-text-muted hover:text-gw-error transition-colors">
+                  @if (isAdmin()) {
+                    <button (click)="deactivateScript(script)"
+                            class="w-9 h-9 bg-gw-bg rounded-xl flex items-center justify-center text-gw-text-muted hover:bg-red-50 hover:text-gw-error transition-all">
                       <i-lucide [img]="TrashIcon" size="14"></i-lucide>
                     </button>
-                 </div>
-               }
+                  }
+                </div>
+
+              </div>
             </div>
           }
         </div>
+
+        <!-- Pagination -->
+        @if (totalCount() > 0) {
+          <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm p-2 flex justify-center">
+            <mat-paginator
+              [length]="totalCount()"
+              [pageSize]="12"
+              [pageSizeOptions]="[12, 24, 48]"
+              (page)="handlePageChange($event)"
+              class="!border-none">
+            </mat-paginator>
+          </div>
+        }
       }
 
-      <!-- Pagination -->
-      <div class="bg-white rounded-3xl border border-gw-card-border shadow-sm p-2 flex justify-center">
-        <mat-paginator 
-          [length]="totalCount()" 
-          [pageSize]="12" 
-          [pageSizeOptions]="[12, 24, 48]"
-          (page)="handlePageChange($event)"
-          class="!border-none"
-        ></mat-paginator>
-      </div>
     </div>
   `,
   styles: [`
@@ -181,15 +182,15 @@ export class ScriptLibraryComponent implements OnInit {
   private authService = inject(AuthService);
   private bottomSheet = inject(MatBottomSheet);
   private toast = inject(ToastService);
+  private router = inject(Router);
 
   readonly SearchIcon = Search;
   readonly LinesIcon = Layers;
-  readonly ClockIcon = Clock;
   readonly PreviewIcon = Eye;
   readonly PlayIcon = Play;
-  readonly EditIcon = Edit3;
   readonly TrashIcon = Trash2;
   readonly PlusIcon = Plus;
+  readonly BookOpenIcon = BookOpen;
 
   scripts = signal<Script[]>([]);
   totalCount = signal(0);
@@ -249,6 +250,32 @@ export class ScriptLibraryComponent implements OnInit {
       data: script,
       panelClass: 'preview-bottom-sheet'
     });
+  }
+
+  categoryColor(cat: string): string {
+    const map: Record<string, string> = {
+      'Grammar Drill': '#3D5A99',
+      'Roleplay':      '#2E7D32',
+      'Interview':     '#E07B39',
+      'Vocabulary':    '#7C3AED',
+      'Fluency Drill': '#0891B2',
+    };
+    return map[cat] ?? '#6B7280';
+  }
+
+  categoryBg(cat: string): string {
+    const map: Record<string, string> = {
+      'Grammar Drill': '#EEF2FF',
+      'Roleplay':      '#ECFDF5',
+      'Interview':     '#FFF7ED',
+      'Vocabulary':    '#F5F3FF',
+      'Fluency Drill': '#ECFEFF',
+    };
+    return map[cat] ?? '#F4F6F9';
+  }
+
+  startSession(script: Script) {
+    this.router.navigate(['/session/create'], { state: { script } });
   }
 
   deactivateScript(script: Script) {

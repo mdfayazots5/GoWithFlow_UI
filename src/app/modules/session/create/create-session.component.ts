@@ -275,6 +275,16 @@ export class CreateSessionComponent implements OnInit {
   private toast = inject(ToastService);
   private router = inject(Router);
 
+  private _preSelectedScript: Script | null = null;
+
+  constructor() {
+    const nav = this.router.getCurrentNavigation();
+    const state = nav?.extras?.state;
+    if (state?.['script']) {
+      this._preSelectedScript = state['script'] as Script;
+    }
+  }
+
   readonly SearchIcon = Search;
   readonly MinusIcon = Minus;
   readonly PlusIcon = Plus;
@@ -350,6 +360,10 @@ export class CreateSessionComponent implements OnInit {
         this.showScriptDropdown.set(false);
       }
     });
+
+    if (this._preSelectedScript) {
+      this.selectScript(this._preSelectedScript);
+    }
   }
 
   selectScript(script: Script) {

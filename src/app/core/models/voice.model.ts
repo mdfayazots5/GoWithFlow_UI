@@ -34,6 +34,7 @@ export interface TurnState {
 }
 
 export interface UtteranceData {
+  utteranceId: number;
   sequenceId: number;
   speakerLabel: string;
   englishText: string;
