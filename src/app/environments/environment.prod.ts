@@ -1,5 +1,5 @@
 export const environment = {
   production: true,
-  apiBaseUrl: 'https://api.gowithflow.app/api',
-  wsBaseUrl: 'https://api.gowithflow.app'
+  apiBaseUrl: 'https://gowithflow-api.onrender.com/api',
+  wsBaseUrl: 'https://gowithflow-api.onrender.com'
 };
