@@ -3,7 +3,7 @@ import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 import {defineConfig} from 'vite';
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
   return {
     plugins: [
       analog({
@@ -30,6 +30,11 @@ export default defineConfig(() => {
         '@core': path.resolve(__dirname, './src/app/core'),
         '@modules': path.resolve(__dirname, './src/app/modules'),
         '@shared': path.resolve(__dirname, './src/app/shared'),
+        '@env/environment': path.resolve(__dirname,
+          mode === 'production'
+            ? './src/app/environments/environment.prod.ts'
+            : './src/app/environments/environment.ts'
+        ),
         '@env': path.resolve(__dirname, './src/app/environments'),
       },
     },
