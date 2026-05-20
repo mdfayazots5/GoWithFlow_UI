@@ -30,11 +30,6 @@ export default defineConfig(({ mode }) => {
         '@core': path.resolve(__dirname, './src/app/core'),
         '@modules': path.resolve(__dirname, './src/app/modules'),
         '@shared': path.resolve(__dirname, './src/app/shared'),
-        '@env/environment': path.resolve(__dirname,
-          mode === 'production'
-            ? './src/app/environments/environment.prod.ts'
-            : './src/app/environments/environment.ts'
-        ),
         '@env': path.resolve(__dirname, './src/app/environments'),
       },
     },
