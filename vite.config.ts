@@ -19,6 +19,9 @@ export default defineConfig(() => {
         '@env': path.resolve(__dirname, './src/app/environments'),
       },
     },
+    build: {
+      outDir: 'dist/analog/public',
+    },
     server: {
       port: 4200,
       strictPort: true,
