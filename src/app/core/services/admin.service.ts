@@ -65,13 +65,48 @@ export class AdminService {
       }
     });
     return this.http.get<any>(`${this.baseUrl}/users`, { params: httpParams }).pipe(
-      map(res => ({ ...res.data, total: res.data.totalCount }))
+      map(res => ({
+        total: res.data.totalCount,
+        totalCount: res.data.totalCount,
+        items: (res.data.items || []).map((u: any) => ({
+          id:           String(u.userId),
+          name:         u.fullName,
+          avatar:       u.avatarUrl || '',
+          mobileNumber: u.mobileNumber,
+          ageGroup:     u.ageGroup,
+          sessions:     u.totalSessionsPlayed ?? 0,
+          streak:       u.dailyStreakCount ?? 0,
+          lastActive:   u.lastLoginDate || null,
+          status:       u.isActive ? 'ACTIVE' : 'INACTIVE',
+        } as AdminUserListItem))
+      }))
     );
   }
 
   getUserDetail(userId: string): Observable<AdminUserDetail> {
     return this.http.get<any>(`${this.baseUrl}/users/${userId}`).pipe(
-      map(res => res.data)
+      map(res => {
+        const d = res.data;
+        return {
+          id:                   String(d.userId),
+          name:                 d.fullName,
+          avatar:               d.avatarUrl || '',
+          mobileNumber:         d.mobileNumber,
+          ageGroup:             d.ageGroup,
+          sessions:             d.totalSessionsPlayed ?? 0,
+          streak:               d.dailyStreakCount ?? 0,
+          lastActive:           d.lastLoginDate || null,
+          status:               d.isActive ? 'ACTIVE' : 'INACTIVE',
+          email:                d.email,
+          preferredHintLanguage: d.preferredHintLanguage,
+          recentSessions:       (d.recentSessions || []).map((s: any) => ({
+            id:    s.sessionId ?? s.id,
+            title: s.scriptTitle ?? s.title,
+            date:  s.sessionDate ?? s.date,
+            score: s.fluencyScore ?? s.score,
+          })),
+        } as AdminUserDetail;
+      })
     );
   }
 
@@ -90,13 +125,51 @@ export class AdminService {
   getReports(params: any = {}): Observable<any> {
     let httpParams = new HttpParams();
     Object.keys(params).forEach(key => {
-      if (params[key]) httpParams = httpParams.set(key, params[key]);
+      if (params[key] !== undefined && params[key] !== null && params[key] !== '')
+        httpParams = httpParams.set(key, params[key]);
     });
-    return this.http.get<any>(`${this.baseUrl}/reports`, { params: httpParams });
+    return this.http.get<any>(`${this.baseUrl}/reports`, { params: httpParams }).pipe(
+      map(res => ({
+        totalCount: res.data?.totalCount ?? 0,
+        items: (res.data?.items ?? []).map((r: any) => ({
+          userId:               r.userId,
+          fullName:             r.fullName,
+          totalSessions:        r.totalSessions ?? 0,
+          avgFluencyScore:      r.avgFluencyScore ?? 0,
+          mostCommonMistakeType: r.mostCommonMistakeType || '—',
+          improvementPercent:   r.improvementPercent ?? 0,
+          lastSessionDate:      r.lastSessionDate || null,
+        }))
+      }))
+    );
   }
 
-  getUserFullReport(userId: string): Observable<any> {
-    return this.http.get<any>(`${this.baseUrl}/reports/users/${userId}`);
+  getUserFullReport(userId: string | number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/reports/users/${userId}`).pipe(
+      map(res => res.data)
+    );
+  }
+
+  createUser(payload: {
+    fullName: string;
+    mobileNumber: string;
+    email?: string;
+    ageGroup: string;
+    preferredHintLanguage: string;
+    password?: string;
+  }): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/users`, payload);
+  }
+
+  updateUser(userId: string, payload: {
+    fullName: string;
+    mobileNumber: string;
+    email?: string;
+    ageGroup: string;
+    preferredHintLanguage: string;
+    password?: string;
+  }): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/users/${userId}`, payload);
   }
 
   exportReports(params: any = {}): Observable<Blob> {

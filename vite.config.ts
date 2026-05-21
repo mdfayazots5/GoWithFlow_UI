@@ -1,30 +1,16 @@
-import analog from '@analogjs/platform';
+import angular from '@analogjs/vite-plugin-angular';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 import {defineConfig} from 'vite';
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(() => {
   return {
     plugins: [
-      analog({
-        ssr: false,
-        static: false,
-        nitro: {
-          devProxy: {
-            '/api': {
-              target: 'https://localhost:44378/api',
-              changeOrigin: true,
-            },
-            '/hubs': {
-              target: 'wss://localhost:44378/hubs',
-              changeOrigin: true,
-            },
-          },
-        },
-      }),
+      angular(),
       tailwindcss()
     ],
     resolve: {
+      mainFields: ['module'],
       alias: {
         '@': path.resolve(__dirname, './src'),
         '@core': path.resolve(__dirname, './src/app/core'),
@@ -38,6 +24,19 @@ export default defineConfig(({ mode }) => {
       strictPort: true,
       host: '0.0.0.0',
       hmr: process.env['DISABLE_HMR'] !== 'true',
+      proxy: {
+        '/api': {
+          target: 'https://localhost:44378',
+          changeOrigin: true,
+          secure: false,
+        },
+        '/hubs': {
+          target: 'https://localhost:44378',
+          changeOrigin: true,
+          secure: false,
+          ws: true,
+        },
+      },
     },
   };
 });

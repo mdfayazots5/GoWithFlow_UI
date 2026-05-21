@@ -1,8 +1,8 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AdminService, AdminUserListItem, AdminUserDetail } from '@core/services/admin.service';
-import { LucideAngularModule, Search, User, Phone, Globe, ArrowRight, Eye, UserX, UserCheck, BarChart2, Flame, Users, ChevronLeft, ChevronRight, X, AlertCircle } from 'lucide-angular';
+import { LucideAngularModule, Search, User, Phone, Globe, ArrowRight, Eye, UserX, UserCheck, BarChart2, Flame, Users, ChevronLeft, ChevronRight, X, AlertCircle, UserPlus, Pencil, EyeOff } from 'lucide-angular';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { ToastService } from '@core/services/toast.service';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
@@ -109,6 +109,126 @@ import { Router } from '@angular/router';
       </div>
     }
 
+    <!-- Add / Edit User Modal -->
+    @if (showUserModal()) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center" (click)="closeUserModal()">
+        <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+        <div class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl mx-4" (click)="$event.stopPropagation()">
+
+          <!-- Modal Header -->
+          <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+            <div class="flex items-center gap-3">
+              <div class="w-9 h-9 rounded-xl bg-gw-primary/10 flex items-center justify-center">
+                <i-lucide [img]="editingUserId() ? EditIcon : AddUserIcon" size="18" class="text-gw-primary"></i-lucide>
+              </div>
+              <h2 class="text-base font-black text-gw-text uppercase tracking-wider">
+                {{ editingUserId() ? 'Edit User' : 'Add User' }}
+              </h2>
+            </div>
+            <button (click)="closeUserModal()" class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gw-text-muted">
+              <i-lucide [img]="XIcon" size="16"></i-lucide>
+            </button>
+          </div>
+
+          <!-- Modal Form -->
+          <form [formGroup]="userForm" (ngSubmit)="submitUserForm()" class="px-6 py-5 space-y-4">
+
+            <!-- Full Name -->
+            <div>
+              <label class="block text-[10px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">Full Name <span class="text-red-500">*</span></label>
+              <input formControlName="fullName" type="text" placeholder="e.g. Ravi Kumar"
+                class="w-full h-10 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all"
+                [class.border-red-400]="userForm.get('fullName')?.invalid && userForm.get('fullName')?.touched">
+            </div>
+
+            <!-- Mobile Number -->
+            <div>
+              <label class="block text-[10px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">Mobile Number <span class="text-red-500">*</span></label>
+              <input formControlName="mobileNumber" type="tel" placeholder="e.g. 9876543210"
+                class="w-full h-10 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all"
+                [class.border-red-400]="userForm.get('mobileNumber')?.invalid && userForm.get('mobileNumber')?.touched">
+            </div>
+
+            <!-- Email -->
+            <div>
+              <label class="block text-[10px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">Email <span class="text-gw-text-muted font-medium normal-case">(optional)</span></label>
+              <input formControlName="email" type="email" placeholder="e.g. ravi@example.com"
+                class="w-full h-10 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all">
+            </div>
+
+            <!-- Age Group + Language row -->
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[10px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">Age Group <span class="text-red-500">*</span></label>
+                <select formControlName="ageGroup"
+                  class="w-full h-10 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all appearance-none cursor-pointer"
+                  [class.border-red-400]="userForm.get('ageGroup')?.invalid && userForm.get('ageGroup')?.touched">
+                  <option value="">Select</option>
+                  <option value="Child (6-12)">Child (6–12)</option>
+                  <option value="Teen (13-17)">Teen (13–17)</option>
+                  <option value="Adult (18+)">Adult (18+)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[10px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">Hint Language <span class="text-red-500">*</span></label>
+                <select formControlName="preferredHintLanguage"
+                  class="w-full h-10 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all appearance-none cursor-pointer"
+                  [class.border-red-400]="userForm.get('preferredHintLanguage')?.invalid && userForm.get('preferredHintLanguage')?.touched">
+                  <option value="">Select</option>
+                  <option value="Telugu">Telugu</option>
+                  <option value="Hindi">Hindi</option>
+                  <option value="Tamil">Tamil</option>
+                  <option value="Kannada">Kannada</option>
+                  <option value="None">None</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Password -->
+            <div>
+              <label class="block text-[10px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">
+                Password
+                @if (editingUserId()) {
+                  <span class="text-gw-text-muted font-medium normal-case">(leave blank to keep current)</span>
+                } @else {
+                  <span class="text-red-500">*</span>
+                }
+              </label>
+              <div class="relative">
+                <input formControlName="password"
+                  [type]="showPassword() ? 'text' : 'password'"
+                  [placeholder]="editingUserId() ? 'Enter new password to change' : 'Min. 6 characters'"
+                  class="w-full h-10 bg-gw-bg border border-transparent rounded-xl px-3 pr-10 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all"
+                  [class.border-red-400]="userForm.get('password')?.invalid && userForm.get('password')?.touched">
+                <button type="button" (click)="showPassword.set(!showPassword())"
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-gw-text-muted hover:text-gw-text transition-colors">
+                  <i-lucide [img]="showPassword() ? EyeOffIcon : EyeShowIcon" size="15"></i-lucide>
+                </button>
+              </div>
+              @if (userForm.get('password')?.invalid && userForm.get('password')?.touched) {
+                <p class="text-[10px] text-red-500 mt-1">
+                  {{ editingUserId() ? 'Min. 6 characters if changing password' : 'Password is required (min. 6 characters)' }}
+                </p>
+              }
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-3 pt-2">
+              <button type="button" (click)="closeUserModal()"
+                class="flex-1 h-11 border-2 border-gray-200 text-gw-text-muted font-black text-sm uppercase tracking-widest rounded-xl hover:border-gray-300 transition-all">
+                Cancel
+              </button>
+              <button type="submit" [disabled]="userForm.invalid || userSubmitting()"
+                class="flex-1 h-11 bg-gw-primary text-white font-black text-sm uppercase tracking-widest rounded-xl shadow-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed">
+                {{ userSubmitting() ? (editingUserId() ? 'Saving...' : 'Creating...') : (editingUserId() ? 'Save Changes' : 'Create User') }}
+              </button>
+            </div>
+
+          </form>
+        </div>
+      </div>
+    }
+
     <!-- Main Content -->
     <div class="space-y-5">
 
@@ -125,6 +245,11 @@ import { Router } from '@angular/router';
             </p>
           </div>
         </div>
+        <button (click)="openAddModal()"
+          class="flex items-center gap-2 h-10 px-4 bg-gw-primary text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-sm hover:opacity-90 transition-opacity">
+          <i-lucide [img]="AddUserIcon" size="15"></i-lucide>
+          Add User
+        </button>
       </div>
 
       <!-- Filters Bar -->
@@ -274,6 +399,12 @@ import { Router } from '@angular/router';
                           <i-lucide [img]="ViewIcon" size="15"></i-lucide>
                         </button>
                         <button
+                          (click)="openEditModal(row)"
+                          title="Edit user"
+                          class="w-8 h-8 flex items-center justify-center rounded-lg text-gw-text-muted hover:text-gw-primary hover:bg-gw-primary/10 transition-colors">
+                          <i-lucide [img]="EditIcon" size="15"></i-lucide>
+                        </button>
+                        <button
                           (click)="toggleStatus(row)"
                           [title]="row.status === 'ACTIVE' ? 'Deactivate' : 'Activate'"
                           class="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
@@ -318,28 +449,46 @@ export class AdminUsersComponent implements OnInit {
   private toast = inject(ToastService);
   private router = inject(Router);
 
-  readonly SearchIcon   = Search;
-  readonly UsersIcon    = Users;
-  readonly SessionsIcon = BarChart2;
-  readonly FlameIcon    = Flame;
-  readonly ViewIcon     = Eye;
+  readonly SearchIcon     = Search;
+  readonly UsersIcon      = Users;
+  readonly SessionsIcon   = BarChart2;
+  readonly FlameIcon      = Flame;
+  readonly ViewIcon       = Eye;
   readonly DeactivateIcon = UserX;
   readonly ActivateIcon   = UserCheck;
-  readonly PhoneIcon    = Phone;
-  readonly GlobeIcon    = Globe;
-  readonly XIcon        = X;
-  readonly ArrowIcon    = ArrowRight;
+  readonly PhoneIcon      = Phone;
+  readonly GlobeIcon      = Globe;
+  readonly XIcon          = X;
+  readonly ArrowIcon      = ArrowRight;
+  readonly AddUserIcon    = UserPlus;
+  readonly EditIcon       = Pencil;
+  readonly EyeShowIcon    = Eye;
+  readonly EyeOffIcon     = EyeOff;
 
-  users       = signal<AdminUserListItem[]>([]);
-  totalUsers  = signal(0);
-  loading     = signal(false);
-  selectedUser = signal<AdminUserListItem | null>(null);
-  detailUser   = signal<AdminUserDetail | null>(null);
-  activeOnly   = signal(false);
-  currentPage  = signal(0);
+  users          = signal<AdminUserListItem[]>([]);
+  totalUsers     = signal(0);
+  loading        = signal(false);
+  selectedUser   = signal<AdminUserListItem | null>(null);
+  detailUser     = signal<AdminUserDetail | null>(null);
+  activeOnly     = signal(false);
+  currentPage    = signal(0);
   currentPageSize = signal(10);
 
-  searchControl   = new FormControl('');
+  showUserModal   = signal(false);
+  userSubmitting  = signal(false);
+  editingUserId   = signal<string | null>(null);
+  showPassword    = signal(false);
+
+  userForm = new FormGroup({
+    fullName:              new FormControl('', [Validators.required, Validators.maxLength(128)]),
+    mobileNumber:          new FormControl('', [Validators.required, Validators.maxLength(16)]),
+    email:                 new FormControl(''),
+    ageGroup:              new FormControl('', Validators.required),
+    preferredHintLanguage: new FormControl('', Validators.required),
+    password:              new FormControl(''),
+  });
+
+  searchControl    = new FormControl('');
   ageFilterControl = new FormControl('');
 
   pageEnd() {
@@ -405,6 +554,106 @@ export class AdminUsersComponent implements OnInit {
       next: detail => this.detailUser.set(detail),
       error: () => {}
     });
+  }
+
+  openAddModal() {
+    this.editingUserId.set(null);
+    this.showPassword.set(false);
+    this.userForm.reset();
+    const pwCtrl = this.userForm.get('password')!;
+    pwCtrl.setValidators([Validators.required, Validators.minLength(6)]);
+    pwCtrl.updateValueAndValidity();
+    this.showUserModal.set(true);
+  }
+
+  openEditModal(user: AdminUserListItem) {
+    this.editingUserId.set(user.id);
+    this.showPassword.set(false);
+    this.userForm.reset();
+    const pwCtrl = this.userForm.get('password')!;
+    pwCtrl.setValidators([Validators.minLength(6)]);
+    pwCtrl.updateValueAndValidity();
+
+    this.userForm.patchValue({
+      fullName:    user.name,
+      mobileNumber: user.mobileNumber,
+      ageGroup:    user.ageGroup,
+    });
+
+    this.adminService.getUserDetail(user.id).subscribe({
+      next: detail => {
+        this.userForm.patchValue({
+          email:                 detail.email || '',
+          preferredHintLanguage: detail.preferredHintLanguage,
+        });
+      },
+      error: () => {}
+    });
+
+    this.showUserModal.set(true);
+  }
+
+  closeUserModal() {
+    this.showUserModal.set(false);
+    this.editingUserId.set(null);
+    this.userForm.reset();
+    this.showPassword.set(false);
+  }
+
+  submitUserForm() {
+    if (this.userForm.invalid) {
+      this.userForm.markAllAsTouched();
+      return;
+    }
+
+    const v = this.userForm.value;
+    this.userSubmitting.set(true);
+
+    const userId = this.editingUserId();
+
+    if (userId) {
+      this.adminService.updateUser(userId, {
+        fullName:              v.fullName!,
+        mobileNumber:          v.mobileNumber!,
+        email:                 v.email || undefined,
+        ageGroup:              v.ageGroup!,
+        preferredHintLanguage: v.preferredHintLanguage!,
+        password:              v.password || undefined,
+      }).subscribe({
+        next: () => {
+          this.toast.success('User updated successfully');
+          this.closeUserModal();
+          this.loadUsers();
+        },
+        error: (err) => {
+          const msg = err?.error?.errors?.[0] || 'Failed to update user';
+          this.toast.error(msg);
+          this.userSubmitting.set(false);
+        },
+        complete: () => this.userSubmitting.set(false)
+      });
+    } else {
+      this.adminService.createUser({
+        fullName:              v.fullName!,
+        mobileNumber:          v.mobileNumber!,
+        email:                 v.email || undefined,
+        ageGroup:              v.ageGroup!,
+        preferredHintLanguage: v.preferredHintLanguage!,
+        password:              v.password!,
+      }).subscribe({
+        next: () => {
+          this.toast.success('User created successfully');
+          this.closeUserModal();
+          this.loadUsers();
+        },
+        error: (err) => {
+          const msg = err?.error?.errors?.[0] || 'Failed to create user';
+          this.toast.error(msg);
+          this.userSubmitting.set(false);
+        },
+        complete: () => this.userSubmitting.set(false)
+      });
+    }
   }
 
   viewFullReport(userId: string) {

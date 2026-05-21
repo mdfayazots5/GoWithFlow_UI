@@ -111,7 +111,7 @@ export class AdminScriptsComponent implements OnInit {
   }
 
   toggleStatus(script: Script) {
-    this.scriptService.updateScriptStatus({ scriptId: script.id, active: !script.active }).subscribe(() => {
+    this.scriptService.updateScriptStatus({ scriptId: Number(script.id), isActive: !script.active }).subscribe(() => {
       script.active = !script.active;
     });
   }

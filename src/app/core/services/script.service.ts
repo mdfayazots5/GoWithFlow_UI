@@ -29,7 +29,13 @@ export class ScriptService {
         const data = res.data;
         return {
           ...data,
-          items: (data.items ?? []).map((item: any) => ({ ...item, id: String(item.scriptId) }))
+          total:      data.totalCount,
+          totalCount: data.totalCount,
+          items: (data.items ?? []).map((item: any) => ({
+            ...item,
+            id:     String(item.scriptId),
+            active: item.isActive,
+          }))
         } as PagedResult<Script>;
       })
     );
