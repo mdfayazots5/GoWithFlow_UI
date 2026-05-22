@@ -44,10 +44,7 @@ type TurnShiftEvent = {
             </div>
 
             <button (click)="showSettings.set(!showSettings())"
-              [class.bg-gw-primary]="showSettings()"
-              [class.text-white]="showSettings()"
-              [class.bg-white\/5]="!showSettings()"
-              [class.text-white\/40]="!showSettings()"
+              [ngClass]="showSettings() ? 'bg-gw-primary text-white' : 'bg-white/5 text-white/40'"
               class="w-10 h-10 rounded-xl flex items-center justify-center hover:opacity-80 transition-all"
               title="Session Preferences">
                <i-lucide [img]="SettingsIcon" size="18"></i-lucide>
@@ -75,12 +72,12 @@ type TurnShiftEvent = {
                 <button
                   (click)="sessionPrefs.update({ defaultVoiceStarter: !sessionPrefs.prefs.defaultVoiceStarter })"
                   class="relative w-11 h-6 rounded-full transition-colors duration-200 flex-shrink-0"
-                  [class.bg-gw-primary]="sessionPrefs.prefs.defaultVoiceStarter"
-                  [class.bg-white\/15]="!sessionPrefs.prefs.defaultVoiceStarter"
+                  [ngClass]="sessionPrefs.prefs.defaultVoiceStarter ? 'bg-gw-primary' : 'bg-white/15'"
+                  [attr.aria-pressed]="sessionPrefs.prefs.defaultVoiceStarter"
+                  aria-label="Toggle auto-start microphone"
                   type="button">
-                  <span class="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200"
-                    [class.translate-x-5]="sessionPrefs.prefs.defaultVoiceStarter"
-                    [class.translate-x-0\.5]="!sessionPrefs.prefs.defaultVoiceStarter"></span>
+                  <span class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 pointer-events-none"
+                    [style.transform]="getToggleThumbTransform(sessionPrefs.prefs.defaultVoiceStarter)"></span>
                 </button>
               </div>
 
@@ -93,12 +90,12 @@ type TurnShiftEvent = {
                 <button
                   (click)="sessionPrefs.update({ autoSubmitOnStop: !sessionPrefs.prefs.autoSubmitOnStop })"
                   class="relative w-11 h-6 rounded-full transition-colors duration-200 flex-shrink-0"
-                  [class.bg-gw-primary]="sessionPrefs.prefs.autoSubmitOnStop"
-                  [class.bg-white\/15]="!sessionPrefs.prefs.autoSubmitOnStop"
+                  [ngClass]="sessionPrefs.prefs.autoSubmitOnStop ? 'bg-gw-primary' : 'bg-white/15'"
+                  [attr.aria-pressed]="sessionPrefs.prefs.autoSubmitOnStop"
+                  aria-label="Toggle auto submit on stop"
                   type="button">
-                  <span class="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200"
-                    [class.translate-x-5]="sessionPrefs.prefs.autoSubmitOnStop"
-                    [class.translate-x-0\.5]="!sessionPrefs.prefs.autoSubmitOnStop"></span>
+                  <span class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 pointer-events-none"
+                    [style.transform]="getToggleThumbTransform(sessionPrefs.prefs.autoSubmitOnStop)"></span>
                 </button>
               </div>
 
@@ -111,12 +108,12 @@ type TurnShiftEvent = {
                 <button
                   (click)="sessionPrefs.update({ listenVoiceBroadcast: !sessionPrefs.prefs.listenVoiceBroadcast })"
                   class="relative w-11 h-6 rounded-full transition-colors duration-200 flex-shrink-0"
-                  [class.bg-gw-primary]="sessionPrefs.prefs.listenVoiceBroadcast"
-                  [class.bg-white\/15]="!sessionPrefs.prefs.listenVoiceBroadcast"
+                  [ngClass]="sessionPrefs.prefs.listenVoiceBroadcast ? 'bg-gw-primary' : 'bg-white/15'"
+                  [attr.aria-pressed]="sessionPrefs.prefs.listenVoiceBroadcast"
+                  aria-label="Toggle speaker voice playback"
                   type="button">
-                  <span class="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200"
-                    [class.translate-x-5]="sessionPrefs.prefs.listenVoiceBroadcast"
-                    [class.translate-x-0\.5]="!sessionPrefs.prefs.listenVoiceBroadcast"></span>
+                  <span class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 pointer-events-none"
+                    [style.transform]="getToggleThumbTransform(sessionPrefs.prefs.listenVoiceBroadcast)"></span>
                 </button>
               </div>
 
@@ -129,12 +126,12 @@ type TurnShiftEvent = {
                 <button
                   (click)="sessionPrefs.update({ showReReadSkipButtons: !sessionPrefs.prefs.showReReadSkipButtons })"
                   class="relative w-11 h-6 rounded-full transition-colors duration-200 flex-shrink-0"
-                  [class.bg-gw-primary]="sessionPrefs.prefs.showReReadSkipButtons"
-                  [class.bg-white\/15]="!sessionPrefs.prefs.showReReadSkipButtons"
+                  [ngClass]="sessionPrefs.prefs.showReReadSkipButtons ? 'bg-gw-primary' : 'bg-white/15'"
+                  [attr.aria-pressed]="sessionPrefs.prefs.showReReadSkipButtons"
+                  aria-label="Toggle re-speak and skip buttons"
                   type="button">
-                  <span class="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200"
-                    [class.translate-x-5]="sessionPrefs.prefs.showReReadSkipButtons"
-                    [class.translate-x-0\.5]="!sessionPrefs.prefs.showReReadSkipButtons"></span>
+                  <span class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 pointer-events-none"
+                    [style.transform]="getToggleThumbTransform(sessionPrefs.prefs.showReReadSkipButtons)"></span>
                 </button>
               </div>
 
@@ -343,6 +340,10 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
   onTurnShifted() {
     this.isLoading.set(true);
     this.loadCurrentTurn(this.turnState()!.sessionId);
+  }
+
+  getToggleThumbTransform(enabled: boolean) {
+    return enabled ? 'translateX(1.25rem)' : 'translateX(0)';
   }
 
   private startTimer(sessionId: string) {
