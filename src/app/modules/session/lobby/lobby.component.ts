@@ -93,6 +93,8 @@ export class LobbyComponent implements OnInit, OnDestroy {
 
   private sessionId = '';
   private hasLeft = false;
+  private startStatusPollHandle: ReturnType<typeof setTimeout> | null = null;
+  private startStatusPollAttempts = 0;
 
   ngOnInit() {
     this.route.params.subscribe(params => {
@@ -107,6 +109,7 @@ export class LobbyComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
+    this.clearStartStatusPoll();
     if (!this.hasLeft && this.sessionId) {
       this.sessionService.leaveSession(this.sessionId).subscribe();
     }
@@ -127,8 +130,11 @@ export class LobbyComponent implements OnInit, OnDestroy {
     });
 
     this.wsService.on('SESSION_STARTED').subscribe(() => {
-      this.hasLeft = true;
-      this.router.navigate(['/live-session/room', this.sessionId]);
+      this.clearStartStatusPoll();
+      if (!this.hasLeft) {
+        this.hasLeft = true;
+        this.navigateToLiveSession(this.sessionId);
+      }
     });
 
     this.wsService.on('MEMBER_LEFT').subscribe((data: any) => {
@@ -145,8 +151,10 @@ export class LobbyComponent implements OnInit, OnDestroy {
       const status = state.session?.status;
 
       if (status === 'ACTIVE') {
-        this.hasLeft = true;
-        this.router.navigate(['/live-session/room', sessionId]);
+        if (!this.hasLeft) {
+          this.hasLeft = true;
+          this.navigateToLiveSession(sessionId);
+        }
         return;
       }
 
@@ -199,11 +207,17 @@ export class LobbyComponent implements OnInit, OnDestroy {
 
   startSession() {
     this.isStarting.set(true);
+    this.startStartStatusPoll();
     this.wsService.emit('StartSession', this.sessionId)
+      .then(() => {
+        this.clearStartStatusPoll();
+        if (!this.hasLeft) {
+          this.hasLeft = true;
+          this.navigateToLiveSession(this.sessionId);
+        }
+      })
       .catch((err) => {
-        this.isStarting.set(false);
-        const msg = err?.message || 'Failed to start session.';
-        this.toast.error(msg);
+        this.reconcileStartFailure(err);
       });
   }
 
@@ -215,5 +229,104 @@ export class LobbyComponent implements OnInit, OnDestroy {
         this.router.navigate(['/user/dashboard']);
       });
     }
+  }
+
+  private startStartStatusPoll() {
+    this.clearStartStatusPoll();
+    this.startStatusPollAttempts = 0;
+
+    const poll = () => {
+      if (this.isStarting() === false || !this.sessionId) {
+        return;
+      }
+
+      this.startStatusPollAttempts += 1;
+
+      this.sessionService.getLobbyState(this.sessionId).subscribe({
+        next: (state) => {
+          const status = state.session?.status;
+
+          if (status === 'ACTIVE') {
+            this.clearStartStatusPoll();
+            if (!this.hasLeft) {
+              this.hasLeft = true;
+              this.navigateToLiveSession(this.sessionId);
+            }
+            return;
+          }
+
+          if (this.startStatusPollAttempts >= 10) {
+            this.clearStartStatusPoll();
+            this.isStarting.set(false);
+            this.toast.error('Session start is taking longer than expected. Please refresh the lobby state.');
+            return;
+          }
+
+          this.startStatusPollHandle = setTimeout(poll, 1000);
+        },
+        error: () => {
+          if (this.startStatusPollAttempts >= 10) {
+            this.clearStartStatusPoll();
+            this.isStarting.set(false);
+            this.toast.error('Unable to confirm whether the session started. Please refresh the lobby state.');
+            return;
+          }
+
+          this.startStatusPollHandle = setTimeout(poll, 1000);
+        }
+      });
+    };
+
+    this.startStatusPollHandle = setTimeout(poll, 1500);
+  }
+
+  private clearStartStatusPoll() {
+    if (this.startStatusPollHandle !== null) {
+      clearTimeout(this.startStatusPollHandle);
+      this.startStatusPollHandle = null;
+    }
+
+    this.startStatusPollAttempts = 0;
+    this.isStarting.set(false);
+  }
+
+  private reconcileStartFailure(err: unknown) {
+    this.sessionService.getLobbyState(this.sessionId).subscribe({
+      next: (state) => {
+        if (state.session?.status === 'ACTIVE') {
+          this.clearStartStatusPoll();
+          if (!this.hasLeft) {
+            this.hasLeft = true;
+            this.navigateToLiveSession(this.sessionId);
+          }
+          return;
+        }
+
+        this.clearStartStatusPoll();
+        const msg = err instanceof Error ? err.message : 'Failed to start session.';
+        this.toast.error(msg);
+      },
+      error: () => {
+        this.clearStartStatusPoll();
+        const msg = err instanceof Error ? err.message : 'Failed to start session.';
+        this.toast.error(msg);
+      }
+    });
+  }
+
+  private navigateToLiveSession(sessionId: string) {
+    const targetUrl = `/live-session/room/${sessionId}`;
+
+    void this.router.navigateByUrl(targetUrl)
+      .then((navigated) => {
+        if (navigated === false && window.location.pathname !== targetUrl) {
+          window.location.assign(targetUrl);
+        }
+      })
+      .catch(() => {
+        if (window.location.pathname !== targetUrl) {
+          window.location.assign(targetUrl);
+        }
+      });
   }
 }

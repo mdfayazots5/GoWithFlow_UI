@@ -121,7 +121,7 @@ export class SessionService {
             maxMembers: d.maxMembers,
             sessionDuration: d.sessionDuration,
             currentMembers: (d.members ?? []).length,
-            status: 'LOBBY'
+            status: d.status ?? 'LOBBY'
           },
           members: (d.members ?? []).map((m: any) => ({
             userId: String(m.userId),

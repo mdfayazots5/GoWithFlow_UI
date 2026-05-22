@@ -2,6 +2,9 @@ import { Injectable, signal } from '@angular/core';
 
 export interface SessionPreferences {
   defaultVoiceStarter: boolean;
+  autoSubmitOnStop: boolean;
+  listenVoiceBroadcast: boolean;
+  showReReadSkipButtons: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -9,7 +12,10 @@ export class SessionPreferencesService {
   private readonly KEY = 'gwf_session_prefs';
 
   private readonly defaults: SessionPreferences = {
-    defaultVoiceStarter: true
+    defaultVoiceStarter: true,
+    autoSubmitOnStop: false,
+    listenVoiceBroadcast: false,
+    showReReadSkipButtons: false
   };
 
   private _prefs = signal<SessionPreferences>(this.load());

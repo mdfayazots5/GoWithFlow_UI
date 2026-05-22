@@ -2,8 +2,9 @@
 import { Component, Input, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TurnState } from '@core/models/voice.model';
-import { LucideAngularModule, Mic, ThumbsUp, HelpCircle, AlertTriangle, MessageCircle } from 'lucide-angular';
+import { LucideAngularModule, Mic, ThumbsUp, HelpCircle, AlertTriangle, MessageCircle, Volume2 } from 'lucide-angular';
 import { LiveSessionService } from '../live-session.service';
+import { VoiceBroadcastService } from '@core/services/voice-broadcast.service';
 
 @Component({
   selector: 'app-listener-screen',
@@ -54,6 +55,13 @@ import { LiveSessionService } from '../live-session.service';
             <span class="w-1.5 h-1.5 rounded-full bg-[#E07B39] animate-pulse"></span>
             <span class="text-[10px] font-black uppercase tracking-[0.2em] text-[#E07B39] italic">Speaking Now</span>
           </div>
+          @if (voiceBroadcast.isReceivingAudio()) {
+            <div class="flex items-center justify-center gap-1.5 px-3 py-1 bg-[#34d399]/15 border border-[#34d399]/30 rounded-full animate-in fade-in duration-300">
+              <i-lucide [img]="VolumeIcon" size="11" class="text-[#34d399]"></i-lucide>
+              <span class="text-[9px] font-black uppercase tracking-widest text-[#34d399] italic">Live Audio</span>
+              <span class="w-1.5 h-1.5 rounded-full bg-[#34d399] animate-pulse"></span>
+            </div>
+          }
         </div>
 
         <!-- Sound Wave -->
@@ -153,8 +161,10 @@ export class ListenerScreenComponent {
   @Input() listenerTagFlash: string | null = null;
 
   private liveSessionService = inject(LiveSessionService);
+  readonly voiceBroadcast = inject(VoiceBroadcastService);
 
   readonly MicIcon = Mic;
+  readonly VolumeIcon = Volume2;
 
   lastAction = signal<string | null>(null);
 

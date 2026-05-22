@@ -6,9 +6,11 @@ import { AuthService } from '@core/services/auth.service';
 import { WebsocketService } from '@core/services/websocket.service';
 import { SpeakerScreenComponent } from '../speaker-screen/speaker-screen.component';
 import { ListenerScreenComponent } from '../listener-screen/listener-screen.component';
-import { LucideAngularModule, LogOut, Clock, Activity, RefreshCw } from 'lucide-angular';
+import { LucideAngularModule, LogOut, Clock, Activity, RefreshCw, Settings } from 'lucide-angular';
 import { TurnState } from '@core/models/voice.model';
 import { catchError, of } from 'rxjs';
+import { SessionPreferencesService } from '@core/services/session-preferences.service';
+import { VoiceBroadcastService } from '@core/services/voice-broadcast.service';
 
 type TurnShiftEvent = {
   newActiveMemberId: string | number;
@@ -35,17 +37,111 @@ type TurnShiftEvent = {
             </div>
          </div>
 
-         <div class="flex items-center gap-6">
+         <div class="flex items-center gap-3">
             <div class="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10">
                <i-lucide [img]="TimerIcon" size="14" class="text-gw-accent"></i-lucide>
                <span class="text-xs font-black italic tabular-nums">{{ sessionTime() }}</span>
             </div>
+
+            <button (click)="showSettings.set(!showSettings())"
+              [class.bg-gw-primary]="showSettings()"
+              [class.text-white]="showSettings()"
+              [class.bg-white\/5]="!showSettings()"
+              [class.text-white\/40]="!showSettings()"
+              class="w-10 h-10 rounded-xl flex items-center justify-center hover:opacity-80 transition-all"
+              title="Session Preferences">
+               <i-lucide [img]="SettingsIcon" size="18"></i-lucide>
+            </button>
 
             <button (click)="confirmLeave()" class="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/40 hover:text-gw-error hover:bg-gw-error/10 transition-all">
                <i-lucide [img]="LeaveIcon" size="20"></i-lucide>
             </button>
          </div>
       </div>
+
+      <!-- Settings Panel -->
+      @if (showSettings()) {
+        <div class="border-b border-white/5 bg-[#121221]/90 backdrop-blur-xl px-6 py-5 animate-in slide-in-from-top-2 duration-200">
+          <div class="max-w-[480px] mx-auto space-y-4">
+            <p class="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">Session Preferences</p>
+            <div class="grid grid-cols-1 gap-3">
+
+              <!-- Auto-Start Mic -->
+              <div class="flex items-center justify-between py-3 px-4 bg-white/4 rounded-2xl border border-white/8">
+                <div>
+                  <p class="text-xs font-black text-white/80 italic">Auto-Start Microphone</p>
+                  <p class="text-[10px] text-white/35 mt-0.5">Mic starts automatically on your turn</p>
+                </div>
+                <button
+                  (click)="sessionPrefs.update({ defaultVoiceStarter: !sessionPrefs.prefs.defaultVoiceStarter })"
+                  class="relative w-11 h-6 rounded-full transition-colors duration-200 flex-shrink-0"
+                  [class.bg-gw-primary]="sessionPrefs.prefs.defaultVoiceStarter"
+                  [class.bg-white\/15]="!sessionPrefs.prefs.defaultVoiceStarter"
+                  type="button">
+                  <span class="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200"
+                    [class.translate-x-5]="sessionPrefs.prefs.defaultVoiceStarter"
+                    [class.translate-x-0\.5]="!sessionPrefs.prefs.defaultVoiceStarter"></span>
+                </button>
+              </div>
+
+              <!-- Auto Submit on Stop -->
+              <div class="flex items-center justify-between py-3 px-4 bg-white/4 rounded-2xl border border-white/8">
+                <div>
+                  <p class="text-xs font-black text-white/80 italic">Auto Submit on Stop</p>
+                  <p class="text-[10px] text-white/35 mt-0.5">Skip "Done Speaking" — submits when you stop recording</p>
+                </div>
+                <button
+                  (click)="sessionPrefs.update({ autoSubmitOnStop: !sessionPrefs.prefs.autoSubmitOnStop })"
+                  class="relative w-11 h-6 rounded-full transition-colors duration-200 flex-shrink-0"
+                  [class.bg-gw-primary]="sessionPrefs.prefs.autoSubmitOnStop"
+                  [class.bg-white\/15]="!sessionPrefs.prefs.autoSubmitOnStop"
+                  type="button">
+                  <span class="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200"
+                    [class.translate-x-5]="sessionPrefs.prefs.autoSubmitOnStop"
+                    [class.translate-x-0\.5]="!sessionPrefs.prefs.autoSubmitOnStop"></span>
+                </button>
+              </div>
+
+              <!-- Hear Speaker's Voice -->
+              <div class="flex items-center justify-between py-3 px-4 bg-white/4 rounded-2xl border border-white/8">
+                <div>
+                  <p class="text-xs font-black text-white/80 italic">Hear Speaker's Voice</p>
+                  <p class="text-[10px] text-white/35 mt-0.5">Receive live audio from the active speaker</p>
+                </div>
+                <button
+                  (click)="sessionPrefs.update({ listenVoiceBroadcast: !sessionPrefs.prefs.listenVoiceBroadcast })"
+                  class="relative w-11 h-6 rounded-full transition-colors duration-200 flex-shrink-0"
+                  [class.bg-gw-primary]="sessionPrefs.prefs.listenVoiceBroadcast"
+                  [class.bg-white\/15]="!sessionPrefs.prefs.listenVoiceBroadcast"
+                  type="button">
+                  <span class="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200"
+                    [class.translate-x-5]="sessionPrefs.prefs.listenVoiceBroadcast"
+                    [class.translate-x-0\.5]="!sessionPrefs.prefs.listenVoiceBroadcast"></span>
+                </button>
+              </div>
+
+              <!-- Show Re-Speak / Skip Buttons -->
+              <div class="flex items-center justify-between py-3 px-4 bg-white/4 rounded-2xl border border-white/8">
+                <div>
+                  <p class="text-xs font-black text-white/80 italic">Show Re-Speak / Skip</p>
+                  <p class="text-[10px] text-white/35 mt-0.5">Show quick action buttons while recording</p>
+                </div>
+                <button
+                  (click)="sessionPrefs.update({ showReReadSkipButtons: !sessionPrefs.prefs.showReReadSkipButtons })"
+                  class="relative w-11 h-6 rounded-full transition-colors duration-200 flex-shrink-0"
+                  [class.bg-gw-primary]="sessionPrefs.prefs.showReReadSkipButtons"
+                  [class.bg-white\/15]="!sessionPrefs.prefs.showReReadSkipButtons"
+                  type="button">
+                  <span class="absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200"
+                    [class.translate-x-5]="sessionPrefs.prefs.showReReadSkipButtons"
+                    [class.translate-x-0\.5]="!sessionPrefs.prefs.showReReadSkipButtons"></span>
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      }
 
       <!-- Main Container: Speaker or Listener -->
       <div class="flex-1 overflow-y-auto">
@@ -96,11 +192,14 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
   private liveSessionService = inject(LiveSessionService);
   private authService = inject(AuthService);
   private ws = inject(WebsocketService);
+  readonly sessionPrefs = inject(SessionPreferencesService);
+  private voiceBroadcast = inject(VoiceBroadcastService);
 
   readonly ActivityIcon = Activity;
   readonly TimerIcon = Clock;
   readonly LeaveIcon = LogOut;
   readonly RetryIcon = RefreshCw;
+  readonly SettingsIcon = Settings;
 
   turnState = signal<TurnState | null>(null);
   isLoading = signal(true);
@@ -110,6 +209,7 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
   sessionTime = signal('00:00');
   showReReadBanner = signal(false);
   listenerTagFlash = signal<string | null>(null);
+  showSettings = signal(false);
 
   private timeSeconds = 0;
   private timerInterval: any;
@@ -126,13 +226,16 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     if (this.timerInterval) clearInterval(this.timerInterval);
+    this.voiceBroadcast.destroy();
     this.ws.disconnect();
   }
 
   private initSession(sessionId: string) {
     this.isLoading.set(true);
     const user = this.authService.currentUser;
+    const myUserId = localStorage.getItem('gwf_userId') || '';
 
+    this.voiceBroadcast.init(sessionId, myUserId);
     this.ws.connect(sessionId, user?.id || '', 'live-session');
     this.loadCurrentTurn(sessionId);
 
@@ -140,8 +243,8 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
       this.handleTurnShift(sessionId, shiftEvent);
     });
 
-    this.ws.on('LISTENER_TAG').subscribe((tagData: { feedbackTag: string }) => {
-      this.listenerTagFlash.set(tagData.feedbackTag);
+    this.ws.on('LISTENER_TAG').subscribe((tagData: { tag: string; fromUserId: number }) => {
+      this.listenerTagFlash.set(tagData.tag);
       setTimeout(() => this.listenerTagFlash.set(null), 2000);
     });
 
@@ -153,6 +256,39 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
     this.ws.on('SESSION_ENDED').subscribe(() => {
       sessionStorage.removeItem(`gwf_session_start_${sessionId}`);
       this.router.navigate(['/session/report', sessionId]);
+    });
+
+    // WebRTC voice broadcast signaling
+    this.ws.on('VOICE_BROADCAST_STARTED').subscribe(({ speakerId }: { speakerId: string }) => {
+      this.voiceBroadcast.handleBroadcastStarted(speakerId);
+    });
+
+    this.ws.on('VOICE_STREAM_REQUESTED').subscribe(({ listenerUserId }: { listenerUserId: string }) => {
+      if (this.isSpeaker()) {
+        this.voiceBroadcast.createOfferForListener(listenerUserId);
+      }
+    });
+
+    this.ws.on('WEBRTC_OFFER').subscribe(({ fromUserId, toUserId, offerJson }: { fromUserId: string; toUserId: string; offerJson: string }) => {
+      if (toUserId === myUserId) {
+        this.voiceBroadcast.handleOffer(fromUserId, offerJson);
+      }
+    });
+
+    this.ws.on('WEBRTC_ANSWER').subscribe(({ fromUserId, toUserId, answerJson }: { fromUserId: string; toUserId: string; answerJson: string }) => {
+      if (toUserId === myUserId) {
+        this.voiceBroadcast.handleAnswer(fromUserId, answerJson);
+      }
+    });
+
+    this.ws.on('ICE_CANDIDATE').subscribe(({ fromUserId, toUserId, candidateJson }: { fromUserId: string; toUserId: string; candidateJson: string }) => {
+      if (toUserId === myUserId) {
+        this.voiceBroadcast.handleIceCandidate(fromUserId, candidateJson);
+      }
+    });
+
+    this.ws.on('VOICE_BROADCAST_STOPPED').subscribe(() => {
+      this.voiceBroadcast.handleBroadcastStopped();
     });
   }
 
@@ -232,7 +368,8 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
     if (confirm('Are you sure you want to leave the live session?')) {
       const sessionId = this.route.snapshot.params['sessionId'];
       if (sessionId) sessionStorage.removeItem(`gwf_session_start_${sessionId}`);
-      this.router.navigate(['/user/dashboard']);
+      const navigate = () => this.router.navigate(['/user/dashboard']);
+      this.liveSessionService.leaveSession(sessionId).subscribe({ next: navigate, error: navigate });
     }
   }
 }

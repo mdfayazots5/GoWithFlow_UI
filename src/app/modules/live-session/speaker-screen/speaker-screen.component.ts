@@ -7,6 +7,7 @@ import { VoiceAnalysisService } from '@core/services/voice-analysis.service';
 import { LiveSessionService } from '../live-session.service';
 import { ToastService } from '@core/services/toast.service';
 import { SessionPreferencesService } from '@core/services/session-preferences.service';
+import { VoiceBroadcastService } from '@core/services/voice-broadcast.service';
 
 @Component({
   selector: 'app-speaker-screen',
@@ -27,6 +28,7 @@ export class SpeakerScreenComponent implements OnDestroy {
   private liveSessionService = inject(LiveSessionService);
   private toast = inject(ToastService);
   private sessionPrefs = inject(SessionPreferencesService);
+  private voiceBroadcast = inject(VoiceBroadcastService);
 
   readonly MicIcon = Mic;
   readonly NoteIcon = CheckCircle2;
@@ -57,18 +59,43 @@ export class SpeakerScreenComponent implements OnDestroy {
     }
   }
 
+  get showReReadSkipButtons(): boolean {
+    return this.sessionPrefs.prefs.showReReadSkipButtons;
+  }
+
+  get autoSubmitOnStop(): boolean {
+    return this.sessionPrefs.prefs.autoSubmitOnStop;
+  }
+
   startRecording() {
     this.isRecording.set(true);
     this.interimTranscript.set('');
     this.voiceService.startRecording().subscribe(res => {
       this.interimTranscript.set(res);
     });
+    this.voiceBroadcast.startBroadcast();
   }
 
   stopRecording() {
     this.isRecording.set(false);
     this.voiceService.stopRecording();
+    this.voiceBroadcast.stopBroadcast();
     this.performAnalysis(this.interimTranscript());
+    if (this.sessionPrefs.prefs.autoSubmitOnStop) {
+      setTimeout(() => this.onConfirm(), 0);
+    }
+  }
+
+  // Skip: stop recording (if active) then submit — immune to autoSubmitOnStop double-fire
+  // because onConfirm() guards against re-entry via isSubmitting()
+  onSkip() {
+    if (this.isRecording()) {
+      this.isRecording.set(false);
+      this.voiceService.stopRecording();
+      this.voiceBroadcast.stopBroadcast();
+      this.performAnalysis(this.interimTranscript());
+    }
+    this.onConfirm();
   }
 
   performAnalysis(transcript: string) {
@@ -92,9 +119,14 @@ export class SpeakerScreenComponent implements OnDestroy {
     this.interimTranscript.set('');
   }
 
+  range(n: number): number[] {
+    return Array.from({ length: n }, (_, i) => i);
+  }
+
   isSubmitting = signal(false);
 
   onConfirm() {
+    if (this.isSubmitting()) return;
     const a = this.analysis();
     const score = a?.fluencyScore || 0;
     const analysisPayload = {

@@ -48,4 +48,32 @@ export class LiveSessionService {
   requestReReadRealtime(sessionId: string | number, requesterId: string | number): Observable<void> {
     return from(this.ws.emit('RequestReRead', String(sessionId), String(requesterId)));
   }
+
+  startVoiceBroadcast(sessionId: string, speakerId: string): Observable<void> {
+    return from(this.ws.emit('VoiceBroadcastStart', sessionId, speakerId));
+  }
+
+  stopVoiceBroadcast(sessionId: string, speakerId: string): Observable<void> {
+    return from(this.ws.emit('VoiceBroadcastStop', sessionId, speakerId));
+  }
+
+  requestVoiceStream(sessionId: string, listenerUserId: string): Observable<void> {
+    return from(this.ws.emit('RequestVoiceStream', sessionId, listenerUserId));
+  }
+
+  sendWebRTCOffer(sessionId: string, toUserId: string, offer: string): Observable<void> {
+    return from(this.ws.emit('SendWebRTCOffer', sessionId, toUserId, offer));
+  }
+
+  sendWebRTCAnswer(sessionId: string, toUserId: string, answer: string): Observable<void> {
+    return from(this.ws.emit('SendWebRTCAnswer', sessionId, toUserId, answer));
+  }
+
+  sendICECandidate(sessionId: string, toUserId: string, candidate: string): Observable<void> {
+    return from(this.ws.emit('SendICECandidate', sessionId, toUserId, candidate));
+  }
+
+  leaveSession(sessionId: string): Observable<boolean> {
+    return this.http.post<{ data: boolean }>(`${environment.apiBaseUrl}/sessions/${sessionId}/leave`, {}).pipe(map(r => r.data));
+  }
 }
