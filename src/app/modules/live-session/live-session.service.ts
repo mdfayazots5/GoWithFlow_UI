@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, from, map } from 'rxjs';
 import { environment } from '@env/environment';
-import { TurnState, VoiceAnalysisResponse } from '@core/models/voice.model';
+import { TurnState, VoiceAnalysisResponse, SessionSummary } from '@core/models/voice.model';
 import { WebsocketService } from '@core/services/websocket.service';
 
 @Injectable({
@@ -33,8 +33,8 @@ export class LiveSessionService {
     return this.http.post<boolean>(`${this.baseUrl}/${sessionId}/re-read`, {});
   }
 
-  completeSession(sessionId: string): Observable<any> {
-    return this.http.post<{ data: any }>(`${environment.apiBaseUrl}/sessions/${sessionId}/complete`, {}).pipe(map(r => r.data));
+  completeSession(sessionId: string): Observable<SessionSummary> {
+    return this.http.post<{ data: SessionSummary }>(`${environment.apiBaseUrl}/sessions/${sessionId}/complete`, {}).pipe(map(r => r.data));
   }
 
   completeTurnRealtime(sessionId: string | number, memberId: string | number, turnIndex: number, score: number): Observable<void> {

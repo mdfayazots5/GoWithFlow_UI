@@ -57,10 +57,14 @@
 .header-avatar {
   width: 36px;
   height: 36px;
-  border-radius: 50%;
-  border: 2px solid var(--gwf-primary);
-  object-fit: cover;
-  display: block;
+  border-radius: 10px;
+  border: 2px solid white;
+  background: linear-gradient(135deg, #3D5A99 0%, #5B7EC9 100%);
+  box-shadow: 0 4px 10px rgba(61, 90, 153, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
 .streak-badge {

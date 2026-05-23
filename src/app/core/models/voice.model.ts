@@ -50,3 +50,22 @@ export interface VoiceAnalysisResponse {
   score: number;
   isAutoSavedAsMistake: boolean;
 }
+
+// ── Session Completion ────────────────────────────────────────────────────────
+
+export interface MemberScore {
+  userId: number;
+  fullName: string;
+  fluencyScore: number;
+  confidenceScore: number;
+  mistakeCount: number;
+  listenerRating: number;
+}
+
+export interface SessionSummary {
+  memberScores: MemberScore[];
+  totalTurns: number;
+  scriptTitle: string;
+  grammarFocusTag: string;
+  totalMistakesAllMembers: number;
+}

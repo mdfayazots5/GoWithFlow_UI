@@ -4,7 +4,6 @@ export interface SessionPreferences {
   defaultVoiceStarter: boolean;
   autoSubmitOnStop: boolean;
   listenVoiceBroadcast: boolean;
-  showReReadSkipButtons: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -14,8 +13,7 @@ export class SessionPreferencesService {
   private readonly defaults: SessionPreferences = {
     defaultVoiceStarter: true,
     autoSubmitOnStop: false,
-    listenVoiceBroadcast: false,
-    showReReadSkipButtons: false
+    listenVoiceBroadcast: false
   };
 
   private _prefs = signal<SessionPreferences>(this.load());

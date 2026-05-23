@@ -1,0 +1,78 @@
+<div class="voice-feedback" *ngIf="result">
+
+  <!-- Overall Band Banner -->
+  <div class="band-banner" *ngIf="overallBand" [style.background]="overallBand.bg" [style.color]="overallBand.color">
+    <span class="band-emoji">{{ overallBand.emoji }}</span>
+    <span class="band-label">{{ overallBand.label }}</span>
+    <span class="overall-score">{{ result.overallScore }}/100</span>
+  </div>
+
+  <!-- Score Strip -->
+  <div class="score-strip">
+    <div class="score-item">
+      <span class="score-num" [class.good]="result.fluencyScore >= 75" [class.bad]="result.fluencyScore < 60">
+        {{ result.fluencyScore }}
+      </span>
+      <span class="score-lbl">Fluency</span>
+    </div>
+    <div class="score-divider"></div>
+    <div class="score-item">
+      <span class="score-num" [class.good]="result.confidenceScore >= 75" [class.bad]="result.confidenceScore < 60">
+        {{ result.confidenceScore }}
+      </span>
+      <span class="score-lbl">Confidence</span>
+    </div>
+    <div class="score-divider"></div>
+    <div class="score-item">
+      <span class="score-num">{{ result.speakingSpeedWpm }}</span>
+      <span class="score-lbl">{{ speedLabel }}</span>
+    </div>
+  </div>
+
+  <!-- Word-Level Highlight Row -->
+  <div class="word-highlight-row">
+    <p class="section-label">What you said:</p>
+    <div class="words-row">
+      <span
+        *ngFor="let w of wordColorMap"
+        class="word-chip"
+        [class]="w.css"
+        [title]="w.tooltip"
+      >
+        <span *ngIf="w.isMissing" class="missing-bracket">[{{ w.word }}]</span>
+        <span *ngIf="!w.isMissing">{{ w.word }}</span>
+      </span>
+    </div>
+    <div class="legend-row">
+      <span class="legend-item"><span class="dot correct"></span> Correct</span>
+      <span class="legend-item"><span class="dot partial"></span> Close</span>
+      <span class="legend-item"><span class="dot wrong"></span> Wrong</span>
+      <span class="legend-item"><span class="dot missing"></span> Missing</span>
+    </div>
+  </div>
+
+  <!-- Hesitation Warning -->
+  <div class="hesitation-row" *ngIf="result.hesitationWords.length > 0">
+    <span class="hesitation-icon">🤔</span>
+    <span class="hesitation-text">
+      Hesitation words detected: <strong>{{ result.hesitationWords.join(', ') }}</strong>
+    </span>
+  </div>
+
+  <!-- Transcribed vs Expected (collapsed by default) -->
+  <button class="toggle-detail" (click)="showDetailedBreakdown = !showDetailedBreakdown">
+    {{ showDetailedBreakdown ? 'Hide detail ↑' : 'Show full comparison ↓' }}
+  </button>
+
+  <div class="detail-panel" *ngIf="showDetailedBreakdown">
+    <div class="comparison-row">
+      <label>You said:</label>
+      <p class="spoken-text">{{ result.transcribedText || '(nothing detected)' }}</p>
+    </div>
+    <div class="comparison-row">
+      <label>Expected:</label>
+      <p class="expected-text">{{ result.expectedText }}</p>
+    </div>
+  </div>
+
+</div>

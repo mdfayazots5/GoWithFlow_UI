@@ -1,0 +1,55 @@
+<div class="voice-recorder" [ngClass]="'state-' + state">
+
+  <!-- State Label -->
+  <p class="state-label">{{ getStateLabel() }}</p>
+
+  <!-- Waveform Canvas — visible during listening -->
+  <div class="waveform-wrapper" *ngIf="state === 'listening'">
+    <canvas #waveformCanvas class="waveform-canvas"></canvas>
+  </div>
+
+  <!-- Interim Transcript — real-time display -->
+  <div class="interim-transcript" *ngIf="state === 'listening' && interimText">
+    <span class="interim-text">{{ interimText }}</span>
+  </div>
+
+  <!-- Volume Indicator Bar -->
+  <div class="volume-bar-wrapper" *ngIf="state === 'listening'">
+    <div class="volume-bar" [style.width.%]="volumeLevel"></div>
+  </div>
+
+  <!-- Mic Button -->
+  <button
+    class="mic-button"
+    [class.recording]="state === 'listening'"
+    [class.processing]="state === 'processing'"
+    [class.error]="state === 'error'"
+    [disabled]="state === 'requesting' || state === 'processing'"
+    (click)="state === 'listening' ? stopEarly() : startRecording()"
+    aria-label="Microphone button"
+  >
+    <svg *ngIf="state !== 'processing'" width="32" height="32" viewBox="0 0 24 24" fill="none">
+      <path
+        [attr.fill]="state === 'listening' ? '#FF4444' : 'white'"
+        d="M12 1a4 4 0 0 0-4 4v6a4 4 0 0 0 8 0V5a4 4 0 0 0-4-4z"
+      />
+      <path
+        [attr.fill]="state === 'listening' ? '#FF4444' : 'white'"
+        d="M19 10a1 1 0 0 0-2 0 5 5 0 0 1-10 0 1 1 0 0 0-2 0 7 7 0 0 0 6 6.92V20H9a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2h-2v-3.08A7 7 0 0 0 19 10z"
+      />
+    </svg>
+    <!-- Spinner for processing -->
+    <div *ngIf="state === 'processing'" class="spinner"></div>
+  </button>
+
+  <!-- Stop button shown while recording -->
+  <p class="stop-hint" *ngIf="state === 'listening'">
+    Tap again to stop early — or just stop speaking
+  </p>
+
+  <!-- Error message -->
+  <p class="error-msg" *ngIf="errorMessage">
+    ⚠ {{ errorMessage }}
+  </p>
+
+</div>

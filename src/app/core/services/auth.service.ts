@@ -1,8 +1,9 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap, map } from 'rxjs';
 import { environment } from '@env/environment';
 import { Router } from '@angular/router';
+import { UserStateService } from './user-state.service';
 
 export interface User {
   id: string;
@@ -18,6 +19,7 @@ export interface User {
   providedIn: 'root'
 })
 export class AuthService {
+  private userState = inject(UserStateService);
   constructor(private http: HttpClient, private router: Router) {}
 
   getCurrentUser(): User | null {
@@ -78,6 +80,7 @@ export class AuthService {
   }
 
   logout() {
+    this.userState.reset();   // wipe in-memory cache before clearing storage
     localStorage.clear();
     this.router.navigate(['/auth/login']);
   }

@@ -7,6 +7,8 @@ import { BottomNavComponent } from '@shared/components/bottom-nav/bottom-nav.com
 import { ToastComponent } from '@shared/components/toast/toast.component';
 import { LoaderComponent } from '@shared/components/loader/loader.component';
 import { filter } from 'rxjs';
+import { AuthService } from '@core/services/auth.service';
+import { UserStateService } from '@core/services/user-state.service';
 
 @Component({
   selector: 'app-root',
@@ -74,7 +76,9 @@ import { filter } from 'rxjs';
   `]
 })
 export class AppComponent {
-  private router = inject(Router);
+  private router    = inject(Router);
+  private auth      = inject(AuthService);
+  private userState = inject(UserStateService);
 
   currentUrl = signal(this.router.url);
 
@@ -83,6 +87,15 @@ export class AppComponent {
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {
       this.currentUrl.set(event.url);
+
+      // Bootstrap common user data once per session.
+      // bootstrap() is idempotent — subsequent calls are a no-op.
+      // Placing it here covers both cases:
+      //   1. Page refresh   → first NavigationEnd fires, user already in localStorage
+      //   2. Fresh login    → OTP verified, router navigates, NavigationEnd fires here
+      if (this.auth.isLoggedIn) {
+        this.userState.bootstrap();
+      }
     });
   }
 
