@@ -27,6 +27,11 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('../scripts/script-upload/script-upload.component').then(m => m.ScriptUploadComponent)
       },
       {
+        path: 'sessions',
+        data: { title: 'Session History' },
+        loadComponent: () => import('./sessions/admin-sessions.component').then(m => m.AdminSessionsComponent)
+      },
+      {
         path: 'reports',
         data: { title: 'System Reports' },
         loadComponent: () => import('./reports/admin-reports.component').then(m => m.AdminReportsComponent)

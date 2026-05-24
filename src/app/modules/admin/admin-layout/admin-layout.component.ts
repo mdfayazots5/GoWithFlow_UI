@@ -2,28 +2,35 @@ import { Component, inject, signal, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet, ActivatedRoute, NavigationEnd } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
 import { AuthService } from '@modules/auth/auth.service';
 import { filter, map } from 'rxjs';
 
 @Component({
   selector: 'app-admin-layout',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, MatIconModule, MatButtonModule],
+  imports: [CommonModule, RouterLink, RouterLinkActive, RouterOutlet, MatIconModule],
   templateUrl: './admin-layout.component.html',
   styleUrls: ['./admin-layout.component.scss']
 })
 export class AdminLayoutComponent {
-  private auth = inject(AuthService);
+  private auth   = inject(AuthService);
   private router = inject(Router);
-  private route = inject(ActivatedRoute);
+  private route  = inject(ActivatedRoute);
 
-  sidebarOpen = false;
-  pageTitle = signal('Dashboard');
+  pageTitle       = signal('Dashboard');
   profileMenuOpen = signal(false);
 
-  adminName = 'GoWithFlow Admin';
+  adminName   = 'GoWithFlow Admin';
   adminAvatar = 'https://api.dicebear.com/7.x/avataaars/svg?seed=Admin';
+
+  get adminInitials(): string {
+    return this.adminName
+      .split(' ')
+      .filter(w => w.length > 0)
+      .slice(0, 2)
+      .map(w => w[0].toUpperCase())
+      .join('');
+  }
 
   constructor() {
     this.router.events.pipe(
@@ -36,20 +43,8 @@ export class AdminLayoutComponent {
     ).subscribe(title => this.pageTitle.set(title));
   }
 
-  toggleSidebar() {
-    this.sidebarOpen = !this.sidebarOpen;
-  }
-
-  closeSidebar() {
-    this.sidebarOpen = false;
-  }
-
   toggleProfileMenu() {
     this.profileMenuOpen.update(v => !v);
-  }
-
-  closeProfileMenu() {
-    this.profileMenuOpen.set(false);
   }
 
   @HostListener('document:click')

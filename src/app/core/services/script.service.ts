@@ -77,6 +77,10 @@ export class ScriptService {
     return this.http.get(`${this.baseUrl}/sample-template`, { responseType: 'blob' });
   }
 
+  downloadScript(scriptId: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${scriptId}/download`, { responseType: 'blob' });
+  }
+
   updateScriptStatus(payload: { scriptId: number, isActive: boolean }): Observable<any> {
     return this.http.patch<any>(`${this.baseUrl}/status`, payload);
   }

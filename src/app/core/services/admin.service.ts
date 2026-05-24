@@ -43,13 +43,20 @@ export class AdminService {
     return this.http.get<any>(`${this.baseUrl}/dashboard`).pipe(
       map(res => ({
         stats: {
-          totalUsers: res.data.totalUsers,
-          activeSessions: res.data.activeSessions,
-          totalScripts: res.data.totalScripts,
-          totalMistakes: res.data.totalMistakes
+          totalUsers:     res.data.totalUsers             ?? 0,
+          activeSessions: res.data.activeSessionsToday    ?? 0,
+          totalScripts:   res.data.totalScriptsUploaded   ?? 0,
+          totalMistakes:  res.data.totalMistakesRecorded  ?? 0,
         },
-        recentActivity: res.data.recentActivities,
-        weakAreas: res.data.topGrammarMistakes
+        recentActivity: (res.data.recentActivities ?? []).map((a: any) => ({
+          userName:     a.userFullName,
+          sessionName:  a.sessionName,
+          sessionDate:  a.sessionDate,
+          fluencyScore: a.fluencyScore,
+          mistakeCount: a.mistakeCount,
+          status:       a.sessionStatus,
+        })),
+        weakAreas: (res.data.topGrammarMistakes ?? []),
       } as AdminDashboard))
     );
   }
@@ -170,6 +177,41 @@ export class AdminService {
     password?: string;
   }): Observable<any> {
     return this.http.put<any>(`${this.baseUrl}/users/${userId}`, payload);
+  }
+
+  getSessionHistory(params: {
+    searchTerm?: string;
+    status?: string;
+    fromDate?: string;
+    toDate?: string;
+    pageNumber?: number;
+    pageSize?: number;
+  } = {}): Observable<{ totalCount: number; items: any[] }> {
+    let httpParams = new HttpParams();
+    if (params.searchTerm) httpParams = httpParams.set('searchTerm', params.searchTerm);
+    if (params.status)     httpParams = httpParams.set('status',     params.status);
+    if (params.fromDate)   httpParams = httpParams.set('fromDate',   params.fromDate);
+    if (params.toDate)     httpParams = httpParams.set('toDate',     params.toDate);
+    httpParams = httpParams.set('pageNumber', String(params.pageNumber ?? 1));
+    httpParams = httpParams.set('pageSize',   String(params.pageSize   ?? 20));
+
+    return this.http.get<any>(`${this.baseUrl}/sessions/history`, { params: httpParams }).pipe(
+      map(res => ({
+        totalCount: res.data?.totalCount ?? 0,
+        items: (res.data?.items ?? []).map((s: any) => ({
+          sessionId:    s.sessionId,
+          sessionName:  s.sessionName,
+          joinCode:     s.joinCode,
+          hostName:     s.hostName,
+          memberCount:  s.memberCount,
+          status:       s.status,
+          sessionDate:  s.sessionDate,
+          durationMin:  s.durationMin,
+          avgFluency:   s.avgFluency,
+          mistakeCount: s.mistakeCount,
+        }))
+      }))
+    );
   }
 
   exportReports(params: any = {}): Observable<Blob> {

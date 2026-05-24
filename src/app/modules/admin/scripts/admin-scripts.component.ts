@@ -6,6 +6,7 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { Router } from '@angular/router';
 import { ToastService } from '@core/services/toast.service';
 import { ScriptService } from '@core/services/script.service';
+import { Script } from '@core/models/script.model';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 
 @Component({
@@ -248,8 +249,8 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
                           <i-lucide [img]="row.active ? DeactivateIcon : ActivateIcon" size="15"></i-lucide>
                         </button>
                         <button
-                          (click)="downloadTemplate()"
-                          title="Download Template"
+                          (click)="downloadScript(row)"
+                          title="Download Script"
                           class="w-8 h-8 flex items-center justify-center rounded-lg text-gw-text-muted hover:text-gw-success hover:bg-green-50 transition-colors">
                           <i-lucide [img]="DownloadIcon" size="15"></i-lucide>
                         </button>
@@ -375,13 +376,13 @@ export class AdminScriptsComponent implements OnInit {
     });
   }
 
-  downloadTemplate() {
-    this.scriptService.getSampleTemplate().subscribe({
+  downloadScript(script: Script) {
+    this.scriptService.downloadScript(script.id).subscribe({
       next: (blob: Blob) => {
-        const url = URL.createObjectURL(blob);
-        const a   = document.createElement('a');
-        a.href     = url;
-        a.download = 'GoWithFlow_ScriptTemplate.xlsx';
+        const url      = URL.createObjectURL(blob);
+        const a        = document.createElement('a');
+        a.href         = url;
+        a.download     = `${script.scriptTitle}.xlsx`;
         a.click();
         URL.revokeObjectURL(url);
       },
