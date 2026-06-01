@@ -76,6 +76,12 @@ export class VoiceRecognitionEngine implements OnDestroy {
 
   // ─── MAIN ENTRY POINT ───────────────────────────────────────────────────────
   async startSession(expectedText: string): Promise<VoiceSessionResult> {
+    // Defensive guard: if a session is already active, stop it cleanly before starting
+    // a new one. Prevents allFinalTranscripts from being wiped mid-recording and avoids
+    // competing SpeechRecognition instances when startSession is called twice.
+    if (this.state$.value !== 'idle') {
+      this.stopSession();
+    }
     this.state$.next('requesting');
     this.retryCount = 0;
     this.allFinalTranscripts = [];

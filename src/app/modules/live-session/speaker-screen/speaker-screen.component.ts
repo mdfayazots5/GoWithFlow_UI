@@ -1,5 +1,5 @@
 // File: src/app/modules/live-session/speaker-screen/speaker-screen.component.ts
-import { Component, Input, Output, EventEmitter, OnDestroy, OnChanges, AfterViewChecked, inject, signal, ViewChild } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnDestroy, OnChanges, AfterViewChecked, inject, signal, ViewChild, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TurnState, VoiceAnalysis } from '@core/models/voice.model';
 import { LucideAngularModule, CheckCircle2, ChevronRight, RotateCcw, Eye, EyeOff, FastForward } from 'lucide-angular';
@@ -74,12 +74,19 @@ export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDe
 
   // ─── LIFECYCLE ───────────────────────────────────────────────────────────────
 
-  ngOnChanges(): void {
-    if (this.turnState) {
-      // Cancel any pending auto-start from the previous turn before resetting state
-      this._cancelAutoStart();
+  ngOnChanges(changes: SimpleChanges): void {
+    if (!this.turnState) return;
 
-      this.words.set(this.turnState.utterance.englishText.split(' '));
+    const ts = changes['turnState'];
+    // Only reset phase and arm auto-start when the turn index itself changes.
+    // A same-turn re-input (e.g. server confirmation after an optimistic update)
+    // must not restart the recording or wipe in-progress state.
+    const isTurnChange = !ts || ts.firstChange || (ts.previousValue?.turnIndex !== this.turnState.turnIndex);
+
+    this._cancelAutoStart();
+    this.words.set(this.turnState.utterance.englishText.split(' '));
+
+    if (isTurnChange) {
       this.resetPhase();
       this.tryRestoreFromStorage();
 
