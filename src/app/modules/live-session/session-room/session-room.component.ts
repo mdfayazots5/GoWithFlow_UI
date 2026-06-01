@@ -442,7 +442,7 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
     // handleTurnShift already sets an optimistic state for the same turn; the subsequent
     // loadCurrentTurn() API confirmation for that same turn must not fire a second
     // ngOnChanges in SpeakerScreenComponent, which would re-arm auto-start mid-recording.
-    if (!current || current.turnIndex !== state.turnIndex || String(current.sessionId) !== String(state.sessionId)) {
+    if (!current || String(current.sessionId) !== String(state.sessionId) || state.turnIndex > current.turnIndex) {
       this.turnState.set(state);
     }
     this.isSpeaker.set(String(state.activeMemberId) === localStorage.getItem('gwf_userId'));
