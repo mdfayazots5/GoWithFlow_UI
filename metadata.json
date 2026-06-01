@@ -1,6 +1,5 @@
 {
   "name": "GoWithFlow",
-  "description": "A real-time turn-based multilingual family English practice app. Speak together, grow together.",
-  "requestFramePermissions": ["microphone"],
-  "majorCapabilities": ["real-time-multiplayer"]
+  "description": "Real-time, turn-based English fluency platform for families and professional mock interview practice.",
+  "requestFramePermissions": ["camera", "microphone"]
 }

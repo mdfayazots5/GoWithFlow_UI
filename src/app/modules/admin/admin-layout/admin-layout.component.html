@@ -1,0 +1,75 @@
+<div class="admin-shell">
+
+  <!-- ── Top Bar ─────────────────────────────────────────── -->
+  <header class="admin-topbar">
+
+    <a class="topbar-brand" routerLink="/admin/dashboard" style="text-decoration:none;cursor:pointer;">
+      <div class="brand-mark">G</div>
+      <div class="brand-text">
+        <span class="brand-name">GoWithFlow</span>
+        <span class="brand-tag">Admin</span>
+      </div>
+    </a>
+
+
+    <div class="topbar-right">
+      <div class="profile-trigger" (click)="$event.stopPropagation(); toggleProfileMenu()">
+        <div class="profile-meta">
+          <span class="profile-role">Administrator</span>
+        </div>
+        <div class="avatar-wrap">
+          <div class="profile-avatar profile-avatar-icon">
+            <mat-icon>person</mat-icon>
+          </div>
+          <span class="avatar-online"></span>
+        </div>
+      </div>
+
+      @if (profileMenuOpen()) {
+        <div class="profile-menu" (click)="$event.stopPropagation()">
+          <div class="profile-menu-header">
+            <div class="profile-menu-avatar">
+              <span class="profile-menu-avatar-initials">{{ adminInitials }}</span>
+            </div>
+            <div>
+              <div class="profile-menu-name">{{ adminName }}</div>
+              <div class="profile-menu-role">Administrator</div>
+            </div>
+          </div>
+          <div class="profile-menu-divider"></div>
+          <button class="profile-menu-signout" (click)="logout()">
+            <mat-icon>logout</mat-icon>
+            <span>Sign Out</span>
+          </button>
+        </div>
+      }
+    </div>
+
+  </header>
+
+  <!-- ── Page Content ──────────────────────────────────────── -->
+  <main class="admin-content">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- ── Footer Navigation ─────────────────────────────────── -->
+  <nav class="footer-nav">
+    <a routerLink="/admin/dashboard" routerLinkActive="active" class="footer-nav-item">
+      <div class="nav-pill"><mat-icon>dashboard</mat-icon></div>
+      <span>Dashboard</span>
+    </a>
+    <a routerLink="/admin/users" routerLinkActive="active" class="footer-nav-item">
+      <div class="nav-pill"><mat-icon>people</mat-icon></div>
+      <span>Users</span>
+    </a>
+    <a routerLink="/admin/scripts" routerLinkActive="active" class="footer-nav-item">
+      <div class="nav-pill"><mat-icon>description</mat-icon></div>
+      <span>Scripts</span>
+    </a>
+    <a routerLink="/admin/reports" routerLinkActive="active" class="footer-nav-item">
+      <div class="nav-pill"><mat-icon>bar_chart</mat-icon></div>
+      <span>Reports</span>
+    </a>
+  </nav>
+
+</div>
