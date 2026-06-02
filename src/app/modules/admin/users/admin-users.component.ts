@@ -127,12 +127,12 @@ import { Router } from '@angular/router';
           </div>
 
           <!-- Modal Form -->
-          <form [formGroup]="userForm" (ngSubmit)="submitUserForm()" class="px-6 py-5 space-y-4">
+          <form [formGroup]="userForm" (ngSubmit)="submitUserForm()" autocomplete="off" class="px-6 py-5 space-y-4">
 
             <!-- Full Name -->
             <div>
               <label class="block text-[10px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">Full Name <span class="text-red-500">*</span></label>
-              <input formControlName="fullName" type="text" placeholder="e.g. Ravi Kumar"
+              <input formControlName="fullName" type="text" placeholder="e.g. Ravi Kumar" autocomplete="off"
                 class="w-full h-10 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all"
                 [class.border-red-400]="userForm.get('fullName')?.invalid && userForm.get('fullName')?.touched">
             </div>
@@ -140,7 +140,7 @@ import { Router } from '@angular/router';
             <!-- Mobile Number -->
             <div>
               <label class="block text-[10px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">Mobile Number <span class="text-red-500">*</span></label>
-              <input formControlName="mobileNumber" type="tel" placeholder="e.g. 9876543210"
+              <input formControlName="mobileNumber" type="tel" placeholder="e.g. 9876543210" autocomplete="off"
                 class="w-full h-10 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all"
                 [class.border-red-400]="userForm.get('mobileNumber')?.invalid && userForm.get('mobileNumber')?.touched">
             </div>
@@ -148,7 +148,7 @@ import { Router } from '@angular/router';
             <!-- Email -->
             <div>
               <label class="block text-[10px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">Email <span class="text-gw-text-muted font-medium normal-case">(optional)</span></label>
-              <input formControlName="email" type="email" placeholder="e.g. ravi@example.com"
+              <input formControlName="email" type="email" placeholder="e.g. ravi@example.com" autocomplete="off"
                 class="w-full h-10 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all">
             </div>
 
@@ -179,6 +179,7 @@ import { Router } from '@angular/router';
                 <input formControlName="password"
                   [type]="showPassword() ? 'text' : 'password'"
                   [placeholder]="editingUserId() ? 'Enter new password to change' : 'Min. 6 characters'"
+                  autocomplete="new-password"
                   class="w-full h-10 bg-gw-bg border border-transparent rounded-xl px-3 pr-10 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all"
                   [class.border-red-400]="userForm.get('password')?.invalid && userForm.get('password')?.touched">
                 <button type="button" (click)="showPassword.set(!showPassword())"
@@ -539,7 +540,7 @@ export class AdminUsersComponent implements OnInit {
   openAddModal() {
     this.editingUserId.set(null);
     this.showPassword.set(false);
-    this.userForm.reset();
+    this.userForm.reset({ fullName: '', mobileNumber: '', email: '', ageGroup: '', preferredHintLanguage: 'Telugu', password: '' });
     const pwCtrl = this.userForm.get('password')!;
     pwCtrl.setValidators([Validators.required, Validators.minLength(6)]);
     pwCtrl.updateValueAndValidity();
@@ -562,6 +563,7 @@ export class AdminUsersComponent implements OnInit {
 
     this.adminService.getUserDetail(user.id).subscribe({
       next: detail => {
+        if (this.editingUserId() !== user.id) return;
         this.userForm.patchValue({
           email: detail.email || '',
           preferredHintLanguage: 'Telugu',
@@ -576,7 +578,7 @@ export class AdminUsersComponent implements OnInit {
   closeUserModal() {
     this.showUserModal.set(false);
     this.editingUserId.set(null);
-    this.userForm.reset();
+    this.userForm.reset({ fullName: '', mobileNumber: '', email: '', ageGroup: '', preferredHintLanguage: 'Telugu', password: '' });
     this.showPassword.set(false);
   }
 

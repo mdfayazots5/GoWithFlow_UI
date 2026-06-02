@@ -56,7 +56,11 @@ export class AdminService {
           mistakeCount: a.mistakeCount,
           status:       a.sessionStatus,
         })),
-        weakAreas: (res.data.topGrammarMistakes ?? []),
+        weakAreas: (res.data.topGrammarMistakes ?? []).map((g: any) => ({
+          tag:        g.grammarTag,
+          count:      g.userCount,
+          percentage: g.percentage,
+        })),
       } as AdminDashboard))
     );
   }

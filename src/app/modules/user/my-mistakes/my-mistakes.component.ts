@@ -132,7 +132,7 @@ import { ToastService } from '@core/services/toast.service';
                       <p class="text-lg font-black text-gw-text">{{ mistake.occurredCount }}x</p>
                     </div>
                     <button
-                      (click)="startPractice(0)"
+                      (click)="startPractice(+mistake.sessionId)"
                       class="w-12 h-12 rounded-xl bg-gw-primary/10 text-gw-primary
                              flex items-center justify-center
                              hover:bg-gw-primary hover:text-white transition-all"
@@ -148,7 +148,7 @@ import { ToastService } from '@core/services/toast.service';
 
         <!-- Practice All CTA -->
         <button
-          (click)="startPractice()"
+          (click)="startPractice(+mistakes()[0].sessionId)"
           [disabled]="isPracticing() || mistakes().length === 0"
           class="w-full h-14 bg-gw-primary text-white font-black uppercase tracking-widest
                  rounded-2xl shadow-lg shadow-gw-primary/20 flex items-center justify-center gap-3
