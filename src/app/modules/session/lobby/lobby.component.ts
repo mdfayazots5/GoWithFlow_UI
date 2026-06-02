@@ -26,11 +26,12 @@ import {
   Shield
 } from 'lucide-angular';
 import { LobbyState, LobbyMember } from '@core/models/session.model';
+import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.component';
 
 @Component({
   selector: 'app-lobby',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule, LucideAngularModule, UserAvatarComponent],
   templateUrl: './lobby.component.html',
   styles: [`:host { display: block; }`]
 })
@@ -147,6 +148,9 @@ export class LobbyComponent implements OnInit, OnDestroy {
         return { ...s, members };
       });
     });
+
+    // Refresh lobby when an invited user accepts and joins
+    this.wsService.on('INVITATION_RESPONDED').subscribe(() => this.loadLobby(this.sessionId));
   }
 
   loadLobby(sessionId: string) {

@@ -2,7 +2,7 @@ import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { UserService } from '@core/services/user.service';
-import { LucideAngularModule, ChevronLeft, TrendingUp, TrendingDown, Minus, Target, AlertCircle, BarChart2, BookOpen, Volume2 } from 'lucide-angular';
+import { LucideAngularModule, TrendingUp, TrendingDown, Minus, Target, AlertCircle, BarChart2, BookOpen, Volume2 } from 'lucide-angular';
 import { catchError, of } from 'rxjs';
 
 interface InterviewSessionTimeline {
@@ -46,18 +46,13 @@ interface InterviewPerformanceDashboard {
   standalone: true,
   imports: [CommonModule, DecimalPipe, LucideAngularModule, RouterLink],
   template: `
-    <div class="space-y-6 animate-in fade-in duration-500 pb-32">
+    <div class="min-h-screen bg-gw-bg">
+      <div class="max-w-lg mx-auto px-4 pt-2 pb-28 space-y-4 animate-in fade-in duration-500">
 
-      <!-- Header -->
-      <div class="flex items-center gap-4">
-        <button routerLink="/user/progress"
-          class="w-10 h-10 rounded-xl bg-gw-bg flex items-center justify-center text-gw-text-muted hover:text-gw-primary transition-all">
-          <i-lucide [img]="BackIcon" size="20"></i-lucide>
-        </button>
-        <div>
-          <h2 class="text-2xl font-black text-gw-text italic uppercase tracking-tighter">Interview Performance</h2>
-          <p class="text-[10px] font-bold text-gw-text-muted uppercase tracking-widest italic">Mock Interview readiness tracker</p>
-        </div>
+      <!-- Page heading -->
+      <div>
+        <h1 class="text-xl font-black text-gw-text tracking-tight">Interview Performance</h1>
+        <p class="text-[11px] font-semibold text-gw-text-muted mt-0.5">Mock interview readiness tracker</p>
       </div>
 
       @if (isLoading()) {
@@ -102,9 +97,11 @@ interface InterviewPerformanceDashboard {
             </div>
             <div class="flex flex-col items-end gap-1">
               <div class="flex items-center gap-1 px-2.5 py-1.5 rounded-xl"
-                [class.bg-gw-success/10]="data()!.readinessTrend === 'Improving'"
-                [class.bg-amber-50]="data()!.readinessTrend === 'Stable'"
-                [class.bg-gw-error/10]="data()!.readinessTrend === 'Declining'">
+                [ngClass]="{
+                  'bg-gw-success/10': data()!.readinessTrend === 'Improving',
+                  'bg-amber-50': data()!.readinessTrend === 'Stable',
+                  'bg-gw-error/10': data()!.readinessTrend === 'Declining'
+                }">
                 <i-lucide [img]="trendIcon()" size="14"
                   [class.text-gw-success]="data()!.readinessTrend === 'Improving'"
                   [class.text-amber-500]="data()!.readinessTrend === 'Stable'"
@@ -279,6 +276,7 @@ interface InterviewPerformanceDashboard {
         }
       }
 
+      </div>
     </div>
   `,
   styles: [`:host { display: block; }`]
@@ -286,7 +284,6 @@ interface InterviewPerformanceDashboard {
 export class InterviewPerformanceComponent implements OnInit {
   private userService = inject(UserService);
 
-  readonly BackIcon    = ChevronLeft;
   readonly TargetIcon  = Target;
   readonly AlertIcon   = AlertCircle;
   readonly ChartIcon   = BarChart2;

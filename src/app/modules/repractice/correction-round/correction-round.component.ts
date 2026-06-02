@@ -106,17 +106,19 @@ import { VoiceAnalysis } from '@core/models/voice.model';
                   } @else {
                     <!-- Result Card -->
                     <div class="w-full space-y-6 animate-in zoom-in duration-500">
-                       <div 
+                       <div
                          class="p-6 rounded-[32px] border pb-8 relative overflow-hidden text-center"
-                         [class.bg-gw-success/10]="lastAnalysis()!.isPassed"
-                         [class.border-gw-success/20]="lastAnalysis()!.isPassed"
-                         [class.bg-gw-warning/10]="!lastAnalysis()!.isPassed"
-                         [class.border-gw-warning/20]="!lastAnalysis()!.isPassed"
+                         [ngClass]="{
+                           'bg-gw-success/10': lastAnalysis()!.isPassed,
+                           'border-gw-success/20': lastAnalysis()!.isPassed,
+                           'bg-gw-warning/10': !lastAnalysis()!.isPassed,
+                           'border-gw-warning/20': !lastAnalysis()!.isPassed
+                         }"
                        >
                           <div class="absolute top-0 left-0 w-full h-1" [class.bg-gw-success]="lastAnalysis()!.isPassed" [class.bg-gw-warning]="!lastAnalysis()!.isPassed"></div>
                           
                           <div class="flex flex-col items-center gap-4">
-                             <div class="w-12 h-12 rounded-full flex items-center justify-center" [class.bg-gw-success/20]="lastAnalysis()!.isPassed" [class.bg-gw-warning/20]="!lastAnalysis()!.isPassed">
+                             <div class="w-12 h-12 rounded-full flex items-center justify-center" [ngClass]="{'bg-gw-success/20': lastAnalysis()!.isPassed, 'bg-gw-warning/20': !lastAnalysis()!.isPassed}">
                                 <i-lucide [img]="lastAnalysis()!.isPassed ? CheckIcon : RetryIcon" size="24" [class.text-gw-success]="lastAnalysis()!.isPassed" [class.text-gw-warning]="!lastAnalysis()!.isPassed"></i-lucide>
                              </div>
                              <div class="space-y-1">

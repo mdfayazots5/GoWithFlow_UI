@@ -134,7 +134,7 @@ interface ScoreboardRow {
                   </thead>
                   <tbody class="divide-y divide-gw-bg">
                     @for (row of scoreboard(); track row.name; let i = $index) {
-                      <tr class="hover:bg-gw-bg/20 transition-colors" [class.bg-gw-primary/5]="i === 0">
+                      <tr class="hover:bg-gw-bg/20 transition-colors" [ngClass]="{'bg-gw-primary/5': i === 0}">
                         <td class="px-6 py-5">
                           @if (i === 0) {
                             <i-lucide [img]="TrophyIcon" size="16" class="text-[#F59E0B]"></i-lucide>

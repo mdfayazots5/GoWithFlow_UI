@@ -41,5 +41,9 @@ export const USER_ROUTES: Routes = [
   {
     path: 'goals',
     loadComponent: () => import('./learning-goals/learning-goals.component').then(m => m.LearningGoalsComponent)
+  },
+  {
+    path: 'invitations',
+    loadComponent: () => import('./invitations/my-invitations.component').then(m => m.MyInvitationsComponent)
   }
 ];

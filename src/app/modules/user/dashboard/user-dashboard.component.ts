@@ -12,6 +12,7 @@ import { UserStateService } from '@core/services/user-state.service';
 import { UserService } from '@core/services/user.service';
 import { MistakeService } from '@core/services/mistake.service';
 import { ChallengeService } from '@core/services/challenge.service';
+import { SessionService } from '@core/services/session.service';
 import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 
@@ -43,6 +44,89 @@ import { catchError, of } from 'rxjs';
           </div>
         </div>
 
+        <!-- ── Quick Actions ─────────────────────────────────────────── -->
+        <div class="grid grid-cols-4 gap-2.5">
+
+          <a routerLink="/session/join"
+             class="bg-white rounded-2xl border border-gw-card-border shadow-sm
+                    flex flex-col items-center gap-2 py-4 px-2
+                    hover:border-gw-primary hover:shadow-md
+                    active:scale-95 transition-all no-underline">
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center"
+                 style="background: rgba(61,90,153,0.08);">
+              <i-lucide [img]="PlayIcon" size="20" style="color:#3D5A99;"></i-lucide>
+            </div>
+            <span class="text-[10px] font-black text-gw-text uppercase tracking-wide text-center leading-tight">
+              Join
+            </span>
+          </a>
+
+          <a routerLink="/session/create"
+             class="bg-white rounded-2xl border border-gw-card-border shadow-sm
+                    flex flex-col items-center gap-2 py-4 px-2
+                    hover:border-gw-primary hover:shadow-md
+                    active:scale-95 transition-all no-underline">
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center"
+                 style="background: rgba(224,123,57,0.08);">
+              <i-lucide [img]="AddIcon" size="20" style="color:#E07B39;"></i-lucide>
+            </div>
+            <span class="text-[10px] font-black text-gw-text uppercase tracking-wide text-center leading-tight">
+              Create
+            </span>
+          </a>
+
+          <a routerLink="/scripts"
+             class="bg-white rounded-2xl border border-gw-card-border shadow-sm
+                    flex flex-col items-center gap-2 py-4 px-2
+                    hover:border-gw-primary hover:shadow-md
+                    active:scale-95 transition-all no-underline">
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center"
+                 style="background: rgba(46,125,50,0.08);">
+              <i-lucide [img]="BookIcon" size="20" style="color:#2E7D32;"></i-lucide>
+            </div>
+            <span class="text-[10px] font-black text-gw-text uppercase tracking-wide text-center leading-tight">
+              Scripts
+            </span>
+          </a>
+
+          <a routerLink="/user/progress"
+             class="bg-white rounded-2xl border border-gw-card-border shadow-sm
+                    flex flex-col items-center gap-2 py-4 px-2
+                    hover:border-gw-primary hover:shadow-md
+                    active:scale-95 transition-all no-underline">
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center"
+                 style="background: rgba(245,158,11,0.08);">
+              <i-lucide [img]="TrendIcon" size="20" style="color:#F59E0B;"></i-lucide>
+            </div>
+            <span class="text-[10px] font-black text-gw-text uppercase tracking-wide text-center leading-tight">
+              Progress
+            </span>
+          </a>
+
+        </div>
+
+        <!-- ── Pending Invitations Banner ──────────────────────────── -->
+        @if (pendingInvitationCount() > 0) {
+          <a routerLink="/user/invitations"
+             class="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl no-underline
+                    animate-in slide-in-from-top-2 duration-300"
+             style="background: linear-gradient(135deg, rgba(61,90,153,0.08), rgba(224,123,57,0.06));
+                    border: 1px solid rgba(61,90,153,0.15);">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-full bg-gw-primary flex items-center justify-center shrink-0">
+                <span class="text-xs font-black text-white">{{ pendingInvitationCount() }}</span>
+              </div>
+              <div>
+                <p class="text-sm font-black text-gw-text">
+                  {{ pendingInvitationCount() === 1 ? '1 session invitation' : pendingInvitationCount() + ' session invitations' }}
+                </p>
+                <p class="text-[10px] text-gw-text-muted italic">Tap to view and respond</p>
+              </div>
+            </div>
+            <i-lucide [img]="ChevronIcon" size="16" class="text-gw-primary shrink-0"></i-lucide>
+          </a>
+        }
+
         <!-- ── Weekly Report Card (shown once per week, dismissible) ── -->
         @if (showWeeklyReport() && weeklyReport()) {
           <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden animate-in slide-in-from-top-2 duration-300">
@@ -63,7 +147,8 @@ import { catchError, of } from 'rxjs';
                   <p class="text-xs text-gw-text-muted italic">Last session: {{ weeklyReport()!.lastSessionDate | date:'MMM d' }}</p>
                 }
                 @if (weeklyReport()!.recommendedScript1Id) {
-                  <a [routerLink]="['/scripts']" class="inline-flex items-center gap-1.5 mt-2 text-[10px] font-black text-gw-primary uppercase tracking-widest italic hover:underline">
+                  <a [routerLink]="['/scripts/prepare', weeklyReport()!.recommendedScript1Id]"
+                     class="inline-flex items-center gap-1.5 mt-2 text-[10px] font-black text-gw-primary uppercase tracking-widest italic hover:underline">
                     Pick up where you left off <i-lucide [img]="ArrowIcon" size="12"></i-lucide>
                   </a>
                 }
@@ -155,12 +240,14 @@ import { catchError, of } from 'rxjs';
                 <p class="text-sm font-black text-gw-text italic mt-0.5">{{ goalProgress()!.goalLabel }}</p>
               </div>
               <span class="text-[8px] font-black uppercase tracking-wider px-2 py-1 rounded-lg italic flex-shrink-0"
-                [class.bg-gw-success/10]="goalProgress()!.trendLabel === 'Improving'"
-                [class.text-gw-success]="goalProgress()!.trendLabel === 'Improving'"
-                [class.bg-amber-50]="goalProgress()!.trendLabel === 'Stable'"
-                [class.text-amber-500]="goalProgress()!.trendLabel === 'Stable'"
-                [class.bg-gw-error/10]="goalProgress()!.trendLabel === 'Declining'"
-                [class.text-gw-error]="goalProgress()!.trendLabel === 'Declining'">
+                [ngClass]="{
+                  'bg-gw-success/10': goalProgress()!.trendLabel === 'Improving',
+                  'text-gw-success': goalProgress()!.trendLabel === 'Improving',
+                  'bg-amber-50': goalProgress()!.trendLabel === 'Stable',
+                  'text-amber-500': goalProgress()!.trendLabel === 'Stable',
+                  'bg-gw-error/10': goalProgress()!.trendLabel === 'Declining',
+                  'text-gw-error': goalProgress()!.trendLabel === 'Declining'
+                }">
                 {{ goalProgress()!.trendLabel }}
               </span>
             </div>
@@ -183,7 +270,10 @@ import { catchError, of } from 'rxjs';
 
         <!-- ── Guided Learning Path ─────────────────────────────────── -->
         @if ((learningPath()?.recommendations?.length || 0) > 0) {
-          <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
+          <div id="recommended-next"
+            class="bg-white rounded-2xl border shadow-sm overflow-hidden transition-colors duration-500"
+            [class.border-gw-primary]="highlightPath()"
+            [class.border-gw-card-border]="!highlightPath()">
             <div class="flex items-center justify-between px-5 py-3.5 border-b border-gw-bg">
               <div class="flex items-center gap-2">
                 <i-lucide [img]="TargetIcon" size="14" class="text-gw-accent flex-shrink-0"></i-lucide>
@@ -205,8 +295,9 @@ import { catchError, of } from 'rxjs';
                     </p>
                     <p class="text-[9px] text-gw-text-muted italic mt-1 leading-tight">{{ rec.reasonText }}</p>
                   </div>
-                  <a [routerLink]="['/scripts']" [queryParams]="{ scriptId: rec.scriptId }"
-                     class="shrink-0 w-8 h-8 rounded-xl bg-gw-primary/10 flex items-center justify-center text-gw-primary hover:bg-gw-primary hover:text-white transition-all">
+                  <a [routerLink]="['/scripts/prepare', rec.scriptId]"
+                     class="shrink-0 w-8 h-8 rounded-xl bg-gw-primary/10 flex items-center justify-center text-gw-primary hover:bg-gw-primary hover:text-white transition-all"
+                     title="Read script &amp; start session">
                     <i-lucide [img]="ArrowIcon" size="14"></i-lucide>
                   </a>
                 </div>
@@ -266,66 +357,6 @@ import { catchError, of } from 'rxjs';
           </a>
         }
 
-        <!-- ── Quick Actions ─────────────────────────────────────────── -->
-        <div class="grid grid-cols-4 gap-2.5">
-
-          <a routerLink="/session/join"
-             class="bg-white rounded-2xl border border-gw-card-border shadow-sm
-                    flex flex-col items-center gap-2 py-4 px-2
-                    hover:border-gw-primary hover:shadow-md
-                    active:scale-95 transition-all no-underline">
-            <div class="w-11 h-11 rounded-xl flex items-center justify-center"
-                 style="background: rgba(61,90,153,0.08);">
-              <i-lucide [img]="PlayIcon" size="20" style="color:#3D5A99;"></i-lucide>
-            </div>
-            <span class="text-[10px] font-black text-gw-text uppercase tracking-wide text-center leading-tight">
-              Join
-            </span>
-          </a>
-
-          <a routerLink="/session/create"
-             class="bg-white rounded-2xl border border-gw-card-border shadow-sm
-                    flex flex-col items-center gap-2 py-4 px-2
-                    hover:border-gw-primary hover:shadow-md
-                    active:scale-95 transition-all no-underline">
-            <div class="w-11 h-11 rounded-xl flex items-center justify-center"
-                 style="background: rgba(224,123,57,0.08);">
-              <i-lucide [img]="AddIcon" size="20" style="color:#E07B39;"></i-lucide>
-            </div>
-            <span class="text-[10px] font-black text-gw-text uppercase tracking-wide text-center leading-tight">
-              Create
-            </span>
-          </a>
-
-          <a routerLink="/scripts"
-             class="bg-white rounded-2xl border border-gw-card-border shadow-sm
-                    flex flex-col items-center gap-2 py-4 px-2
-                    hover:border-gw-primary hover:shadow-md
-                    active:scale-95 transition-all no-underline">
-            <div class="w-11 h-11 rounded-xl flex items-center justify-center"
-                 style="background: rgba(46,125,50,0.08);">
-              <i-lucide [img]="BookIcon" size="20" style="color:#2E7D32;"></i-lucide>
-            </div>
-            <span class="text-[10px] font-black text-gw-text uppercase tracking-wide text-center leading-tight">
-              Scripts
-            </span>
-          </a>
-
-          <a routerLink="/user/progress"
-             class="bg-white rounded-2xl border border-gw-card-border shadow-sm
-                    flex flex-col items-center gap-2 py-4 px-2
-                    hover:border-gw-primary hover:shadow-md
-                    active:scale-95 transition-all no-underline">
-            <div class="w-11 h-11 rounded-xl flex items-center justify-center"
-                 style="background: rgba(245,158,11,0.08);">
-              <i-lucide [img]="TrendIcon" size="20" style="color:#F59E0B;"></i-lucide>
-            </div>
-            <span class="text-[10px] font-black text-gw-text uppercase tracking-wide text-center leading-tight">
-              Progress
-            </span>
-          </a>
-
-        </div>
 
         <!-- ── Recent Sessions ───────────────────────────────────────── -->
         <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
@@ -419,6 +450,7 @@ export class UserDashboardComponent implements OnInit {
   private userSvc       = inject(UserService);
   private mistakeSvc    = inject(MistakeService);
   private challengeSvc  = inject(ChallengeService);
+  private sessionSvc    = inject(SessionService);
 
   today = new Date();
 
@@ -430,7 +462,8 @@ export class UserDashboardComponent implements OnInit {
   showWeeklyReport = signal(false);
 
   // ── Learning path ────────────────────────────────────────────
-  learningPath = signal<any>(null);
+  learningPath  = signal<any>(null);
+  highlightPath = signal(false);
 
   // ── Goal progress ─────────────────────────────────────────────
   goalProgress = signal<any>(null);
@@ -440,6 +473,9 @@ export class UserDashboardComponent implements OnInit {
 
   // ── Weekly challenge ──────────────────────────────────────────
   activeChallenge = signal<any>(null);
+
+  // ── Pending invitations badge ─────────────────────────────────
+  pendingInvitationCount = signal(0);
 
   firstName = computed(() => {
     const name = this.auth.currentUser?.fullName?.trim();
@@ -466,11 +502,13 @@ export class UserDashboardComponent implements OnInit {
   readonly StarIcon     = Star;
 
   ngOnInit() {
+    const scrollTo = (window.history.state as any)?.scrollTo as string | undefined;
     this.loadWeeklyReport();
-    this.loadLearningPath();
+    this.loadLearningPath(scrollTo);
     this.loadGoalProgress();
     this.loadDueForReview();
     this.loadActiveChallenge();
+    this.loadPendingInvitations();
   }
 
   private loadWeeklyReport() {
@@ -486,9 +524,18 @@ export class UserDashboardComponent implements OnInit {
     });
   }
 
-  private loadLearningPath() {
+  private loadLearningPath(scrollTo?: string) {
     this.userSvc.getLearningPath().pipe(catchError(() => of(null))).subscribe(path => {
-      if (path) this.learningPath.set(path);
+      if (path) {
+        this.learningPath.set(path);
+        if (scrollTo === 'recommended-next') {
+          setTimeout(() => {
+            document.getElementById('recommended-next')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            this.highlightPath.set(true);
+            setTimeout(() => this.highlightPath.set(false), 1800);
+          }, 150);
+        }
+      }
     });
   }
 
@@ -510,6 +557,12 @@ export class UserDashboardComponent implements OnInit {
     });
   }
 
+  private loadPendingInvitations() {
+    this.sessionSvc.getMyInvitations().pipe(catchError(() => of([]))).subscribe(invs => {
+      this.pendingInvitationCount.set(invs.length);
+    });
+  }
+
   dismissWeeklyReport() {
     const weekKey = `gwf_weekly_report_${this.currentISOWeek()}`;
     localStorage.setItem(weekKey, 'dismissed');
@@ -526,19 +579,22 @@ export class UserDashboardComponent implements OnInit {
 
   recIcon(type: string) {
     if (type === 'repractice') return this.RepracticeIcon;
-    if (type === 'low_score') return this.ZapIcon;
+    if (type === 'low_score')  return this.ZapIcon;
+    if (type === 'goal')       return this.TargetIcon;
     return this.VocabIcon;
   }
 
   recIconBg(type: string): string {
     if (type === 'repractice') return 'rgba(224,123,57,0.08)';
-    if (type === 'low_score') return 'rgba(61,90,153,0.08)';
+    if (type === 'low_score')  return 'rgba(61,90,153,0.08)';
+    if (type === 'goal')       return 'rgba(61,90,153,0.10)';
     return 'rgba(46,125,50,0.08)';
   }
 
   recIconColor(type: string): string {
     if (type === 'repractice') return '#E07B39';
-    if (type === 'low_score') return '#3D5A99';
+    if (type === 'low_score')  return '#3D5A99';
+    if (type === 'goal')       return '#3D5A99';
     return '#2E7D32';
   }
 

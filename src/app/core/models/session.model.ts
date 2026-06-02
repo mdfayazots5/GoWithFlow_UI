@@ -16,6 +16,7 @@ export interface Session {
   createdDate: string;
   startedDate?: string;
   endedDate?: string;
+  scheduledAt?: string;
   roomExpiresAt: string;
   fluencyScore?: number;
   mistakesCount?: number;
@@ -100,4 +101,42 @@ export interface LobbyMember {
   isHost: boolean;
   slotIndex: number;
   slotName: string;
+}
+
+export type InvitationStatus = 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'EXPIRED' | 'CANCELLED';
+
+export interface SessionInvitation {
+  invitationId: number;
+  sessionId: number;
+  userId: number;
+  slotIndex: number;
+  slotName: string;
+  status: InvitationStatus;
+  sentAt: string;
+  respondedAt?: string;
+  expiresAt?: string;
+  fullName: string;
+  avatarUrl?: string;
+}
+
+export interface UserInvitation {
+  invitationId: number;
+  sessionId: number;
+  slotIndex: number;
+  slotName: string;
+  status: InvitationStatus;
+  sentAt: string;
+  expiresAt?: string;
+  sessionName: string;
+  sessionMode: string;
+  sessionDuration: number;
+  scheduledAt?: string;
+  hostName: string;
+  hostAvatarUrl?: string;
+}
+
+export interface UserSearchResult {
+  userId: number;
+  fullName: string;
+  avatarUrl?: string;
 }

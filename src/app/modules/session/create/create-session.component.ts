@@ -6,21 +6,19 @@ import { Router, RouterLink } from '@angular/router';
 import { SessionService } from '@core/services/session.service';
 import { ScriptService } from '@core/services/script.service';
 import { ToastService } from '@core/services/toast.service';
-import { 
-  LucideAngularModule, 
-  MessageSquare, 
-  Users, 
-  Users2, 
-  Mic2, 
-  Zap, 
-  RotateCcw, 
-  Plus, 
-  Minus, 
-  ChevronRight, 
-  Copy, 
-  Share2, 
-  Layout, 
-  Clock, 
+import {
+  LucideAngularModule,
+  MessageSquare,
+  Users,
+  Users2,
+  Mic2,
+  Zap,
+  RotateCcw,
+  Plus,
+  Minus,
+  ChevronRight,
+  Layout,
+  Clock,
   Calendar,
   Search
 } from 'lucide-angular';
@@ -32,14 +30,13 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, RouterLink],
   template: `
-    <div class="max-w-xl mx-auto pb-12 animate-in fade-in duration-300">
+    <div class="min-h-screen bg-gw-bg">
+      <div class="max-w-lg mx-auto px-4 pt-2 pb-28 space-y-4 animate-in fade-in duration-500">
 
-      @if (!createdSession()) {
-
-        <!-- Page Header -->
-        <div class="mb-8">
-          <p class="text-[10px] font-bold uppercase tracking-[0.3em] text-gw-text-muted mb-1">New Practice Room</p>
-          <h2 class="text-3xl font-extrabold text-gw-text leading-none">Create Session</h2>
+        <!-- Page Heading -->
+        <div>
+          <h1 class="text-xl font-black text-gw-text tracking-tight">Create Session</h1>
+          <p class="text-[11px] font-semibold text-gw-text-muted mt-0.5">Set up your practice room</p>
         </div>
 
         <form [formGroup]="createForm" class="space-y-5">
@@ -215,53 +212,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
 
         </form>
 
-      } @else {
-
-        <!-- SUCCESS STATE -->
-        <div class="animate-in zoom-in-95 duration-300">
-          <div class="bg-white rounded-2xl border border-gw-card-border overflow-hidden">
-            <div class="h-1.5 w-full bg-gw-primary"></div>
-            <div class="p-8 text-center space-y-8">
-
-              <div>
-                <div class="w-14 h-14 bg-gw-success/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <i-lucide [img]="CheckIcon" size="28" class="text-gw-success"></i-lucide>
-                </div>
-                <h3 class="text-2xl font-extrabold text-gw-text">Session Ready</h3>
-                <p class="text-sm text-gw-text-muted mt-1">Share this code with your practice partners</p>
-              </div>
-
-              <div class="bg-gw-bg rounded-2xl py-8 px-6">
-                <p class="text-5xl font-extrabold text-gw-text tracking-[0.25em]">{{ createdSession()?.joinCode }}</p>
-                <div class="flex justify-center gap-3 mt-6">
-                  <button (click)="copyCode()"
-                    class="flex items-center gap-2 h-10 px-5 bg-white rounded-xl border border-gw-card-border text-[12px] font-bold text-gw-text-muted hover:text-gw-primary hover:border-gw-primary transition-all">
-                    <i-lucide [img]="CopyIcon" size="14"></i-lucide> Copy
-                  </button>
-                  <button (click)="shareSession()"
-                    class="flex items-center gap-2 h-10 px-5 bg-white rounded-xl border border-gw-card-border text-[12px] font-bold text-gw-text-muted hover:text-gw-accent hover:border-gw-accent transition-all">
-                    <i-lucide [img]="ShareIcon" size="14"></i-lucide> Share
-                  </button>
-                </div>
-              </div>
-
-              <div class="space-y-3">
-                <button type="button" (click)="goToLobby()"
-                  class="w-full h-13 text-white font-bold text-[13px] uppercase tracking-[0.18em] rounded-xl hover:opacity-90 active:scale-[0.98] transition-all py-4"
-                  style="background: var(--gw-accent)">
-                  Enter Lobby
-                </button>
-                <button type="button" (click)="createdSession.set(null)"
-                  class="w-full text-[11px] font-bold uppercase tracking-[0.16em] text-gw-text-muted hover:text-gw-text transition-colors py-2">
-                  Create Another Session
-                </button>
-              </div>
-
-            </div>
-          </div>
-        </div>
-
-      }
+      </div>
     </div>
   `,
   styles: [`
@@ -289,9 +240,6 @@ export class CreateSessionComponent implements OnInit {
   readonly MinusIcon = Minus;
   readonly PlusIcon = Plus;
   readonly NextIcon = ChevronRight;
-  readonly CopyIcon = Copy;
-  readonly ShareIcon = Share2;
-  readonly CheckIcon = Zap;
 
   modes = [
     { value: 1, label: 'Grammar Drill', caption: 'Grammar-led practice', icon: MessageSquare },
@@ -303,7 +251,6 @@ export class CreateSessionComponent implements OnInit {
   ];
 
   isLoading = signal(false);
-  createdSession = signal<any>(null);
   selectedScript = signal<Script | null>(null);
 
   scriptSearch = new FormControl('');
@@ -415,11 +362,35 @@ export class CreateSessionComponent implements OnInit {
     this.isLoading.set(true);
     this.sessionService.createSession(payload).subscribe({
       next: (res) => {
-        this.isLoading.set(false);
-        this.createdSession.set(res);
         localStorage.setItem('gwf_sessionId', String(res.sessionId));
         localStorage.setItem('gwf_joinCode', res.joinCode);
-        this.toast.success('Session created!');
+
+        // Fetch all slot names from backend via validateCode — list items have no utterances
+        this.sessionService.validateCode(res.joinCode).subscribe({
+          next: (preview) => {
+            this.isLoading.set(false);
+            this.toast.success('Session created!');
+
+            // Exclude slot 1 (host) — only pass unoccupied guest slots to invite screen
+            const guestSlots = (preview.slots ?? [])
+              .filter(s => !s.isOccupied)
+              .map(s => ({ slotIndex: s.slotIndex, slotName: s.slotName }));
+
+            this.router.navigate(['/session/invite'], {
+              queryParams: {
+                sessionId:   res.sessionId,
+                sessionName: res.sessionName,
+                slots:       JSON.stringify(guestSlots)
+              }
+            });
+          },
+          error: () => {
+            this.isLoading.set(false);
+            this.toast.success('Session created!');
+            // Fallback: go to lobby if slot fetch fails
+            this.router.navigate(['/session/lobby', res.sessionId]);
+          }
+        });
       },
       error: () => {
         this.isLoading.set(false);
@@ -427,29 +398,4 @@ export class CreateSessionComponent implements OnInit {
     });
   }
 
-  copyCode() {
-    if (this.createdSession()) {
-      navigator.clipboard.writeText(this.createdSession().joinCode);
-      this.toast.success('Code copied to clipboard');
-    }
-  }
-
-  shareSession() {
-    if (navigator.share && this.createdSession()) {
-      const selectedMode = this.modes.find(mode => mode.value === this.createForm.value.sessionMode)?.label ?? 'practice';
-      navigator.share({
-        title: 'Join GoWithFlow Session',
-        text: `Join my ${selectedMode} session! Code: ${this.createdSession().joinCode}`,
-        url: window.location.origin + '/session/join?code=' + this.createdSession().joinCode
-      }).catch(() => {});
-    } else {
-      this.copyCode();
-    }
-  }
-
-  goToLobby() {
-    if (this.createdSession()) {
-      this.router.navigate(['/session/lobby', this.createdSession().sessionId]);
-    }
-  }
 }

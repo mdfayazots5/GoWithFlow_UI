@@ -22,7 +22,31 @@ export class MistakeService {
     if (filters?.isResolved !== undefined) {
       params = params.set('isResolved', String(filters.isResolved));
     }
-    return this.http.get<PagedResult<Mistake>>(this.baseUrl, { params });
+    return this.http.get<any>(this.baseUrl, { params }).pipe(
+      map(res => {
+        // Unwrap ApiResponse wrapper — backend returns { success, data: { items, totalCount } }
+        const d = res?.data ?? res;
+        const items: Mistake[] = (d?.items ?? []).map((r: any) => ({
+          id:            String(r.mistakeId ?? r.id ?? ''),
+          userId:        String(r.userId ?? ''),
+          type:          r.mistakeType ?? r.type ?? 'GRAMMAR',
+          spokenText:    r.spokenText ?? '',
+          expectedText:  r.utteranceText ?? r.expectedText ?? '',
+          sessionId:     String(r.sessionId ?? ''),
+          sessionName:   r.sessionName ?? '',
+          createdDate:   r.firstOccurrence ?? r.createdDate ?? '',
+          occurredCount: r.occurredCount ?? 1,
+          practicedCount: r.practiceCount ?? r.practicedCount ?? 0,
+          isResolved:    r.isResolved ?? false,
+          correctionNote: r.correctionText ?? r.correctionNote ?? undefined
+        } as Mistake));
+        return {
+          items,
+          total:      d?.totalCount ?? d?.total ?? items.length,
+          totalCount: d?.totalCount ?? d?.total ?? items.length
+        } as PagedResult<Mistake>;
+      })
+    );
   }
 
   getMistakeSummary(): Observable<MistakeSummary> {
@@ -35,5 +59,9 @@ export class MistakeService {
 
   getGrammarProgressWithTrend(): Observable<any[]> {
     return this.http.get<{ data: any[] }>(`${this.baseUrl}/grammar-trends`).pipe(map(r => r.data));
+  }
+
+  getDueForReview(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/due-for-review`);
   }
 }

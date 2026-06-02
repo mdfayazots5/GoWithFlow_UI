@@ -94,7 +94,7 @@ interface ScriptAnalyticsItem {
               <tbody class="divide-y divide-gw-bg">
                 @for (item of filtered(); track item.scriptId) {
                   <tr class="hover:bg-gw-bg/50 transition-colors"
-                    [class.bg-amber-50/30]="item.isInactive">
+                    [ngClass]="{'bg-amber-50/30': item.isInactive}">
                     <td class="px-4 py-3.5">
                       <div class="flex items-start gap-2">
                         @if (item.isInactive) {

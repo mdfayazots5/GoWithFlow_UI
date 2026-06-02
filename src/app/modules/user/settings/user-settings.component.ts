@@ -2,8 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { LucideAngularModule, User, Mail, Phone, Camera, Save, CheckCircle, Mic } from 'lucide-angular';
-import { HeaderComponent } from '@shared/components/header/header.component';
-import { BottomNavComponent } from '@shared/components/bottom-nav/bottom-nav.component';
 import { UserService } from '@core/services/user.service';
 import { AuthService } from '@core/services/auth.service';
 import { SessionPreferencesService } from '@core/services/session-preferences.service';
@@ -11,135 +9,146 @@ import { SessionPreferencesService } from '@core/services/session-preferences.se
 @Component({
   selector: 'app-user-settings',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, HeaderComponent, BottomNavComponent],
+  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule],
   template: `
-    <div class="min-h-screen bg-ls-bg pb-24">
-      <app-header title="Account Settings" [showBack]="true"></app-header>
+    <div class="min-h-screen bg-gw-bg">
+      <div class="max-w-lg mx-auto px-4 pt-2 pb-28 space-y-4 animate-in fade-in duration-500">
 
-      <main class="p-6 space-y-8 animate-in slide-in-from-bottom-4">
-        <!-- Avatar Section -->
-        <div class="flex flex-col items-center gap-4">
-           <div class="relative group">
-              <div class="w-32 h-32 rounded-[40px] border-4 border-white shadow-xl overflow-hidden bg-white">
-                 <img [src]="avatarPreview" class="w-full h-full object-cover">
-              </div>
-              <label class="absolute -bottom-2 -right-2 bg-ls-primary text-white p-3 rounded-2xl shadow-lg border-2 border-white cursor-pointer hover:scale-110 active:scale-95 transition-all">
-                 <i-lucide [img]="CameraIcon" size="18"></i-lucide>
-                 <input type="file" (change)="onFileSelected($event)" class="hidden" accept="image/*">
-              </label>
-           </div>
-           <p class="text-[10px] font-black uppercase tracking-[0.2em] text-ls-text-muted">Tap camera to change avatar</p>
+        <!-- Page heading -->
+        <div>
+          <h1 class="text-xl font-black text-gw-text tracking-tight">Account Settings</h1>
+          <p class="text-[11px] font-semibold text-gw-text-muted mt-0.5">Update your profile and preferences</p>
         </div>
 
-        <!-- Form Section -->
-        <form [formGroup]="settingsForm" (ngSubmit)="onSubmit()" class="space-y-6">
-           <div class="space-y-4">
-              <h3 class="text-xs font-black uppercase tracking-[0.2em] text-ls-text-muted px-1">Personal Details</h3>
-              
-              <div class="space-y-4">
-                 <div class="relative">
-                    <i-lucide [img]="UserIcon" size="16" class="absolute left-4 top-1/2 -translate-y-1/2 text-ls-text-muted"></i-lucide>
-                    <input 
-                      formControlName="name"
-                      type="text" 
-                      placeholder="Full Name" 
-                      class="form-input"
-                    >
-                 </div>
+        <!-- Avatar Section -->
+        <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm p-5 flex flex-col items-center gap-3">
+          <div class="relative group">
+            <div class="w-24 h-24 rounded-2xl border-4 border-white shadow-lg overflow-hidden bg-gw-bg">
+              <img [src]="avatarPreview" class="w-full h-full object-cover">
+            </div>
+            <label class="absolute -bottom-2 -right-2 bg-gw-primary text-white p-2.5 rounded-xl shadow-lg border-2 border-white cursor-pointer hover:opacity-90 active:scale-95 transition-all">
+              <i-lucide [img]="CameraIcon" size="15"></i-lucide>
+              <input type="file" (change)="onFileSelected($event)" class="hidden" accept="image/*">
+            </label>
+          </div>
+          <p class="text-[10px] font-bold uppercase tracking-widest text-gw-text-muted">Tap camera to change photo</p>
+        </div>
 
-                 <div class="relative">
-                    <i-lucide [img]="MailIcon" size="16" class="absolute left-4 top-1/2 -translate-y-1/2 text-ls-text-muted"></i-lucide>
-                    <input 
-                      formControlName="email"
-                      type="email" 
-                      placeholder="Email Address" 
-                      class="form-input opacity-60 pointer-events-none"
-                    >
-                 </div>
+        <!-- Personal Details -->
+        <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
+          <div class="px-5 py-3.5 border-b border-gw-bg">
+            <p class="text-[10px] font-black text-gw-text-muted uppercase tracking-widest">Personal Details</p>
+          </div>
+          <form [formGroup]="settingsForm" (ngSubmit)="onSubmit()" class="divide-y divide-gw-bg">
 
-                 <div class="relative">
-                    <i-lucide [img]="PhoneIcon" size="16" class="absolute left-4 top-1/2 -translate-y-1/2 text-ls-text-muted"></i-lucide>
-                    <input 
-                      formControlName="mobile"
-                      type="tel" 
-                      placeholder="Mobile Number" 
-                      class="form-input"
-                    >
-                 </div>
+            <div class="flex items-center gap-3.5 px-5 py-3.5">
+              <div class="w-9 h-9 bg-gw-bg rounded-xl flex items-center justify-center shrink-0">
+                <i-lucide [img]="UserIcon" size="15" class="text-gw-text-muted"></i-lucide>
               </div>
-           </div>
-
-           <button 
-             type="submit" 
-             [disabled]="settingsForm.invalid || isSaving"
-             class="w-full h-16 bg-ls-primary text-white rounded-3xl font-black uppercase tracking-widest text-lg italic shadow-xl shadow-ls-primary/20 flex items-center justify-center gap-3 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none"
-           >
-              <i-lucide [img]="isSaved ? CheckIcon : SaveIcon" size="20" [class.animate-bounce]="isSaved"></i-lucide>
-              {{ isSaving ? 'Saving Changes...' : (isSaved ? 'Changes Saved!' : 'Update Profile') }}
-           </button>
-        </form>
-
-        <!-- Live Session Preferences -->
-        <div class="space-y-4">
-          <h3 class="text-xs font-black uppercase tracking-[0.2em] text-ls-text-muted px-1">Live Session Preferences</h3>
-
-          <div class="bg-white border border-ls-card-border rounded-3xl divide-y divide-ls-card-border shadow-sm">
-
-            <!-- Default Voice Starter -->
-            <div class="flex items-center justify-between px-5 py-4 gap-4">
-              <div class="flex items-center gap-3 min-w-0">
-                <div class="w-10 h-10 rounded-2xl bg-[#3D5A99]/10 flex items-center justify-center flex-shrink-0">
-                  <i-lucide [img]="MicIcon" size="18" class="text-ls-primary"></i-lucide>
-                </div>
-                <div class="min-w-0">
-                  <p class="text-sm font-black text-ls-text leading-tight">Default Voice Starter</p>
-                  <p class="text-[11px] text-ls-text-muted mt-0.5 leading-snug">
-                    Auto-start recording when it's your turn to speak
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                (click)="toggleVoiceStarter()"
-                class="relative flex-shrink-0 w-12 h-6 rounded-full transition-colors duration-300 focus:outline-none"
-                [ngClass]="prefs.defaultVoiceStarter ? 'bg-[#3D5A99]' : 'bg-gray-200'"
-                [attr.aria-checked]="prefs.defaultVoiceStarter"
-                role="switch"
+              <input
+                formControlName="name"
+                type="text"
+                placeholder="Full Name"
+                class="flex-1 h-10 bg-transparent text-sm font-semibold text-gw-text outline-none placeholder:text-gw-text-muted"
               >
-                <span
-                  class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300"
-                  [ngClass]="prefs.defaultVoiceStarter ? 'translate-x-6' : 'translate-x-0'"
-                ></span>
+            </div>
+
+            <div class="flex items-center gap-3.5 px-5 py-3.5">
+              <div class="w-9 h-9 bg-gw-bg rounded-xl flex items-center justify-center shrink-0">
+                <i-lucide [img]="MailIcon" size="15" class="text-gw-text-muted"></i-lucide>
+              </div>
+              <input
+                formControlName="email"
+                type="email"
+                placeholder="Email Address"
+                class="flex-1 h-10 bg-transparent text-sm font-semibold text-gw-text outline-none placeholder:text-gw-text-muted opacity-50 pointer-events-none"
+              >
+            </div>
+
+            <div class="flex items-center gap-3.5 px-5 py-3.5">
+              <div class="w-9 h-9 bg-gw-bg rounded-xl flex items-center justify-center shrink-0">
+                <i-lucide [img]="PhoneIcon" size="15" class="text-gw-text-muted"></i-lucide>
+              </div>
+              <input
+                formControlName="mobile"
+                type="tel"
+                placeholder="Mobile Number"
+                class="flex-1 h-10 bg-transparent text-sm font-semibold text-gw-text outline-none placeholder:text-gw-text-muted"
+              >
+            </div>
+
+            <div class="px-5 py-4">
+              <button
+                type="submit"
+                [disabled]="settingsForm.invalid || isSaving"
+                class="w-full h-12 bg-gw-primary text-white rounded-xl font-black uppercase tracking-widest text-sm
+                       flex items-center justify-center gap-2.5
+                       hover:opacity-90 active:scale-[0.98] transition-all
+                       disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <i-lucide [img]="isSaved ? CheckIcon : SaveIcon" size="16" [class.animate-bounce]="isSaved"></i-lucide>
+                {{ isSaving ? 'Saving...' : (isSaved ? 'Saved!' : 'Update Profile') }}
               </button>
             </div>
 
+          </form>
+        </div>
+
+        <!-- Live Session Preferences -->
+        <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
+          <div class="px-5 py-3.5 border-b border-gw-bg">
+            <p class="text-[10px] font-black text-gw-text-muted uppercase tracking-widest">Session Preferences</p>
+          </div>
+
+          <div class="flex items-center justify-between px-5 py-4 gap-4">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                   style="background: rgba(61,90,153,0.08);">
+                <i-lucide [img]="MicIcon" size="15" style="color:#3D5A99;"></i-lucide>
+              </div>
+              <div class="min-w-0">
+                <p class="text-sm font-bold text-gw-text leading-tight">Default Voice Starter</p>
+                <p class="text-[10px] text-gw-text-muted mt-0.5 leading-snug">
+                  Auto-start recording when it's your turn
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              (click)="toggleVoiceStarter()"
+              class="relative flex-shrink-0 w-11 h-6 rounded-full transition-colors duration-300 focus:outline-none"
+              [class.bg-gw-primary]="prefs.defaultVoiceStarter"
+              [class.bg-gw-card-border]="!prefs.defaultVoiceStarter"
+              [attr.aria-checked]="prefs.defaultVoiceStarter"
+              role="switch"
+            >
+              <span
+                class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-300"
+                [class.translate-x-5]="prefs.defaultVoiceStarter"
+                [class.translate-x-0]="!prefs.defaultVoiceStarter"
+              ></span>
+            </button>
           </div>
         </div>
-      </main>
 
-      <app-bottom-nav></app-bottom-nav>
+      </div>
     </div>
   `,
-  styles: [`
-    .form-input {
-      @apply w-full h-16 pl-12 pr-4 bg-white border border-ls-card-border rounded-2xl text-ls-text font-bold focus:outline-none focus:border-ls-primary transition-all shadow-sm;
-    }
-  `]
+  styles: [`:host { display: block; }`]
 })
 export class UserSettingsComponent implements OnInit {
-  readonly UserIcon = User;
-  readonly MailIcon = Mail;
-  readonly PhoneIcon = Phone;
+  readonly UserIcon   = User;
+  readonly MailIcon   = Mail;
+  readonly PhoneIcon  = Phone;
   readonly CameraIcon = Camera;
-  readonly SaveIcon = Save;
-  readonly CheckIcon = CheckCircle;
-  readonly MicIcon = Mic;
+  readonly SaveIcon   = Save;
+  readonly CheckIcon  = CheckCircle;
+  readonly MicIcon    = Mic;
 
   settingsForm!: FormGroup;
   avatarPreview = 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ravi';
   isSaving = false;
-  isSaved = false;
+  isSaved  = false;
 
   get prefs() { return this.sessionPrefs.prefs; }
 
@@ -153,42 +162,34 @@ export class UserSettingsComponent implements OnInit {
   ngOnInit() {
     const user = this.auth.currentUser;
     this.settingsForm = this.fb.group({
-      name: [user?.fullName || '', [Validators.required]],
-      email: [user?.email || '', [Validators.required, Validators.email]],
+      name:   [user?.fullName     || '', [Validators.required]],
+      email:  [user?.email        || '', [Validators.required, Validators.email]],
       mobile: [user?.mobileNumber || '', [Validators.required]]
     });
-
-    if (user?.avatarUrl) {
-      this.avatarPreview = user.avatarUrl;
-    }
+    if (user?.avatarUrl) this.avatarPreview = user.avatarUrl;
   }
 
   onFileSelected(event: any) {
     const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e: any) => this.avatarPreview = e.target.result;
-      reader.readAsDataURL(file);
-
-      this.userService.uploadAvatar(file).subscribe(res => {
-        // Handle avatar upload success
-      });
-    }
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e: any) => this.avatarPreview = e.target.result;
+    reader.readAsDataURL(file);
+    this.userService.uploadAvatar(file).subscribe();
   }
 
   onSubmit() {
-    if (this.settingsForm.valid) {
-      this.isSaving = true;
-      this.isSaved = false;
-      this.userService.updateProfile(this.settingsForm.value).subscribe({
-        next: (res) => {
-          this.isSaving = false;
-          this.isSaved = true;
-          setTimeout(() => this.isSaved = false, 3000);
-        },
-        error: () => this.isSaving = false
-      });
-    }
+    if (!this.settingsForm.valid) return;
+    this.isSaving = true;
+    this.isSaved  = false;
+    this.userService.updateProfile(this.settingsForm.value).subscribe({
+      next: () => {
+        this.isSaving = false;
+        this.isSaved  = true;
+        setTimeout(() => this.isSaved = false, 3000);
+      },
+      error: () => this.isSaving = false
+    });
   }
 
   toggleVoiceStarter() {

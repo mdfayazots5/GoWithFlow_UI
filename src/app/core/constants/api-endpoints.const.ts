@@ -28,6 +28,9 @@ export const API = {
     END:       (id: string) => `/sessions/${id}/end`,
     LEAVE:     (id: string) => `/sessions/${id}/leave`,
     COMPLETE:  (id: string) => `/sessions/${id}/complete`,
+    INVITATIONS:       (id: string) => `/sessions/${id}/invitations`,
+    INVITATION_RESPOND:(id: string, invId: number) => `/sessions/${id}/invitations/${invId}`,
+    INVITATION_CANCEL: (id: string, invId: number) => `/sessions/${id}/invitations/${invId}/cancel`,
   },
   TURNS: {
     CURRENT:          (id: string) => `/turns/${id}/current`,
@@ -55,6 +58,8 @@ export const API = {
     PROGRESS:        '/users/progress',
     STREAK:          '/users/streak',
     BADGES:          '/users/badges',
+    SEARCH:          '/users/search',
+    MY_INVITATIONS:  '/users/invitations',
   },
   ADMIN: {
     DASHBOARD:       '/admin/dashboard',

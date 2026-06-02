@@ -6,6 +6,10 @@ export const SESSION_ROUTES: Routes = [
     loadComponent: () => import('./create/create-session.component').then(m => m.CreateSessionComponent)
   },
   {
+    path: 'invite',
+    loadComponent: () => import('./invite/invite-session.component').then(m => m.InviteSessionComponent)
+  },
+  {
     path: 'join',
     loadComponent: () => import('./join/join-session.component').then(m => m.JoinSessionComponent)
   },

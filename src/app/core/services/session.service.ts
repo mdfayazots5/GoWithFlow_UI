@@ -8,7 +8,10 @@ import {
   SessionPreview,
   JoinSessionResponse,
   LobbyState,
-  LobbyMember
+  LobbyMember,
+  SessionInvitation,
+  UserInvitation,
+  UserSearchResult
 } from '@core/models/session.model';
 import { PagedResult } from '@core/models/script.model';
 
@@ -152,5 +155,76 @@ export class SessionService {
 
   leaveSession(sessionId: string): Observable<boolean> {
     return this.http.post<boolean>(`${this.baseUrl}/${sessionId}/leave`, {});
+  }
+
+  sendInvitations(sessionId: string, assignments: { userId: number; slotIndex: number }[]): Observable<SessionInvitation[]> {
+    return this.http.post<any>(`${this.baseUrl}/${sessionId}/invitations`, { sessionId: Number(sessionId), assignments }).pipe(
+      map(res => this.mapInvitations(res.data ?? []))
+    );
+  }
+
+  getSessionInvitations(sessionId: string): Observable<SessionInvitation[]> {
+    return this.http.get<any>(`${this.baseUrl}/${sessionId}/invitations`).pipe(
+      map(res => this.mapInvitations(res.data ?? []))
+    );
+  }
+
+  respondToInvitation(sessionId: string, invitationId: number, status: 'ACCEPTED' | 'DECLINED'): Observable<boolean> {
+    return this.http.patch<any>(`${this.baseUrl}/${sessionId}/invitations/${invitationId}`, { status }).pipe(
+      map(res => res.success === true)
+    );
+  }
+
+  cancelInvitation(sessionId: string, invitationId: number): Observable<boolean> {
+    return this.http.delete<any>(`${this.baseUrl}/${sessionId}/invitations/${invitationId}/cancel`).pipe(
+      map(res => res.success === true)
+    );
+  }
+
+  getMyInvitations(): Observable<UserInvitation[]> {
+    return this.http.get<any>(`${environment.apiBaseUrl}/users/invitations`).pipe(
+      map(res => (res.data ?? []).map((d: any) => ({
+        invitationId:    d.invitationId,
+        sessionId:       d.sessionId,
+        slotIndex:       d.slotIndex,
+        slotName:        d.slotName,
+        status:          d.status,
+        sentAt:          d.sentAt,
+        expiresAt:       d.expiresAt,
+        sessionName:     d.sessionName,
+        sessionMode:     d.sessionMode,
+        sessionDuration: d.sessionDuration,
+        scheduledAt:     d.scheduledAt,
+        hostName:        d.hostName,
+        hostAvatarUrl:   d.hostAvatarUrl
+      } as UserInvitation)))
+    );
+  }
+
+  searchUsers(query: string): Observable<UserSearchResult[]> {
+    const params = new HttpParams().set('q', query);
+    return this.http.get<any>(`${environment.apiBaseUrl}/users/search`, { params }).pipe(
+      map(res => (res.data ?? []).map((u: any) => ({
+        userId:    u.userId,
+        fullName:  u.fullName,
+        avatarUrl: u.avatarUrl
+      } as UserSearchResult)))
+    );
+  }
+
+  private mapInvitations(data: any[]): SessionInvitation[] {
+    return data.map(d => ({
+      invitationId: d.invitationId,
+      sessionId:    d.sessionId,
+      userId:       d.userId,
+      slotIndex:    d.slotIndex,
+      slotName:     d.slotName,
+      status:       d.status,
+      sentAt:       d.sentAt,
+      respondedAt:  d.respondedAt,
+      expiresAt:    d.expiresAt,
+      fullName:     d.fullName,
+      avatarUrl:    d.avatarUrl
+    } as SessionInvitation));
   }
 }

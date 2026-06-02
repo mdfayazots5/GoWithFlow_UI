@@ -5,11 +5,12 @@ import { TurnState } from '@core/models/voice.model';
 import { LucideAngularModule, Mic, ThumbsUp, AlertCircle, Volume2 } from 'lucide-angular';
 import { LiveSessionService } from '../live-session.service';
 import { VoiceBroadcastService } from '@core/services/voice-broadcast.service';
+import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.component';
 
 @Component({
   selector: 'app-listener-screen',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule, LucideAngularModule, UserAvatarComponent],
   template: `
     <div class="flex flex-col gap-3 animate-in fade-in duration-500">
 
@@ -36,11 +37,12 @@ import { VoiceBroadcastService } from '@core/services/voice-broadcast.service';
         <div class="relative flex items-center justify-center w-24 h-24">
           <div class="absolute w-24 h-24 rounded-full border border-[#3D5A99]/20 ring-pulse-outer"></div>
           <div class="absolute w-18 h-18 rounded-full border border-[#3D5A99]/35 ring-pulse-inner" style="width:4.5rem;height:4.5rem"></div>
-          <div class="w-16 h-16 rounded-[22px] overflow-hidden border-2 border-[#3D5A99] relative z-10 shadow-xl shadow-[#3D5A99]/30">
-            <img
-              [src]="'https://api.dicebear.com/7.x/avataaars/svg?seed=' + turnState.activeMemberName"
-              class="w-full h-full object-cover"
-            >
+          <div class="relative z-10">
+            <app-user-avatar
+              [name]="turnState.activeMemberName"
+              size="lg"
+              [dark]="true">
+            </app-user-avatar>
           </div>
           <div class="absolute bottom-0 right-0 z-20 w-6 h-6 bg-[#3D5A99] rounded-full flex items-center justify-center border-2 border-[#1A1A2E]">
             <i-lucide [img]="MicIcon" size="10" class="text-white"></i-lucide>

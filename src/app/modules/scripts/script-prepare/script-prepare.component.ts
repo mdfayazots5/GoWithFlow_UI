@@ -1,8 +1,8 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ScriptService } from '@core/services/script.service';
-import { LucideAngularModule, ChevronLeft, BookOpen, Mic, MicOff, Tag, MessageSquare, Globe } from 'lucide-angular';
+import { LucideAngularModule, ChevronLeft, BookOpen, Mic, MicOff, Tag, MessageSquare, Globe, Play } from 'lucide-angular';
 import { catchError, of } from 'rxjs';
 
 interface Utterance {
@@ -162,12 +162,17 @@ interface ScriptDetail {
         </div>
 
         <!-- Start session CTA -->
-        <div class="sticky bottom-4 flex justify-center">
-          <a routerLink="/scripts" queryParamsHandling="preserve"
-            class="bg-gw-primary text-white font-black text-xs uppercase tracking-widest italic px-8 py-3.5 rounded-2xl shadow-lg hover:opacity-90 transition-all flex items-center gap-2">
-            <i-lucide [img]="BookIcon" size="16"></i-lucide>
-            Back to Library — Start Session
+        <div class="sticky bottom-4 flex gap-3 justify-center">
+          <a routerLink="/scripts"
+            class="h-12 px-5 bg-gw-bg text-gw-text-muted font-black text-[10px] uppercase tracking-widest italic rounded-2xl shadow-sm hover:bg-gw-card-border transition-all flex items-center gap-2">
+            <i-lucide [img]="BookIcon" size="14"></i-lucide>
+            Library
           </a>
+          <button (click)="startSession()"
+            class="h-12 px-8 bg-gw-primary text-white font-black text-[10px] uppercase tracking-widest italic rounded-2xl shadow-lg hover:opacity-90 transition-all flex items-center gap-2">
+            <i-lucide [img]="PlayIcon" size="14"></i-lucide>
+            Start Session
+          </button>
         </div>
       }
 
@@ -177,14 +182,16 @@ interface ScriptDetail {
 })
 export class ScriptPrepareComponent implements OnInit {
   private scriptService = inject(ScriptService);
-  private route = inject(ActivatedRoute);
+  private route  = inject(ActivatedRoute);
+  private router = inject(Router);
 
-  readonly BackIcon = ChevronLeft;
-  readonly BookIcon = BookOpen;
-  readonly MicIcon  = Mic;
-  readonly OffIcon  = MicOff;
-  readonly TagIcon  = Tag;
-  readonly MsgIcon  = MessageSquare;
+  readonly BackIcon  = ChevronLeft;
+  readonly BookIcon  = BookOpen;
+  readonly PlayIcon  = Play;
+  readonly MicIcon   = Mic;
+  readonly OffIcon   = MicOff;
+  readonly TagIcon   = Tag;
+  readonly MsgIcon   = MessageSquare;
   readonly GlobeIcon = Globe;
 
   script    = signal<ScriptDetail | null>(null);
@@ -201,6 +208,11 @@ export class ScriptPrepareComponent implements OnInit {
 
   isFacilitatorTurn(speakerLabel: string): boolean {
     return this.facilitatorLabels.has(speakerLabel);
+  }
+
+  startSession() {
+    const s = this.script();
+    if (s) this.router.navigate(['/session/create'], { state: { script: s } });
   }
 
   ngOnInit() {

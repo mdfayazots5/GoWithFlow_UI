@@ -5,7 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { UserService } from '@core/services/user.service';
 import { RepracticeService } from '../../repractice/repractice.service';
 import { SessionDetail } from '@core/models/session.model';
-import { LucideAngularModule, ChevronLeft, Calendar, Clock, Award, Target, Zap, RotateCcw, BookOpen, User, ArrowRight, Info } from 'lucide-angular';
+import { LucideAngularModule, Calendar, Clock, Award, Target, Zap, RotateCcw, BookOpen, ArrowRight, Info } from 'lucide-angular';
 import { ToastService } from '@core/services/toast.service';
 
 @Component({
@@ -13,22 +13,23 @@ import { ToastService } from '@core/services/toast.service';
   standalone: true,
   imports: [CommonModule, LucideAngularModule, RouterLink],
   template: `
-    <div class="space-y-8 animate-in slide-in-from-bottom-10 duration-700 pb-32">
-      <!-- Header -->
-      <div class="flex items-center gap-4">
-         <button routerLink="/user/dashboard" class="w-10 h-10 rounded-xl bg-gw-bg flex items-center justify-center text-gw-text-muted hover:text-gw-primary transition-all">
-            <i-lucide [img]="BackIcon" size="20"></i-lucide>
-         </button>
-         <div>
-            <h2 class="text-2xl font-black text-gw-text italic uppercase tracking-tighter">{{ detail()?.sessionName }}</h2>
-            <p class="text-[10px] font-bold text-gw-text-muted uppercase tracking-widest italic">{{ detail()?.createdDate | date:'fullDate' }}</p>
-         </div>
+    <div class="min-h-screen bg-gw-bg">
+      <div class="max-w-lg mx-auto px-4 pt-2 pb-28 space-y-4 animate-in fade-in duration-500">
+
+      <!-- Page heading -->
+      <div>
+        <h1 class="text-xl font-black text-gw-text tracking-tight truncate">
+          {{ detail()?.sessionName || 'Session Detail' }}
+        </h1>
+        <p class="text-[11px] font-semibold text-gw-text-muted mt-0.5">
+          {{ detail()?.createdDate | date:'fullDate' }}
+        </p>
       </div>
 
       <!-- Performance Overview -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
          <!-- Circular Progress + Main Stats -->
-         <div class="bg-white p-8 rounded-[40px] border border-gw-card-border shadow-sm flex flex-col items-center gap-8">
+         <div class="bg-white p-5 rounded-2xl border border-gw-card-border shadow-sm flex flex-col items-center gap-5">
             <div class="relative w-48 h-48 flex items-center justify-center">
                <svg class="w-full h-full -rotate-90">
                   <circle cx="96" cy="96" r="88" fill="none" stroke="currentColor" stroke-width="12" class="text-gw-bg"></circle>
@@ -47,7 +48,7 @@ import { ToastService } from '@core/services/toast.service';
                </div>
             </div>
 
-            <div class="grid grid-cols-3 w-full gap-4 border-t border-gw-bg pt-8">
+            <div class="grid grid-cols-3 w-full gap-4 border-t border-gw-bg pt-4">
                <div class="text-center space-y-1">
                   <span class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Confidence</span>
                   <p class="text-lg font-black italic">{{ detail()?.myPerformance?.confidence }}%</p>
@@ -64,8 +65,8 @@ import { ToastService } from '@core/services/toast.service';
          </div>
 
          <!-- Listener Feedback + Session Info -->
-         <div class="space-y-6">
-            <div class="bg-white p-8 rounded-[40px] border border-gw-card-border shadow-sm space-y-6">
+         <div class="space-y-4">
+            <div class="bg-white p-5 rounded-2xl border border-gw-card-border shadow-sm space-y-4">
                <h3 class="text-xs font-black uppercase tracking-widest text-gw-text-muted italic flex items-center gap-2">
                   <i-lucide [img]="AwardIcon" size="14"></i-lucide>
                   LISTENER FEEDBACK
@@ -80,7 +81,7 @@ import { ToastService } from '@core/services/toast.service';
                </div>
             </div>
 
-            <div class="bg-[#1A1A2E] p-8 rounded-[40px] shadow-sm space-y-6 text-white">
+            <div class="bg-[#1A1A2E] p-5 rounded-2xl shadow-sm space-y-4 text-white">
                <h3 class="text-xs font-black uppercase tracking-widest text-white/40 italic flex items-center gap-2">
                   <i-lucide [img]="InfoIcon" size="14"></i-lucide>
                   SESSION CONTEXT
@@ -104,15 +105,15 @@ import { ToastService } from '@core/services/toast.service';
       </div>
 
       <!-- My Mistakes Section -->
-      <div class="space-y-6">
+      <div class="space-y-3">
          <div class="flex items-center justify-between">
-            <h3 class="text-lg font-black text-gw-text italic uppercase tracking-widest border-l-4 border-gw-error pl-4">Mistakes to Fix</h3>
+            <h3 class="text-sm font-black text-gw-text uppercase tracking-widest border-l-4 border-gw-error pl-3">Mistakes to Fix</h3>
             <span class="text-[10px] font-black bg-gw-error/10 text-gw-error px-3 py-1 rounded-full italic">{{ detail()?.myMistakes?.length }} DETECTED</span>
          </div>
 
          <div class="grid gap-4">
             @for (mistake of detail()?.myMistakes; track mistake.said) {
-               <div class="bg-white p-6 rounded-[32px] border border-gw-card-border shadow-sm space-y-6 group">
+               <div class="bg-white p-5 rounded-2xl border border-gw-card-border shadow-sm space-y-3 group">
                   <div class="flex justify-between items-center">
                      <span class="px-3 py-1 bg-gw-bg text-gw-text-muted rounded-lg text-[8px] font-black uppercase tracking-widest italic">{{ mistake.type }} — {{ mistake.tag }}</span>
                      <button (click)="practiceMistake()" class="text-gw-primary hover:scale-110 transition-transform">
@@ -135,9 +136,9 @@ import { ToastService } from '@core/services/toast.service';
       </div>
 
       <!-- Other Members -->
-      <div class="space-y-6">
-         <h3 class="text-lg font-black text-gw-text italic uppercase tracking-widest border-l-4 border-gw-primary pl-4">Member Performance</h3>
-         <div class="bg-white rounded-[40px] border border-gw-card-border overflow-hidden">
+      <div class="space-y-3">
+         <h3 class="text-sm font-black text-gw-text uppercase tracking-widest border-l-4 border-gw-primary pl-3">Member Performance</h3>
+         <div class="bg-white rounded-2xl border border-gw-card-border overflow-hidden shadow-sm">
             <table class="w-full text-left border-collapse">
                <thead>
                   <tr class="bg-gw-bg/50">
@@ -172,19 +173,32 @@ import { ToastService } from '@core/services/toast.service';
       </div>
 
       <!-- Final Actions -->
-      <div class="grid md:grid-cols-3 gap-4 pt-8">
-         <button (click)="practiceMistake()" class="h-16 bg-gw-text text-white font-black uppercase tracking-widest italic rounded-2xl shadow-xl shadow-gw-text/20 hover:scale-[1.02] transition-all flex items-center justify-center gap-3">
-            <i-lucide [img]="ZapIcon" size="20" class="text-gw-accent"></i-lucide>
-            START CORRECTION ROUND
-         </button>
-         <button routerLink="/scripts" class="h-16 bg-white border-2 border-gw-card-border text-gw-text font-black uppercase tracking-widest italic rounded-2xl flex items-center justify-center gap-3 hover:bg-gw-bg transition-all">
-            <i-lucide [img]="BookIcon" size="20"></i-lucide>
-            VIEW SCRIPT
-         </button>
-         <button (click)="practiceAgain()" class="h-16 bg-white border-2 border-gw-card-border text-gw-text font-black uppercase tracking-widest italic rounded-2xl flex items-center justify-center gap-3 hover:bg-gw-bg transition-all">
-            <i-lucide [img]="RetryIcon" size="20"></i-lucide>
-            PRACTICE AGAIN
-         </button>
+      <div class="space-y-3">
+        <button (click)="practiceMistake()"
+          class="w-full h-14 bg-gw-primary text-white font-black uppercase tracking-widest
+                 rounded-2xl shadow-lg shadow-gw-primary/20 flex items-center justify-center gap-3
+                 hover:opacity-90 active:scale-[0.98] transition-all text-sm">
+          <i-lucide [img]="ZapIcon" size="18" class="text-gw-accent"></i-lucide>
+          Start Correction Round
+        </button>
+        <div class="grid grid-cols-2 gap-3">
+          <button routerLink="/scripts"
+            class="h-12 bg-white border border-gw-card-border text-gw-text font-black uppercase
+                   tracking-widest rounded-2xl flex items-center justify-center gap-2
+                   hover:bg-gw-bg transition-all text-xs">
+            <i-lucide [img]="BookIcon" size="15"></i-lucide>
+            View Script
+          </button>
+          <button (click)="practiceAgain()"
+            class="h-12 bg-white border border-gw-card-border text-gw-text font-black uppercase
+                   tracking-widest rounded-2xl flex items-center justify-center gap-2
+                   hover:bg-gw-bg transition-all text-xs">
+            <i-lucide [img]="RetryIcon" size="15"></i-lucide>
+            Practice Again
+          </button>
+        </div>
+      </div>
+
       </div>
     </div>
   `,
@@ -199,7 +213,6 @@ export class SessionDetailComponent implements OnInit {
   private repracticeService = inject(RepracticeService);
   private toast = inject(ToastService);
 
-  readonly BackIcon = ChevronLeft;
   readonly CalendarIcon = Calendar;
   readonly ClockIcon = Clock;
   readonly AwardIcon = Award;

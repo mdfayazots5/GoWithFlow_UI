@@ -2,253 +2,274 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { ScriptService } from '@core/services/script.service';
-import { Script } from '@core/models/script.model';
-import { LucideAngularModule, Search, BookOpen, Layers, Eye, Play, Trash2, Plus, BookMarked } from 'lucide-angular';
+import { Router, RouterLink } from '@angular/router';
+import {
+  LucideAngularModule,
+  Search, BookOpen, Layers, Eye, Play, Trash2, Plus, BookMarked, Loader2
+} from 'lucide-angular';
 import { MatBottomSheet, MatBottomSheetModule } from '@angular/material/bottom-sheet';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { ScriptPreviewComponent } from './script-preview.component';
 import { AuthService } from '@core/services/auth.service';
 import { ToastService } from '@core/services/toast.service';
-import { Router, RouterLink } from '@angular/router';
+import { ScriptService } from '@core/services/script.service';
+import { Script } from '@core/models/script.model';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 
 @Component({
   selector: 'app-script-library',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, MatBottomSheetModule, MatPaginatorModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, MatBottomSheetModule, RouterLink],
   template: `
-    <div class="space-y-6 animate-in fade-in duration-500 pb-24">
+    <div class="min-h-screen bg-gw-bg">
+      <div class="max-w-lg mx-auto px-4 pt-2 pb-28 space-y-4 animate-in fade-in duration-500">
 
-      <!-- Header -->
-      <div class="flex items-center justify-between">
-        <div>
-          <h2 class="text-2xl font-black text-gw-text uppercase tracking-tight">Script Library</h2>
-          <p class="text-[10px] font-semibold text-gw-text-muted uppercase tracking-widest mt-0.5">Choose a script to start your fluency journey</p>
-        </div>
-        @if (isAdmin()) {
-          <a routerLink="/admin/scripts/upload"
-             class="h-10 px-4 bg-gw-text text-white text-xs font-bold uppercase tracking-wide rounded-xl flex items-center gap-2 hover:opacity-90 active:scale-95 transition-all shadow-md">
-            <i-lucide [img]="PlusIcon" size="16"></i-lucide>
-            <span class="hidden sm:inline">New Script</span>
-          </a>
-        }
-      </div>
-
-      <!-- Search -->
-      <div class="relative">
-        <i-lucide [img]="SearchIcon" size="16"
-                  class="absolute left-4 top-1/2 -translate-y-1/2 text-gw-text-muted pointer-events-none"></i-lucide>
-        <input [formControl]="searchControl" type="text" placeholder="Search scripts..."
-               class="w-full h-11 bg-white border border-gw-card-border rounded-xl pl-11 pr-4 text-sm font-medium text-gw-text outline-none focus:border-gw-primary transition-colors shadow-sm placeholder:text-gw-text-muted/60">
-      </div>
-
-      <!-- Filter chips — horizontal scroll on mobile -->
-      <div class="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-        <select [formControl]="categoryControl"
-                class="shrink-0 h-9 bg-white border border-gw-card-border rounded-xl px-3 text-[11px] font-bold text-gw-text outline-none appearance-none cursor-pointer focus:border-gw-primary transition-colors shadow-sm">
-          <option value="">All Categories</option>
-          <option value="Grammar Drill">Grammar Drill</option>
-          <option value="Roleplay">Roleplay</option>
-          <option value="Interview">Interview</option>
-          <option value="Vocabulary">Vocabulary</option>
-          <option value="Fluency Drill">Fluency Drill</option>
-        </select>
-
-        <select [formControl]="grammarControl"
-                class="shrink-0 h-9 bg-white border border-gw-card-border rounded-xl px-3 text-[11px] font-bold text-gw-text outline-none appearance-none cursor-pointer focus:border-gw-primary transition-colors shadow-sm">
-          <option value="">All Grammar Focus</option>
-          <option value="Have Been">Have Been</option>
-          <option value="Has Been">Has Been</option>
-          <option value="Must Be">Must Be</option>
-          <option value="Should Be">Should Be</option>
-          <option value="Would Have">Would Have</option>
-        </select>
-
-        <select [formControl]="ageControl"
-                class="shrink-0 h-9 bg-white border border-gw-card-border rounded-xl px-3 text-[11px] font-bold text-gw-text outline-none appearance-none cursor-pointer focus:border-gw-primary transition-colors shadow-sm">
-          <option value="">All Ages</option>
-          <option value="Child (6-12)">Child (6–12)</option>
-          <option value="Teen (13-17)">Teen (13–17)</option>
-          <option value="Adult (18+)">Adult (18+)</option>
-        </select>
-      </div>
-
-      <!-- Scripts Grid -->
-      @if (isLoading()) {
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          @for (i of [1,2,3,4,5,6]; track i) {
-            <div class="h-48 bg-white border border-gw-card-border rounded-2xl animate-pulse"></div>
+        <!-- ── Page Heading ─────────────────────────────────────── -->
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <h1 class="text-xl font-black text-gw-text tracking-tight leading-tight">Script Library</h1>
+            <p class="text-[11px] font-semibold text-gw-text-muted mt-0.5">Choose a script to start your session</p>
+          </div>
+          @if (isAdmin()) {
+            <a routerLink="/admin/scripts/upload"
+               class="h-9 px-4 bg-gw-primary text-white text-[11px] font-black uppercase
+                      tracking-widest rounded-xl flex items-center gap-2
+                      hover:opacity-90 active:scale-95 transition-all shrink-0 no-underline">
+              <i-lucide [img]="PlusIcon" size="14"></i-lucide>
+              New
+            </a>
           }
         </div>
-      } @else if (scripts().length === 0) {
-        <div class="bg-white rounded-2xl border border-gw-card-border p-12 flex flex-col items-center gap-3 text-center">
-          <div class="w-14 h-14 bg-gw-bg rounded-2xl flex items-center justify-center">
-            <i-lucide [img]="BookOpenIcon" size="26" class="text-gw-text-muted"></i-lucide>
-          </div>
-          <p class="text-sm font-bold text-gw-text">No scripts found</p>
-          <p class="text-xs text-gw-text-muted">Try adjusting your search or filters.</p>
+
+        <!-- ── Search ────────────────────────────────────────────── -->
+        <div class="relative">
+          <i-lucide [img]="SearchIcon" size="15"
+                    class="absolute left-4 top-1/2 -translate-y-1/2 text-gw-text-muted pointer-events-none">
+          </i-lucide>
+          <input [formControl]="searchControl" type="text" placeholder="Search scripts..."
+                 class="w-full h-11 bg-white border border-gw-card-border rounded-2xl
+                        pl-11 pr-4 text-sm font-medium text-gw-text shadow-sm
+                        outline-none focus:border-gw-primary transition-colors
+                        placeholder:text-gw-text-muted/60">
         </div>
-      } @else {
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          @for (script of scripts(); track script.id) {
-            <div class="group bg-white rounded-2xl border border-gw-card-border shadow-sm hover:shadow-lg hover:border-gw-primary hover:-translate-y-0.5 transition-all duration-300 flex flex-col overflow-hidden relative">
 
-              <!-- Top color bar based on category -->
-              <div class="h-1 w-full"
-                   [style.background]="categoryColor(script.category)"></div>
+        <!-- ── Filter Row ────────────────────────────────────────── -->
+        <div class="flex gap-2 overflow-x-auto pb-0.5"
+             style="-ms-overflow-style:none;scrollbar-width:none;">
+          <select [formControl]="categoryControl"
+                  class="shrink-0 h-9 bg-white border border-gw-card-border rounded-full
+                         px-4 text-[10px] font-black uppercase tracking-widest text-gw-text
+                         outline-none appearance-none cursor-pointer
+                         focus:border-gw-primary transition-colors shadow-sm">
+            <option value="">All Categories</option>
+            <option value="Grammar Drill">Grammar Drill</option>
+            <option value="Roleplay">Roleplay</option>
+            <option value="Interview">Interview</option>
+            <option value="Vocabulary">Vocabulary</option>
+            <option value="Fluency Drill">Fluency Drill</option>
+          </select>
 
-              <div class="p-5 flex flex-col flex-1 gap-4">
+          <select [formControl]="grammarControl"
+                  class="shrink-0 h-9 bg-white border border-gw-card-border rounded-full
+                         px-4 text-[10px] font-black uppercase tracking-widest text-gw-text
+                         outline-none appearance-none cursor-pointer
+                         focus:border-gw-primary transition-colors shadow-sm">
+            <option value="">All Grammar</option>
+            <option value="Have Been">Have Been</option>
+            <option value="Has Been">Has Been</option>
+            <option value="Must Be">Must Be</option>
+            <option value="Should Be">Should Be</option>
+            <option value="Would Have">Would Have</option>
+          </select>
 
-                <!-- Tags row -->
-                <div class="flex flex-wrap gap-1.5">
-                  <span class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider"
-                        [style.background]="categoryBg(script.category)"
-                        [style.color]="categoryColor(script.category)">
-                    {{ script.category }}
-                  </span>
-                  @if (script.grammarFocusTag && script.grammarFocusTag !== 'None') {
-                    <span class="px-2 py-0.5 bg-amber-50 text-amber-600 rounded-md text-[9px] font-black uppercase tracking-wider border border-amber-100">
-                      {{ script.grammarFocusTag }}
-                    </span>
-                  }
-                </div>
+          <select [formControl]="ageControl"
+                  class="shrink-0 h-9 bg-white border border-gw-card-border rounded-full
+                         px-4 text-[10px] font-black uppercase tracking-widest text-gw-text
+                         outline-none appearance-none cursor-pointer
+                         focus:border-gw-primary transition-colors shadow-sm">
+            <option value="">All Ages</option>
+            <option value="Child (6-12)">Child (6–12)</option>
+            <option value="Teen (13-17)">Teen (13–17)</option>
+            <option value="Adult (18+)">Adult (18+)</option>
+          </select>
+        </div>
 
-                <!-- Title -->
-                <h3 class="text-base font-black text-gw-text uppercase tracking-tight leading-tight group-hover:text-gw-primary transition-colors line-clamp-2">
-                  {{ script.scriptTitle }}
-                </h3>
+        <!-- ── Loading Skeletons ────────────────────────────────── -->
+        @if (isLoading()) {
+          @for (i of [1,2,3,4,5]; track i) {
+            <div class="h-[88px] bg-white rounded-2xl border border-gw-card-border animate-pulse"></div>
+          }
+        }
 
-                <!-- Meta row -->
-                <div class="flex items-center gap-4 mt-auto">
-                  <div class="flex items-center gap-1.5 text-gw-text-muted">
-                    <i-lucide [img]="LinesIcon" size="13"></i-lucide>
-                    <span class="text-xs font-bold">{{ script.utteranceCount }} lines</span>
-                  </div>
-                  <div class="flex items-center gap-1.5">
-                    @for (dot of [1,2,3,4,5]; track dot) {
-                      <div class="w-2 h-2 rounded-full transition-colors"
-                           [style.background]="dot <= (script.complexityLevel || 0) ? categoryColor(script.category) : '#E0E4EC'"></div>
-                    }
-                  </div>
-                </div>
-
-                <!-- Actions -->
-                <div class="flex items-center gap-2 pt-1 border-t border-gw-bg">
-                  <button (click)="previewScript(script)"
-                          class="flex-1 h-9 bg-gw-bg text-gw-text text-xs font-bold rounded-xl hover:bg-gw-primary/10 hover:text-gw-primary transition-all flex items-center justify-center gap-1.5">
-                    <i-lucide [img]="PreviewIcon" size="13"></i-lucide>
-                    Preview
-                  </button>
-                  <a [routerLink]="['/scripts/prepare', script.id]"
-                     class="w-9 h-9 bg-gw-bg rounded-xl flex items-center justify-center text-gw-text-muted hover:bg-gw-primary/10 hover:text-gw-primary transition-all"
-                     title="Prepare — read script before joining">
-                    <i-lucide [img]="PrepareIcon" size="14"></i-lucide>
-                  </a>
-                  <button (click)="startSession(script)" style="background:var(--gw-primary);" class="w-9 h-9 text-white rounded-xl flex items-center justify-center hover:opacity-90 active:scale-95 transition-all shadow-sm">
-                    <i-lucide [img]="PlayIcon" size="16"></i-lucide>
-                  </button>
-                  @if (isAdmin()) {
-                    <button (click)="deactivateScript(script)"
-                            class="w-9 h-9 bg-gw-bg rounded-xl flex items-center justify-center text-gw-text-muted hover:bg-red-50 hover:text-gw-error transition-all">
-                      <i-lucide [img]="TrashIcon" size="14"></i-lucide>
-                    </button>
-                  }
-                </div>
-
-              </div>
+        <!-- ── Empty State ──────────────────────────────────────── -->
+        @else if (scripts().length === 0) {
+          <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm
+                      flex flex-col items-center justify-center py-16 gap-3 text-center">
+            <div class="w-12 h-12 rounded-2xl bg-gw-bg flex items-center justify-center">
+              <i-lucide [img]="BookOpenIcon" size="22" class="text-gw-text-muted"></i-lucide>
             </div>
-          }
-        </div>
-
-        <!-- Pagination -->
-        @if (totalCount() > 0) {
-          <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm p-2 flex justify-center">
-            <mat-paginator
-              [length]="totalCount()"
-              [pageSize]="12"
-              [pageSizeOptions]="[12, 24, 48]"
-              (page)="handlePageChange($event)"
-              class="!border-none">
-            </mat-paginator>
+            <p class="text-sm font-bold text-gw-text">No scripts found</p>
+            <p class="text-xs text-gw-text-muted">Try adjusting your search or filters.</p>
           </div>
         }
-      }
 
+        <!-- ── Script List ──────────────────────────────────────── -->
+        @else {
+          <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
+            <div class="divide-y divide-gw-bg">
+              @for (script of scripts(); track script.id) {
+                <div class="px-4 py-3.5 hover:bg-gw-bg/50 transition-colors">
+
+                  <div class="flex items-center gap-3.5">
+
+                    <!-- Category icon -->
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                         [style.background]="categoryBg(script.category)">
+                      <i-lucide [img]="BookOpenIcon" size="18"
+                                [style.color]="categoryColor(script.category)"></i-lucide>
+                    </div>
+
+                    <!-- Title + meta -->
+                    <div class="flex-1 min-w-0">
+                      <p class="text-sm font-bold text-gw-text truncate leading-tight">
+                        {{ script.scriptTitle }}
+                      </p>
+                      <div class="flex items-center gap-2 mt-1 flex-wrap">
+                        <span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+                              [style.background]="categoryBg(script.category)"
+                              [style.color]="categoryColor(script.category)">
+                          {{ script.category }}
+                        </span>
+                        @if (script.grammarFocusTag && script.grammarFocusTag !== 'None') {
+                          <span class="text-[9px] font-bold text-amber-600 bg-amber-50
+                                       px-2 py-0.5 rounded-full border border-amber-100">
+                            {{ script.grammarFocusTag }}
+                          </span>
+                        }
+                        <span class="text-[10px] font-semibold text-gw-text-muted">
+                          {{ script.utteranceCount }} lines
+                        </span>
+                        <!-- Complexity dots -->
+                        <span class="flex items-center gap-0.5">
+                          @for (dot of [1,2,3,4,5]; track dot) {
+                            <span class="w-1.5 h-1.5 rounded-full"
+                                  [style.background]="dot <= (script.complexityLevel || 0)
+                                    ? categoryColor(script.category) : '#E0E4EC'"></span>
+                          }
+                        </span>
+                      </div>
+                    </div>
+
+                    <!-- Action buttons -->
+                    <div class="flex items-center gap-1.5 shrink-0">
+                      <button (click)="previewScript(script)"
+                              class="w-8 h-8 rounded-xl flex items-center justify-center
+                                     text-gw-text-muted bg-gw-bg
+                                     hover:text-gw-primary hover:bg-gw-primary/10 transition-all"
+                              title="Preview">
+                        <i-lucide [img]="PreviewIcon" size="15"></i-lucide>
+                      </button>
+                      <a [routerLink]="['/scripts/prepare', script.id]"
+                         class="w-8 h-8 rounded-xl flex items-center justify-center
+                                text-gw-text-muted bg-gw-bg
+                                hover:text-gw-primary hover:bg-gw-primary/10 transition-all no-underline"
+                         title="Prepare">
+                        <i-lucide [img]="PrepareIcon" size="15"></i-lucide>
+                      </a>
+                      <button (click)="startSession(script)"
+                              class="w-8 h-8 rounded-xl flex items-center justify-center
+                                     text-white hover:opacity-90 active:scale-95 transition-all"
+                              style="background:var(--gw-primary);"
+                              title="Start session">
+                        <i-lucide [img]="PlayIcon" size="15"></i-lucide>
+                      </button>
+                      @if (isAdmin()) {
+                        <button (click)="deactivateScript(script)"
+                                class="w-8 h-8 rounded-xl flex items-center justify-center
+                                       text-gw-text-muted bg-gw-bg
+                                       hover:text-gw-error hover:bg-red-50 transition-all"
+                                title="Deactivate">
+                          <i-lucide [img]="TrashIcon" size="14"></i-lucide>
+                        </button>
+                      }
+                    </div>
+
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- ── Load More ──────────────────────────────────────── -->
+          @if (hasMore()) {
+            <button (click)="loadMore()"
+                    [disabled]="loadingMore()"
+                    class="w-full py-3 rounded-2xl bg-white border border-gw-card-border
+                           text-[11px] font-black uppercase tracking-widest text-gw-text-muted
+                           hover:border-gw-primary hover:text-gw-primary transition-all
+                           flex items-center justify-center gap-2 disabled:opacity-50">
+              @if (loadingMore()) {
+                <i-lucide [img]="LoaderIcon" size="14" class="animate-spin"></i-lucide>
+                Loading...
+              } @else {
+                Load More
+              }
+            </button>
+          }
+        }
+
+      </div>
     </div>
   `,
-  styles: [`
-    :host { display: block; }
-    .mat-mdc-paginator { background: transparent; }
-  `]
+  styles: [`:host { display: block; }`]
 })
 export class ScriptLibraryComponent implements OnInit {
   private scriptService = inject(ScriptService);
-  private authService = inject(AuthService);
-  private bottomSheet = inject(MatBottomSheet);
-  private toast = inject(ToastService);
-  private router = inject(Router);
+  private authService   = inject(AuthService);
+  private bottomSheet   = inject(MatBottomSheet);
+  private toast         = inject(ToastService);
+  private router        = inject(Router);
 
-  readonly SearchIcon  = Search;
-  readonly LinesIcon   = Layers;
-  readonly PreviewIcon = Eye;
-  readonly PlayIcon    = Play;
-  readonly TrashIcon   = Trash2;
-  readonly PlusIcon    = Plus;
+  readonly SearchIcon   = Search;
   readonly BookOpenIcon = BookOpen;
+  readonly LinesIcon    = Layers;
+  readonly PreviewIcon  = Eye;
+  readonly PlayIcon     = Play;
+  readonly TrashIcon    = Trash2;
+  readonly PlusIcon     = Plus;
   readonly PrepareIcon  = BookMarked;
+  readonly LoaderIcon   = Loader2;
 
-  scripts = signal<Script[]>([]);
-  totalCount = signal(0);
-  isLoading = signal(true);
-  isAdmin = signal(false);
+  scripts    = signal<Script[]>([]);
+  isLoading  = signal(true);
+  loadingMore = signal(false);
+  isAdmin    = signal(false);
 
-  searchControl = new FormControl('');
+  private total    = 0;
+  private pageSize = 20;
+  private page     = 0;
+
+  hasMore = signal(false);
+
+  searchControl   = new FormControl('');
   categoryControl = new FormControl('');
-  grammarControl = new FormControl('');
-  ageControl = new FormControl('');
+  grammarControl  = new FormControl('');
+  ageControl      = new FormControl('');
 
   ngOnInit() {
     this.isAdmin.set(this.authService.getRole() === 'ADMIN');
-    this.loadScripts();
+    this.load();
 
-    this.searchControl.valueChanges.pipe(
-      debounceTime(400),
-      distinctUntilChanged()
-    ).subscribe(() => this.loadScripts());
-
-    this.categoryControl.valueChanges.subscribe(() => this.loadScripts());
-    this.grammarControl.valueChanges.subscribe(() => this.loadScripts());
-    this.ageControl.valueChanges.subscribe(() => this.loadScripts());
+    this.searchControl.valueChanges.pipe(debounceTime(400), distinctUntilChanged())
+      .subscribe(() => this.reset());
+    this.categoryControl.valueChanges.subscribe(() => this.reset());
+    this.grammarControl.valueChanges.subscribe(() => this.reset());
+    this.ageControl.valueChanges.subscribe(() => this.reset());
   }
 
-  loadScripts(pageIndex = 0, pageSize = 12) {
-    this.isLoading.set(true);
-    const filters: any = {
-      search: this.searchControl.value,
-      category: this.categoryControl.value,
-      grammarFocusTag: this.grammarControl.value,
-      targetAgeGroup: this.ageControl.value,
-      page: pageIndex,
-      limit: pageSize
-    };
-    if (!this.isAdmin()) {
-      filters.isActive = true;
-    }
-
-    this.scriptService.getScripts(filters).subscribe({
-      next: (res) => {
-        this.scripts.set(res.items);
-        this.totalCount.set(res.total);
-        this.isLoading.set(false);
-      },
-      error: () => this.isLoading.set(false)
-    });
-  }
-
-  handlePageChange(event: PageEvent) {
-    this.loadScripts(event.pageIndex, event.pageSize);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  loadMore() {
+    this.page++;
+    this.loadingMore.set(true);
+    this.load(true);
   }
 
   previewScript(script: Script) {
@@ -256,6 +277,19 @@ export class ScriptLibraryComponent implements OnInit {
       data: script,
       panelClass: 'preview-bottom-sheet'
     });
+  }
+
+  startSession(script: Script) {
+    this.router.navigate(['/session/create'], { state: { script } });
+  }
+
+  deactivateScript(script: Script) {
+    if (confirm(`Deactivate "${script.scriptTitle}"?`)) {
+      this.scriptService.updateScriptStatus({ scriptId: Number(script.id), isActive: false }).subscribe(() => {
+        this.toast.success('Script deactivated');
+        this.reset();
+      });
+    }
   }
 
   categoryColor(cat: string): string {
@@ -271,25 +305,46 @@ export class ScriptLibraryComponent implements OnInit {
 
   categoryBg(cat: string): string {
     const map: Record<string, string> = {
-      'Grammar Drill': '#EEF2FF',
-      'Roleplay':      '#ECFDF5',
-      'Interview':     '#FFF7ED',
-      'Vocabulary':    '#F5F3FF',
-      'Fluency Drill': '#ECFEFF',
+      'Grammar Drill': 'rgba(61,90,153,0.08)',
+      'Roleplay':      'rgba(46,125,50,0.08)',
+      'Interview':     'rgba(224,123,57,0.08)',
+      'Vocabulary':    'rgba(124,58,237,0.08)',
+      'Fluency Drill': 'rgba(8,145,178,0.08)',
     };
-    return map[cat] ?? '#F4F6F9';
+    return map[cat] ?? 'rgba(107,114,128,0.08)';
   }
 
-  startSession(script: Script) {
-    this.router.navigate(['/session/create'], { state: { script } });
+  private reset() {
+    this.page = 0;
+    this.scripts.set([]);
+    this.isLoading.set(true);
+    this.load();
   }
 
-  deactivateScript(script: Script) {
-    if (confirm(`Are you sure you want to deactivate "${script.scriptTitle}"?`)) {
-      this.scriptService.updateScriptStatus({ scriptId: Number(script.id), isActive: false }).subscribe(() => {
-        this.toast.success('Script deactivated');
-        this.loadScripts();
-      });
-    }
+  private load(append = false) {
+    const filters: any = {
+      search:          this.searchControl.value || undefined,
+      category:        this.categoryControl.value || undefined,
+      grammarFocusTag: this.grammarControl.value || undefined,
+      targetAgeGroup:  this.ageControl.value || undefined,
+      page:            this.page,
+      limit:           this.pageSize
+    };
+    if (!this.isAdmin()) filters.isActive = true;
+
+    this.scriptService.getScripts(filters).subscribe({
+      next: (res) => {
+        const items = res.items ?? [];
+        this.total  = res.total ?? res.totalCount ?? items.length;
+        this.scripts.update(prev => append ? [...prev, ...items] : items);
+        this.hasMore.set(this.scripts().length < this.total);
+        this.isLoading.set(false);
+        this.loadingMore.set(false);
+      },
+      error: () => {
+        this.isLoading.set(false);
+        this.loadingMore.set(false);
+      }
+    });
   }
 }

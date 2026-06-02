@@ -1,194 +1,286 @@
 // File: src/app/modules/session/session-list/session-list.component.ts
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import {
+  LucideAngularModule,
+  History, ChevronRight, FileText, RotateCcw,
+  Zap, Users, Mic2, BookOpen, MessageSquare, Layout,
+  Loader2, Trophy
+} from 'lucide-angular';
 import { SessionService } from '@core/services/session.service';
 import { Session } from '@core/models/session.model';
-import { LucideAngularModule, Search, Clock, Calendar, ChevronRight, Activity, CheckCircle, XCircle, AlertCircle, TrendingUp, Mic2 } from 'lucide-angular';
-import { RouterLink } from '@angular/router';
+
+const MODE_ICON: Record<string, any> = {
+  'Grammar Drill':     MessageSquare,
+  'Roleplay':          Users,
+  'Mock Interview':    Layout,
+  'Vocabulary Sprint': Zap,
+  'Fluency Drill':     Mic2,
+  'Repractice Round':  RotateCcw,
+};
+
+const MODE_COLOR: Record<string, string> = {
+  'Grammar Drill':     '#3D5A99',
+  'Roleplay':          '#E07B39',
+  'Mock Interview':    '#5C35A8',
+  'Vocabulary Sprint': '#F59E0B',
+  'Fluency Drill':     '#2E7D32',
+  'Repractice Round':  '#C62828',
+};
+
+const MODE_BG: Record<string, string> = {
+  'Grammar Drill':     'rgba(61,90,153,0.08)',
+  'Roleplay':          'rgba(224,123,57,0.08)',
+  'Mock Interview':    'rgba(92,53,168,0.08)',
+  'Vocabulary Sprint': 'rgba(245,158,11,0.08)',
+  'Fluency Drill':     'rgba(46,125,50,0.08)',
+  'Repractice Round':  'rgba(198,40,40,0.08)',
+};
+
+const FILTERS = ['All', 'COMPLETED', 'LOBBY', 'ABANDONED'] as const;
+type Filter = typeof FILTERS[number];
 
 @Component({
   selector: 'app-session-list',
   standalone: true,
   imports: [CommonModule, LucideAngularModule, RouterLink],
   template: `
-    <div class="space-y-8 animate-in fade-in duration-500 pb-20">
-      <!-- Header -->
-      <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div class="space-y-1">
-          <h2 class="text-4xl font-black text-gw-text italic uppercase tracking-tighter">SESSION HISTORY</h2>
-          <p class="text-xs font-bold text-gw-text-muted uppercase tracking-widest italic">Track your practice progress over time</p>
+    <div class="min-h-screen bg-gw-bg">
+      <div class="max-w-lg mx-auto px-4 pt-2 pb-28 space-y-4 animate-in fade-in duration-500">
+
+        <!-- ── Page Heading ─────────────────────────────────────── -->
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <h1 class="text-xl font-black text-gw-text tracking-tight leading-tight">Session History</h1>
+            <p class="text-[11px] font-semibold text-gw-text-muted mt-0.5">Your past practice records</p>
+          </div>
+          <div class="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
+               style="background: rgba(61,90,153,0.08);">
+            <i-lucide [img]="HistoryIcon" size="18" style="color:#3D5A99;"></i-lucide>
+          </div>
         </div>
-        
-        <div class="flex bg-white p-1.5 rounded-2xl border border-gw-card-border shadow-sm">
-          @for (tab of tabs; track tab) {
-            <button 
-              (click)="activeTab.set(tab); loadSessions()"
-              class="px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
-              [class.bg-gw-text]="activeTab() === tab"
-              [class.text-white]="activeTab() === tab"
-              [class.text-gw-text-muted]="activeTab() !== tab"
-            >
-              {{ tab }}
+
+        <!-- ── Filter Tabs ───────────────────────────────────────── -->
+        <div class="flex gap-2 overflow-x-auto pb-0.5" style="-ms-overflow-style:none;scrollbar-width:none;">
+          @for (f of filters; track f) {
+            <button (click)="setFilter(f)"
+                    class="shrink-0 h-8 px-4 rounded-full text-[10px] font-black uppercase
+                           tracking-widest transition-all border"
+                    [class.bg-gw-primary]="activeFilter() === f"
+                    [class.text-white]="activeFilter() === f"
+                    [class.border-gw-primary]="activeFilter() === f"
+                    [class.bg-white]="activeFilter() !== f"
+                    [class.text-gw-text-muted]="activeFilter() !== f"
+                    [class.border-gw-card-border]="activeFilter() !== f">
+              {{ f === 'All' ? 'All' : (f | titlecase) }}
             </button>
           }
         </div>
-      </div>
 
-      <!-- Session Cards Row -->
-      @if (isLoading()) {
-        <div class="space-y-4">
-          @for (i of [1,2,3]; track i) {
-            <div class="h-32 bg-white rounded-[32px] border border-gw-card-border animate-pulse"></div>
+        <!-- ── Loading Skeletons ────────────────────────────────── -->
+        @if (loading()) {
+          @for (i of [1,2,3,4,5]; track i) {
+            <div class="h-[76px] bg-white rounded-2xl border border-gw-card-border animate-pulse"></div>
           }
-        </div>
-      } @else {
-        <div class="space-y-4">
-          @for (session of sessions(); track session.id) {
-            <a 
-              [routerLink]="['/session/detail', session.id]"
-              class="group bg-white p-6 rounded-[32px] border border-gw-card-border shadow-sm hover:border-gw-primary hover:shadow-xl hover:-translate-x-1 transition-all flex flex-col md:flex-row md:items-center gap-6"
-            >
-              <!-- Status Icon -->
-              <div
-                class="w-16 h-16 rounded-2xl flex items-center justify-center transition-all group-hover:scale-110"
-                [ngClass]="{
-                  'bg-gw-primary/10 text-gw-primary': session.status === 'ACTIVE',
-                  'bg-gw-success/10 text-gw-success': session.status === 'COMPLETED',
-                  'bg-gw-bg text-gw-text-muted': session.status === 'LOBBY' || session.status === 'PAUSED',
-                  'bg-gw-error/10 text-gw-error': session.status === 'ABANDONED'
-                }"
-              >
-                <i-lucide [img]="getStatusIcon(session.status)" size="32"></i-lucide>
-              </div>
+        }
 
-              <!-- Content -->
-              <div class="flex-1 space-y-2">
-                <div class="flex flex-wrap items-center gap-3">
-                  <span class="px-2 py-0.5 bg-gw-bg text-gw-text-muted rounded text-[8px] font-black uppercase tracking-widest italic">{{ session.sessionMode }}</span>
-                  <span
-                    class="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest italic"
-                    [ngClass]="{
-                      'bg-gw-primary/10 text-gw-primary': session.status === 'ACTIVE',
-                      'bg-gw-success/10 text-gw-success': session.status === 'COMPLETED'
-                    }"
-                  >
-                    {{ session.status }}
-                  </span>
-                </div>
-                <h3 class="text-xl font-black text-gw-text italic uppercase tracking-tight">{{ session.sessionName }}</h3>
-                <div class="flex items-center gap-4 text-xs font-bold text-gw-text-muted italic">
-                   <span class="flex items-center gap-1">
-                      <i-lucide [img]="CalendarIcon" size="12"></i-lucide>
-                      {{ session.createdDate | date:'mediumDate' }}
-                   </span>
-                   <span class="flex items-center gap-1">
-                      <i-lucide [img]="ClockIcon" size="12"></i-lucide>
-                      {{ session.sessionDuration }} Min
-                   </span>
-                   <span class="flex items-center gap-1">
-                      <i-lucide [img]="UserIcon" size="12"></i-lucide>
-                      {{ session.currentMembers }} Members
-                   </span>
-                </div>
-              </div>
+        <!-- ── Empty State ──────────────────────────────────────── -->
+        @else if (sessions().length === 0) {
+          <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm
+                      flex flex-col items-center justify-center py-16 gap-3 text-center">
+            <div class="w-12 h-12 rounded-2xl bg-gw-bg flex items-center justify-center">
+              <i-lucide [img]="TrophyIcon" size="22" class="text-gw-text-muted"></i-lucide>
+            </div>
+            <p class="text-sm font-bold text-gw-text">No sessions yet</p>
+            <p class="text-xs text-gw-text-muted max-w-[200px]">
+              {{ activeFilter() === 'All' ? 'Join a session to start tracking your progress.' : 'No ' + (activeFilter() | titlecase) + ' sessions found.' }}
+            </p>
+            <a routerLink="/session/join"
+               class="mt-1 h-9 px-5 bg-gw-primary text-white text-[11px] font-black uppercase
+                      tracking-widest rounded-xl flex items-center hover:opacity-90 transition-opacity no-underline">
+              Join a Session
+            </a>
+          </div>
+        }
 
-              <!-- Stats / Score -->
-              @if (session.status === 'COMPLETED') {
-                <div class="flex items-center gap-8 bg-gw-bg/30 p-4 rounded-2xl border border-gw-bg group-hover:border-gw-primary/10 transition-all">
-                   <div class="text-center">
-                      <p class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic mb-1">Fluency</p>
-                      <div class="flex items-center gap-1 text-gw-success">
-                         <i-lucide [img]="TrendIcon" size="14"></i-lucide>
-                         <span class="text-lg font-black italic tabular-nums">{{ session.fluencyScore }}%</span>
-                      </div>
-                   </div>
-                   <div class="w-px h-8 bg-gw-card-border/50"></div>
-                   <div class="text-center pr-4">
-                      <p class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic mb-1">Mistakes</p>
-                      <div class="flex items-center gap-1 text-gw-error">
-                         <i-lucide [img]="ErrorIcon" size="14"></i-lucide>
-                         <span class="text-lg font-black italic tabular-nums">{{ session.mistakesCount }}</span>
-                      </div>
-                   </div>
+        <!-- ── Session List ─────────────────────────────────────── -->
+        @else {
+          <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
+            <div class="divide-y divide-gw-bg">
+              @for (s of sessions(); track s.id) {
+                <div class="flex items-center gap-3.5 px-4 py-3.5
+                            hover:bg-gw-bg/50 transition-colors">
+
+                  <!-- Mode icon -->
+                  <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                       [style.background]="modeBg(s.sessionMode)">
+                    <i-lucide [img]="modeIcon(s.sessionMode)" size="18"
+                              [style.color]="modeColor(s.sessionMode)"></i-lucide>
+                  </div>
+
+                  <!-- Meta -->
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-gw-text truncate leading-tight">
+                      {{ s.sessionName }}
+                    </p>
+                    <div class="flex items-center gap-2 mt-1 flex-wrap">
+                      <span class="text-[10px] font-semibold text-gw-text-muted">
+                        {{ s.createdDate | date:'MMM d, yyyy' }}
+                      </span>
+                      <span class="text-[10px] text-gw-text-muted">·</span>
+                      <span class="text-[10px] font-semibold text-gw-text-muted">
+                        {{ s.sessionDuration }} min
+                      </span>
+                      @if (s.mistakesCount) {
+                        <span class="text-[10px] text-gw-text-muted">·</span>
+                        <span class="text-[10px] font-semibold" style="color:#C62828;">
+                          {{ s.mistakesCount }} error{{ s.mistakesCount === 1 ? '' : 's' }}
+                        </span>
+                      }
+                    </div>
+                  </div>
+
+                  <!-- Score + status -->
+                  <div class="flex flex-col items-end gap-1.5 shrink-0">
+                    @if (s.fluencyScore !== null && s.fluencyScore !== undefined) {
+                      <span class="text-[11px] font-black px-2 py-0.5 rounded-lg"
+                            [style.background]="scoreBg(s.fluencyScore!)"
+                            [style.color]="scoreColor(s.fluencyScore!)">
+                        {{ s.fluencyScore | number:'1.0-0' }}%
+                      </span>
+                    }
+                    <span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+                          [style.background]="statusBg(s.status)"
+                          [style.color]="statusColor(s.status)">
+                      {{ s.status | titlecase }}
+                    </span>
+                  </div>
+
+                  <!-- Navigate -->
+                  <a [routerLink]="['/session/detail', s.id]"
+                     class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0
+                            text-gw-text-muted hover:text-gw-primary hover:bg-gw-primary/10
+                            transition-all no-underline">
+                    <i-lucide [img]="ChevronIcon" size="16"></i-lucide>
+                  </a>
+
                 </div>
               }
-
-              <div class="text-gw-card-border transition-all group-hover:text-gw-primary group-hover:translate-x-2">
-                 <i-lucide [img]="NextIcon" size="24"></i-lucide>
-              </div>
-            </a>
-          }
-
-          @if (sessions().length === 0) {
-            <div class="py-20 text-center space-y-6 animate-in zoom-in duration-500">
-               <div class="w-20 h-20 bg-gw-bg rounded-3xl flex items-center justify-center text-gw-card-border mx-auto shadow-inner">
-                  <i-lucide [img]="EmptyIcon" size="40"></i-lucide>
-               </div>
-               <div class="space-y-2">
-                  <h4 class="text-2xl font-black text-gw-text italic uppercase tracking-tight">NO SESSIONS FOUND</h4>
-                  <p class="text-sm font-bold text-gw-text-muted uppercase tracking-widest italic">Try changing your filters or start a new one</p>
-               </div>
-               <a routerLink="/session/create" class="inline-flex h-14 px-8 bg-gw-primary text-white font-black uppercase tracking-widest italic rounded-2xl items-center gap-2 hover:scale-[1.05] transition-all">
-                  <i-lucide [img]="MicIcon" size="18"></i-lucide>
-                  Start New Session
-               </a>
             </div>
-          }
-        </div>
-      }
+          </div>
 
-      <!-- Pagination -->
-      @if (sessions().length > 0) {
-        <div class="flex justify-center pt-8">
-           <div class="flex gap-2">
-              <button class="w-10 h-10 rounded-xl bg-white border border-gw-card-border flex items-center justify-center text-gw-text font-black italic hover:bg-gw-bg transition-all">1</button>
-           </div>
-        </div>
-      }
+          <!-- ── Load More ──────────────────────────────────────── -->
+          @if (hasMore()) {
+            <button (click)="loadMore()"
+                    [disabled]="loadingMore()"
+                    class="w-full py-3 rounded-2xl bg-white border border-gw-card-border
+                           text-[11px] font-black uppercase tracking-widest text-gw-text-muted
+                           hover:border-gw-primary hover:text-gw-primary transition-all
+                           flex items-center justify-center gap-2 disabled:opacity-50">
+              @if (loadingMore()) {
+                <i-lucide [img]="LoaderIcon" size="14" class="animate-spin"></i-lucide>
+                Loading...
+              } @else {
+                Load More
+              }
+            </button>
+          }
+        }
+
+      </div>
     </div>
   `,
-  styles: [`
-    :host { display: block; }
-  `]
+  styles: [`:host { display: block; }`]
 })
 export class SessionListComponent implements OnInit {
   private sessionService = inject(SessionService);
 
-  readonly CalendarIcon = Calendar;
-  readonly ClockIcon = Clock;
-  readonly UserIcon = Activity;
-  readonly TrendIcon = TrendingUp;
-  readonly ErrorIcon = AlertCircle;
-  readonly NextIcon = ChevronRight;
-  readonly EmptyIcon = AlertCircle;
-  readonly MicIcon = Mic2;
+  readonly HistoryIcon = History;
+  readonly ChevronIcon = ChevronRight;
+  readonly LoaderIcon  = Loader2;
+  readonly TrophyIcon  = Trophy;
 
-  tabs = ['All', 'Active', 'Completed', 'Abandoned'];
-  activeTab = signal('All');
-  sessions = signal<Session[]>([]);
-  isLoading = signal(true);
+  readonly filters = FILTERS;
 
-  ngOnInit() {
-    this.loadSessions();
+  loading      = signal(true);
+  loadingMore  = signal(false);
+  activeFilter = signal<Filter>('All');
+
+  private allItems = signal<Session[]>([]);
+  private total    = 0;
+  private page     = 1;
+
+  sessions = computed(() => this.allItems());
+  hasMore  = computed(() => this.allItems().length < this.total);
+
+  ngOnInit() { this.load(); }
+
+  setFilter(f: Filter) {
+    if (this.activeFilter() === f) return;
+    this.activeFilter.set(f);
+    this.page = 1;
+    this.allItems.set([]);
+    this.loading.set(true);
+    this.load();
   }
 
-  loadSessions() {
-    this.isLoading.set(true);
-    this.sessionService.getSessionHistory(this.activeTab()).subscribe({
+  loadMore() {
+    this.page++;
+    this.loadingMore.set(true);
+    this.load(true);
+  }
+
+  private load(append = false) {
+    const filter = this.activeFilter() === 'All' ? undefined : this.activeFilter();
+    this.sessionService.getSessionHistory(filter).subscribe({
       next: (res: any) => {
-        this.sessions.set(res.items);
-        this.isLoading.set(false);
+        const items: Session[] = res.items ?? [];
+        this.total = res.totalCount ?? res.total ?? items.length;
+        this.allItems.update(prev => append ? [...prev, ...items] : items);
+        this.loading.set(false);
+        this.loadingMore.set(false);
       },
-      error: () => this.isLoading.set(false)
+      error: () => {
+        this.loading.set(false);
+        this.loadingMore.set(false);
+      }
     });
   }
 
-  getStatusIcon(status: string) {
-    switch (status) {
-      case 'ACTIVE': return Activity;
-      case 'COMPLETED': return CheckCircle;
-      case 'ABANDONED': return XCircle;
-      default: return Clock;
+  modeIcon(mode: string)  { return MODE_ICON[mode]  ?? BookOpen; }
+  modeColor(mode: string) { return MODE_COLOR[mode] ?? '#3D5A99'; }
+  modeBg(mode: string)    { return MODE_BG[mode]    ?? 'rgba(61,90,153,0.08)'; }
+
+  scoreBg(score: number): string {
+    if (score >= 80) return 'rgba(46,125,50,0.10)';
+    if (score >= 60) return 'rgba(245,158,11,0.10)';
+    return 'rgba(198,40,40,0.10)';
+  }
+
+  scoreColor(score: number): string {
+    if (score >= 80) return '#2E7D32';
+    if (score >= 60) return '#B45309';
+    return '#C62828';
+  }
+
+  statusBg(status: string): string {
+    switch (status?.toUpperCase()) {
+      case 'COMPLETED': return 'rgba(46,125,50,0.10)';
+      case 'ACTIVE':    return 'rgba(61,90,153,0.10)';
+      case 'LOBBY':     return 'rgba(245,158,11,0.10)';
+      case 'ABANDONED': return 'rgba(198,40,40,0.08)';
+      default:          return 'rgba(100,116,139,0.08)';
+    }
+  }
+
+  statusColor(status: string): string {
+    switch (status?.toUpperCase()) {
+      case 'COMPLETED': return '#2E7D32';
+      case 'ACTIVE':    return '#3D5A99';
+      case 'LOBBY':     return '#B45309';
+      case 'ABANDONED': return '#C62828';
+      default:          return '#64748B';
     }
   }
 }

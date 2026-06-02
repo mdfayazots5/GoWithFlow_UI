@@ -13,16 +13,17 @@ import { catchError, of } from 'rxjs';
   standalone: true,
   imports: [CommonModule, LucideAngularModule, RouterLink],
   template: `
-    <div class="space-y-8 animate-in fade-in duration-500 pb-32">
+    <div class="min-h-screen bg-gw-bg">
+      <div class="max-w-lg mx-auto px-4 pt-2 pb-28 space-y-4 animate-in fade-in duration-500">
 
-      <!-- Header -->
-      <div class="space-y-1">
-        <h2 class="text-3xl font-black text-gw-text uppercase tracking-tight">Progress Journey</h2>
-        <p class="text-xs font-semibold text-gw-text-muted uppercase tracking-widest">Your path to English fluency</p>
+      <!-- Page heading -->
+      <div>
+        <h1 class="text-xl font-black text-gw-text tracking-tight">Progress Journey</h1>
+        <p class="text-[11px] font-semibold text-gw-text-muted mt-0.5">Your path to English fluency</p>
       </div>
 
       <!-- Stats Grid -->
-      <div class="grid grid-cols-2 gap-3">
+      <div class="grid grid-cols-2 gap-3 mt-0">
         @for (stat of trackerStats; track stat.label) {
           <div class="bg-white p-5 rounded-2xl border border-gw-card-border shadow-sm flex flex-col gap-3 relative overflow-hidden">
             <div class="absolute -right-3 -bottom-3 opacity-[0.06]">
@@ -41,7 +42,7 @@ import { catchError, of } from 'rxjs';
       </div>
 
       <!-- Score Trend -->
-      <div class="space-y-4">
+      <div class="space-y-3">
         <div class="flex items-center justify-between">
           <h3 class="text-sm font-black text-gw-text uppercase tracking-widest border-l-4 border-gw-accent pl-3">Score Trend</h3>
           <span class="text-[9px] font-bold text-gw-text-muted uppercase bg-gw-bg px-2 py-1 rounded-lg">Last 10 Sessions</span>
@@ -117,7 +118,7 @@ import { catchError, of } from 'rxjs';
       </div>
 
       <!-- Grammar Focus -->
-      <div class="space-y-4">
+      <div class="space-y-3">
         <h3 class="text-sm font-black text-gw-text uppercase tracking-widest border-l-4 border-gw-primary pl-3">Grammar Focus</h3>
 
         @if ((data()?.grammarProgress?.length ?? 0) === 0) {
@@ -141,12 +142,14 @@ import { catchError, of } from 'rxjs';
                   <div class="flex items-center gap-1.5 flex-shrink-0">
                     @if (grammar.trendLabel) {
                       <span class="flex items-center gap-0.5 text-[7px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md italic"
-                        [class.bg-gw-success/10]="grammar.trendLabel === 'Improving'"
-                        [class.text-gw-success]="grammar.trendLabel === 'Improving'"
-                        [class.bg-amber-50]="grammar.trendLabel === 'Stable'"
-                        [class.text-amber-500]="grammar.trendLabel === 'Stable'"
-                        [class.bg-gw-error/10]="grammar.trendLabel === 'Regressing'"
-                        [class.text-gw-error]="grammar.trendLabel === 'Regressing'">
+                        [ngClass]="{
+                          'bg-gw-success/10': grammar.trendLabel === 'Improving',
+                          'text-gw-success': grammar.trendLabel === 'Improving',
+                          'bg-amber-50': grammar.trendLabel === 'Stable',
+                          'text-amber-500': grammar.trendLabel === 'Stable',
+                          'bg-gw-error/10': grammar.trendLabel === 'Regressing',
+                          'text-gw-error': grammar.trendLabel === 'Regressing'
+                        }">
                         {{ grammar.trendLabel }}
                       </span>
                     }
@@ -179,7 +182,7 @@ import { catchError, of } from 'rxjs';
       </div>
 
       <!-- Badges Earned -->
-      <div class="space-y-4">
+      <div class="space-y-3">
         <h3 class="text-sm font-black text-gw-text uppercase tracking-widest border-l-4 border-gw-warning pl-3">Badges Earned</h3>
 
         @if (badges().length === 0) {
@@ -245,7 +248,7 @@ import { catchError, of } from 'rxjs';
       </div>
 
       <!-- Repractice History -->
-      <div class="space-y-4">
+      <div class="space-y-3">
         <h3 class="text-sm font-black text-gw-text uppercase tracking-widest border-l-4 border-gw-text pl-3">Repractice History</h3>
 
         @if ((data()?.repracticeHistory?.length ?? 0) === 0) {
@@ -279,6 +282,7 @@ import { catchError, of } from 'rxjs';
         }
       </div>
 
+      </div>
     </div>
   `,
   styles: [`:host { display: block; }`]

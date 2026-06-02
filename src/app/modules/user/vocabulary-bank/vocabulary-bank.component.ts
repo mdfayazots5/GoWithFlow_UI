@@ -3,7 +3,7 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { UserService } from '@core/services/user.service';
-import { LucideAngularModule, ChevronLeft, BookOpen, RotateCcw, CheckCircle2, Clock } from 'lucide-angular';
+import { LucideAngularModule, BookOpen, RotateCcw, CheckCircle2, Clock } from 'lucide-angular';
 import { catchError, of } from 'rxjs';
 
 interface VocabularyBankItem {
@@ -26,18 +26,13 @@ interface VocabularyBank {
   standalone: true,
   imports: [CommonModule, LucideAngularModule, RouterLink],
   template: `
-    <div class="space-y-6 animate-in fade-in duration-500 pb-32">
+    <div class="min-h-screen bg-gw-bg">
+      <div class="max-w-lg mx-auto px-4 pt-2 pb-28 space-y-4 animate-in fade-in duration-500">
 
-      <!-- Header -->
-      <div class="flex items-center gap-4">
-        <button routerLink="/user/progress"
-          class="w-10 h-10 rounded-xl bg-gw-bg flex items-center justify-center text-gw-text-muted hover:text-gw-primary transition-all">
-          <i-lucide [img]="BackIcon" size="20"></i-lucide>
-        </button>
-        <div>
-          <h2 class="text-2xl font-black text-gw-text italic uppercase tracking-tighter">Vocabulary Bank</h2>
-          <p class="text-[10px] font-bold text-gw-text-muted uppercase tracking-widest italic">Words you've practiced in Vocabulary Sprint</p>
-        </div>
+      <!-- Page heading -->
+      <div>
+        <h1 class="text-xl font-black text-gw-text tracking-tight">Vocabulary Bank</h1>
+        <p class="text-[11px] font-semibold text-gw-text-muted mt-0.5">Words you've practiced in Vocabulary Sprint</p>
       </div>
 
       <!-- Loading -->
@@ -148,6 +143,7 @@ interface VocabularyBank {
 
       }
 
+      </div>
     </div>
   `,
   styles: [`:host { display: block; }`]
@@ -155,7 +151,6 @@ interface VocabularyBank {
 export class VocabularyBankComponent implements OnInit {
   private userService = inject(UserService);
 
-  readonly BackIcon   = ChevronLeft;
   readonly BookIcon   = BookOpen;
   readonly ReviewIcon = RotateCcw;
   readonly CheckIcon  = CheckCircle2;

@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { LiveSessionService } from '../../live-session/live-session.service';
 import { SessionReview, SessionReviewTurn, GrammarError } from '@core/models/voice.model';
-import { LucideAngularModule, ChevronLeft, CheckCircle2, AlertTriangle, Mic, MicOff, Zap, BookOpen, Play } from 'lucide-angular';
+import { LucideAngularModule, CheckCircle2, AlertTriangle, Mic, MicOff, Zap, BookOpen, Play } from 'lucide-angular';
 import { catchError, of } from 'rxjs';
 import { AudioArchiveService } from '@core/services/audio-archive.service';
 
@@ -18,10 +18,6 @@ import { AudioArchiveService } from '@core/services/audio-archive.service';
       <!-- Header -->
       <div class="sticky top-0 z-10 bg-gw-bg/95 backdrop-blur border-b border-gw-card-border">
         <div class="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
-          <button routerLink="/session/history"
-            class="w-9 h-9 rounded-xl bg-white border border-gw-card-border flex items-center justify-center text-gw-text-muted hover:text-gw-primary transition-all flex-shrink-0">
-            <i-lucide [img]="BackIcon" size="18"></i-lucide>
-          </button>
           <div class="min-w-0">
             <h2 class="text-base font-black text-gw-text italic uppercase tracking-tight truncate">
               {{ review()?.scriptTitle || 'Session Review' }}
@@ -95,14 +91,14 @@ import { AudioArchiveService } from '@core/services/audio-archive.service';
               <div class="flex items-center justify-between px-4 py-2.5 border-b"
                    [class.border-gw-bg]="!turn.isFacilitatorTurn"
                    [class.border-transparent]="turn.isFacilitatorTurn"
-                   [class.bg-gw-bg/50]="!turn.isFacilitatorTurn"
+                   [ngClass]="{'bg-gw-bg/50': !turn.isFacilitatorTurn}"
                    [class.bg-white]="turn.isFacilitatorTurn">
                 <div class="flex items-center gap-2">
                   <span class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted italic">
                     Turn {{ turn.turnIndex }}
                   </span>
                   <span class="px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-wider"
-                        [class.bg-gw-primary/10]="!turn.isFacilitatorTurn"
+                        [ngClass]="{'bg-gw-primary/10': !turn.isFacilitatorTurn}"
                         [class.text-gw-primary]="!turn.isFacilitatorTurn"
                         [class.bg-gw-bg]="turn.isFacilitatorTurn"
                         [class.text-gw-text-muted]="turn.isFacilitatorTurn">
@@ -234,7 +230,6 @@ export class SessionReviewComponent implements OnInit {
   private liveSessionService = inject(LiveSessionService);
   private audioArchiveSvc = inject(AudioArchiveService);
 
-  readonly BackIcon    = ChevronLeft;
   readonly CheckIcon   = CheckCircle2;
   readonly ErrorIcon   = AlertTriangle;
   readonly MicIcon     = Mic;

@@ -83,12 +83,7 @@
         @if (member) {
           <!-- Avatar -->
           <div class="relative shrink-0">
-            <div class="w-12 h-12 rounded-2xl bg-gw-bg border border-gw-card-border overflow-hidden flex items-center justify-center text-gw-text-muted">
-              @if (member.avatar) {
-                <img [src]="member.avatar" class="w-full h-full object-cover" (error)="hideImg($event)">
-              }
-              <i-lucide [img]="UserIcon" size="18" class="absolute text-gw-text-muted"></i-lucide>
-            </div>
+            <app-user-avatar [name]="member.name" size="md"></app-user-avatar>
             @if (member.isHost) {
               <div class="absolute -top-1 -right-1 w-5 h-5 bg-gw-accent rounded-full flex items-center justify-center shadow-sm">
                 <i-lucide [img]="StarIcon" size="9" class="text-white"></i-lucide>
@@ -129,7 +124,8 @@
 
         } @else {
           <!-- Empty slot -->
-          <div class="w-12 h-12 rounded-2xl border-2 border-dashed border-gw-card-border flex items-center justify-center shrink-0">
+          <div class="w-12 h-12 rounded-2xl border-2 border-dashed border-gw-card-border
+                      flex items-center justify-center shrink-0 bg-gw-bg/60">
             <i-lucide [img]="UserIcon" size="18" class="text-gw-card-border"></i-lucide>
           </div>
           <div>
