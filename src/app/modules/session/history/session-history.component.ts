@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule, Search, Calendar, ChevronRight, Activity } from 'lucide-angular';
+import { LucideAngularModule, Search, Calendar, ChevronRight, Activity, FileText } from 'lucide-angular';
 import { HeaderComponent } from '@shared/components/header/header.component';
 import { BottomNavComponent } from '@shared/components/bottom-nav/bottom-nav.component';
 import { SessionService } from '@core/services/session.service';
@@ -43,9 +43,16 @@ import { RouterLink } from '@angular/router';
                  </div>
               </div>
               
-              <a [routerLink]="['/session/detail', s.id]" class="p-2 text-ls-card-border group-hover:text-ls-primary transition-all">
-                 <i-lucide [img]="ChevronIcon" size="20"></i-lucide>
-              </a>
+              <div class="flex items-center gap-1 flex-shrink-0">
+                 <a [routerLink]="['/session/review', s.id]"
+                    class="p-2 text-ls-card-border hover:text-gw-accent transition-all"
+                    title="Review transcript">
+                    <i-lucide [img]="ReviewIcon" size="18"></i-lucide>
+                 </a>
+                 <a [routerLink]="['/session/detail', s.id]" class="p-2 text-ls-card-border group-hover:text-ls-primary transition-all">
+                    <i-lucide [img]="ChevronIcon" size="20"></i-lucide>
+                 </a>
+              </div>
            </div>
         </div>
 
@@ -64,6 +71,7 @@ export class SessionHistoryComponent implements OnInit {
   readonly ActivityIcon = Activity;
   readonly CalendarIcon = Calendar;
   readonly ChevronIcon = ChevronRight;
+  readonly ReviewIcon = FileText;
 
   history: any;
 

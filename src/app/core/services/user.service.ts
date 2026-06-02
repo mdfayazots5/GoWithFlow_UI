@@ -45,4 +45,32 @@ export class UserService {
   getDashboard(): Observable<any> {
     return this.http.get<{ data: any }>(`${environment.apiBaseUrl}/dashboard`).pipe(map(r => r.data));
   }
+
+  getVocabularyBank(): Observable<any> {
+    return this.http.get<{ data: any }>(`${environment.apiBaseUrl}/vocabulary/bank`).pipe(map(r => r.data));
+  }
+
+  getWeeklyReport(): Observable<any> {
+    return this.http.get<{ data: any }>(`${environment.apiBaseUrl}/dashboard/weekly-report`).pipe(map(r => r.data));
+  }
+
+  getLearningPath(): Observable<any> {
+    return this.http.get<{ data: any }>(`${environment.apiBaseUrl}/dashboard/learning-path`).pipe(map(r => r.data));
+  }
+
+  getInterviewPerformanceDashboard(): Observable<any> {
+    return this.http.get<{ data: any }>(`${environment.apiBaseUrl}/dashboard/interview-performance`).pipe(map(r => r.data));
+  }
+
+  getPronunciationTimeline(): Observable<any> {
+    return this.http.get<{ data: any }>(`${environment.apiBaseUrl}/dashboard/pronunciation-timeline`).pipe(map(r => r.data));
+  }
+
+  getGoalProgress(): Observable<any> {
+    return this.http.get<{ data: any }>(`${environment.apiBaseUrl}/users/goal`).pipe(map(r => r.data));
+  }
+
+  setGoal(goalType: string, timelineWeeks: number): Observable<any> {
+    return this.http.post<{ data: any }>(`${environment.apiBaseUrl}/users/goal`, { goalType, timelineWeeks }).pipe(map(r => r.data));
+  }
 }

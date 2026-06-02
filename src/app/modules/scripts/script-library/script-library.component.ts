@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ScriptService } from '@core/services/script.service';
 import { Script } from '@core/models/script.model';
-import { LucideAngularModule, Search, BookOpen, Layers, Eye, Play, Trash2, Plus } from 'lucide-angular';
+import { LucideAngularModule, Search, BookOpen, Layers, Eye, Play, Trash2, Plus, BookMarked } from 'lucide-angular';
 import { MatBottomSheet, MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { ScriptPreviewComponent } from './script-preview.component';
@@ -140,6 +140,11 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
                     <i-lucide [img]="PreviewIcon" size="13"></i-lucide>
                     Preview
                   </button>
+                  <a [routerLink]="['/scripts/prepare', script.id]"
+                     class="w-9 h-9 bg-gw-bg rounded-xl flex items-center justify-center text-gw-text-muted hover:bg-gw-primary/10 hover:text-gw-primary transition-all"
+                     title="Prepare — read script before joining">
+                    <i-lucide [img]="PrepareIcon" size="14"></i-lucide>
+                  </a>
                   <button (click)="startSession(script)" style="background:var(--gw-primary);" class="w-9 h-9 text-white rounded-xl flex items-center justify-center hover:opacity-90 active:scale-95 transition-all shadow-sm">
                     <i-lucide [img]="PlayIcon" size="16"></i-lucide>
                   </button>
@@ -184,13 +189,14 @@ export class ScriptLibraryComponent implements OnInit {
   private toast = inject(ToastService);
   private router = inject(Router);
 
-  readonly SearchIcon = Search;
-  readonly LinesIcon = Layers;
+  readonly SearchIcon  = Search;
+  readonly LinesIcon   = Layers;
   readonly PreviewIcon = Eye;
-  readonly PlayIcon = Play;
-  readonly TrashIcon = Trash2;
-  readonly PlusIcon = Plus;
+  readonly PlayIcon    = Play;
+  readonly TrashIcon   = Trash2;
+  readonly PlusIcon    = Plus;
   readonly BookOpenIcon = BookOpen;
+  readonly PrepareIcon  = BookMarked;
 
   scripts = signal<Script[]>([]);
   totalCount = signal(0);

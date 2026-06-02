@@ -2,9 +2,11 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { UserService } from '@core/services/user.service';
+import { MistakeService } from '../mistake.service';
 import { ImprovementData } from '@core/models/user.model';
-import { LucideAngularModule, TrendingUp, Award, Clock, Target, Flame, ChevronRight, Zap, Info, Calendar, BookOpen, Star } from 'lucide-angular';
+import { LucideAngularModule, TrendingUp, TrendingDown, Minus, Award, Clock, Target, Flame, ChevronRight, Zap, Info, Calendar, BookOpen, Star } from 'lucide-angular';
 import { RouterLink } from '@angular/router';
+import { catchError, of } from 'rxjs';
 
 @Component({
   selector: 'app-improvement-tracker',
@@ -128,23 +130,47 @@ import { RouterLink } from '@angular/router';
           </div>
         } @else {
           <div class="grid gap-3">
-            @for (grammar of data()?.grammarProgress; track grammar.grammarTag) {
-              <div class="bg-white p-5 rounded-2xl border border-gw-card-border shadow-sm space-y-3">
-                <div class="flex justify-between items-center">
-                  <div class="flex items-center gap-2">
-                    <div class="w-2 h-2 rounded-full bg-gw-primary"></div>
-                    <span class="text-xs font-bold text-gw-text uppercase tracking-wide">{{ grammar.grammarTag }}</span>
+            @for (grammar of grammarWithTrend(); track grammar.grammarTag) {
+              <div class="bg-white p-5 rounded-2xl border border-gw-card-border shadow-sm space-y-3"
+                [class.border-amber-200]="grammar.trendLabel === 'Regressing'">
+                <div class="flex justify-between items-center gap-2">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <div class="w-2 h-2 rounded-full bg-gw-primary flex-shrink-0"></div>
+                    <span class="text-xs font-bold text-gw-text uppercase tracking-wide truncate">{{ grammar.grammarTag }}</span>
                   </div>
-                  <span class="text-[9px] font-semibold text-gw-text-muted bg-gw-bg px-2 py-1 rounded-lg">
-                    {{ grammar.resolvedMistakes }}/{{ grammar.totalMistakes }} Resolved
-                  </span>
+                  <div class="flex items-center gap-1.5 flex-shrink-0">
+                    @if (grammar.trendLabel) {
+                      <span class="flex items-center gap-0.5 text-[7px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md italic"
+                        [class.bg-gw-success/10]="grammar.trendLabel === 'Improving'"
+                        [class.text-gw-success]="grammar.trendLabel === 'Improving'"
+                        [class.bg-amber-50]="grammar.trendLabel === 'Stable'"
+                        [class.text-amber-500]="grammar.trendLabel === 'Stable'"
+                        [class.bg-gw-error/10]="grammar.trendLabel === 'Regressing'"
+                        [class.text-gw-error]="grammar.trendLabel === 'Regressing'">
+                        {{ grammar.trendLabel }}
+                      </span>
+                    }
+                    <span class="text-[9px] font-semibold text-gw-text-muted bg-gw-bg px-2 py-1 rounded-lg">
+                      {{ grammar.resolvedMistakes }}/{{ grammar.totalMistakes }}
+                    </span>
+                  </div>
                 </div>
                 <div class="space-y-1">
                   <div class="h-2 w-full bg-gw-bg rounded-full overflow-hidden">
                     <div class="h-full bg-gw-primary rounded-full transition-all duration-700"
                          [style.width.%]="grammar.progressBarValue"></div>
                   </div>
-                  <p class="text-[9px] text-gw-text-muted text-right">{{ grammar.improvementPercent }}% resolved</p>
+                  <div class="flex items-center justify-between">
+                    <p class="text-[9px] text-gw-text-muted">{{ grammar.improvementPercent }}% resolved</p>
+                    @if (grammar.trendLabel && grammar.currentPeriodAvg > 0) {
+                      <p class="text-[8px] italic"
+                        [class.text-gw-success]="grammar.trendLabel === 'Improving'"
+                        [class.text-amber-500]="grammar.trendLabel === 'Stable'"
+                        [class.text-gw-error]="grammar.trendLabel === 'Regressing'">
+                        {{ grammar.currentPeriodAvg | number:'1.1-1' }} errors/session (4wk avg)
+                      </p>
+                    }
+                  </div>
                 </div>
               </div>
             }
@@ -190,6 +216,34 @@ import { RouterLink } from '@angular/router';
         }
       </div>
 
+      <!-- Quick Links -->
+      <div class="grid grid-cols-2 gap-3">
+        <a routerLink="/user/interview-performance"
+           class="bg-white rounded-2xl border border-gw-card-border shadow-sm p-4 flex flex-col gap-2 hover:border-gw-primary transition-all group">
+          <div class="w-8 h-8 rounded-xl bg-gw-primary/10 flex items-center justify-center">
+            <i-lucide [img]="TargetIcon" size="16" class="text-gw-primary"></i-lucide>
+          </div>
+          <p class="text-[10px] font-black uppercase tracking-wider text-gw-text italic group-hover:text-gw-primary transition-colors">Interview Performance</p>
+          <p class="text-[8px] text-gw-text-muted italic">Readiness score & trends</p>
+        </a>
+        <a routerLink="/user/vocabulary"
+           class="bg-white rounded-2xl border border-gw-card-border shadow-sm p-4 flex flex-col gap-2 hover:border-gw-primary transition-all group">
+          <div class="w-8 h-8 rounded-xl bg-gw-primary/10 flex items-center justify-center">
+            <i-lucide [img]="BookIcon" size="16" class="text-gw-primary"></i-lucide>
+          </div>
+          <p class="text-[10px] font-black uppercase tracking-wider text-gw-text italic group-hover:text-gw-primary transition-colors">Vocabulary Bank</p>
+          <p class="text-[8px] text-gw-text-muted italic">Words you've practiced</p>
+        </a>
+        <a routerLink="/user/pronunciation-timeline"
+           class="bg-white rounded-2xl border border-gw-card-border shadow-sm p-4 flex flex-col gap-2 hover:border-gw-primary transition-all group col-span-2">
+          <div class="w-8 h-8 rounded-xl bg-gw-primary/10 flex items-center justify-center">
+            <i-lucide [img]="TrendingIcon" size="16" class="text-gw-primary"></i-lucide>
+          </div>
+          <p class="text-[10px] font-black uppercase tracking-wider text-gw-text italic group-hover:text-gw-primary transition-colors">Pronunciation Timeline</p>
+          <p class="text-[8px] text-gw-text-muted italic">Problem words & session-by-session history</p>
+        </a>
+      </div>
+
       <!-- Repractice History -->
       <div class="space-y-4">
         <h3 class="text-sm font-black text-gw-text uppercase tracking-widest border-l-4 border-gw-text pl-3">Repractice History</h3>
@@ -231,27 +285,42 @@ import { RouterLink } from '@angular/router';
 })
 export class ImprovementTrackerComponent implements OnInit {
   private userService = inject(UserService);
+  private mistakeService = inject(MistakeService);
 
-  readonly TrendingIcon = TrendingUp;
-  readonly AwardIcon = Award;
-  readonly ClockIcon = Clock;
-  readonly TargetIcon = Target;
-  readonly FlameIcon = Flame;
-  readonly ZapIcon = Zap;
-  readonly StarIcon = Star;
-  readonly BookIcon = BookOpen;
+  readonly TrendingIcon  = TrendingUp;
+  readonly TrendDownIcon = TrendingDown;
+  readonly StableIcon    = Minus;
+  readonly AwardIcon     = Award;
+  readonly ClockIcon     = Clock;
+  readonly TargetIcon    = Target;
+  readonly FlameIcon     = Flame;
+  readonly ZapIcon       = Zap;
+  readonly StarIcon      = Star;
+  readonly BookIcon      = BookOpen;
 
-  data = signal<ImprovementData | null>(null);
-  badges = signal<any[]>([]);
+  data             = signal<ImprovementData | null>(null);
+  badges           = signal<any[]>([]);
+  grammarWithTrend = signal<any[]>([]);
   trackerStats: any[] = [];
 
   ngOnInit() {
     this.loadData();
+    this.loadGrammarTrends();
+  }
+
+  private loadGrammarTrends() {
+    this.mistakeService.getGrammarProgressWithTrend().pipe(catchError(() => of([]))).subscribe(trends => {
+      this.grammarWithTrend.set(trends ?? []);
+    });
   }
 
   loadData() {
     this.userService.getImprovementData().subscribe(res => {
       this.data.set(res);
+      // Only populate grammarWithTrend from base data if trend call is still pending
+      if (this.grammarWithTrend().length === 0 && res.grammarProgress?.length > 0) {
+        this.grammarWithTrend.set(res.grammarProgress);
+      }
       this.trackerStats = [
         { label: 'Sessions',  value: res.statsHeader.sessionsCompleted,           icon: Award,     bg: '#EEF2FF', color: '#3D5A99' },
         { label: 'Avg Score', value: res.statsHeader.avgScoreThisWeek + '%',       icon: TrendingUp, bg: '#ECFDF5', color: '#2E7D32' },

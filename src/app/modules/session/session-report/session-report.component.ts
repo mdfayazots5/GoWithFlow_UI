@@ -5,7 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LiveSessionService } from '../../live-session/live-session.service';
 import { RepracticeService } from '../../repractice/repractice.service';
 import { SessionSummary, MemberScore } from '@core/models/voice.model';
-import { LucideAngularModule, CheckCircle2, Trophy, Clock, Target, Zap, ChevronRight, Home, Layout, TrendingUp, RefreshCw, AlertCircle } from 'lucide-angular';
+import { LucideAngularModule, CheckCircle2, Trophy, Clock, Target, Zap, ChevronRight, Home, Layout, TrendingUp, RefreshCw, AlertCircle, BookOpen } from 'lucide-angular';
 import { ToastService } from '@core/services/toast.service';
 
 interface ScoreboardRow {
@@ -178,6 +178,52 @@ interface ScoreboardRow {
             }
           </div>
 
+          <!-- Vocabulary Summary (Vocabulary Sprint sessions only) -->
+          @if (summary()?.vocabularySummary) {
+            <div class="flex items-start gap-4 px-5 py-4 bg-gw-primary/5 border border-gw-primary/15 rounded-2xl">
+              <div class="w-9 h-9 rounded-xl bg-gw-primary/15 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <i-lucide [img]="VocabIcon" size="18" class="text-gw-primary"></i-lucide>
+              </div>
+              <div class="space-y-1.5 min-w-0">
+                <p class="text-[9px] font-black uppercase tracking-widest text-gw-primary italic">Vocabulary Tracker</p>
+                <p class="text-sm font-bold text-gw-text italic leading-snug">
+                  You practiced
+                  <span class="font-black text-gw-primary">{{ summary()!.vocabularySummary!.wordsPracticedThisSession }} word{{ summary()!.vocabularySummary!.wordsPracticedThisSession !== 1 ? 's' : '' }}</span>
+                  today. Your vocabulary bank has
+                  <span class="font-black text-gw-text">{{ summary()!.vocabularySummary!.totalWordsInBank }}</span> words total.
+                  @if (summary()!.vocabularySummary!.wordsDueForReview > 0) {
+                    <span class="text-gw-accent font-black">{{ summary()!.vocabularySummary!.wordsDueForReview }} are due for review.</span>
+                  }
+                </p>
+                @if (summary()!.vocabularySummary!.wordsPracticed.length > 0) {
+                  <div class="flex flex-wrap gap-1.5 pt-1">
+                    @for (word of summary()!.vocabularySummary!.wordsPracticed; track word) {
+                      <span class="px-2.5 py-1 bg-gw-primary/10 border border-gw-primary/20 rounded-full text-[9px] font-black text-gw-primary uppercase tracking-wider">
+                        {{ word }}
+                      </span>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <!-- Facilitator Section (only shown when session had facilitator roles) -->
+          @if (facilitators().length > 0) {
+            <div class="flex items-center gap-3 px-5 py-4 bg-white/5 border border-white/10 rounded-2xl">
+              <div>
+                <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted italic mb-1">Facilitator</p>
+                <div class="flex flex-wrap gap-2">
+                  @for (name of facilitators(); track name) {
+                    <span class="px-3 py-1 rounded-lg text-[9px] font-black italic uppercase tracking-wider bg-gw-bg border border-gw-card-border text-gw-text-muted">
+                      {{ name }} — Facilitator
+                    </span>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+
           <!-- Turns Completed Banner -->
           <div class="flex items-center gap-4 px-6 py-5 bg-[#1A1A2E] rounded-[32px] text-white">
             <div class="w-14 h-14 bg-gw-accent/20 rounded-[20px] flex items-center justify-center flex-shrink-0">
@@ -242,6 +288,7 @@ export class SessionReportComponent implements OnInit {
   readonly TargetIcon = Target;
   readonly RetryIcon = RefreshCw;
   readonly ErrorIcon = AlertCircle;
+  readonly VocabIcon = BookOpen;
 
   summary = signal<SessionSummary | null>(null);
   isLoading = signal(true);
@@ -254,10 +301,11 @@ export class SessionReportComponent implements OnInit {
   sessionId = signal('');
   sessionDuration = signal('--:--');
 
-  // ── Computed scoreboard — sorted by fluency descending, fully from API data ──
+  // ── Computed scoreboard — performance members only, sorted by fluency descending ──
   scoreboard = computed<ScoreboardRow[]>(() => {
     const scores = this.summary()?.memberScores ?? [];
     return [...scores]
+      .filter(m => !m.isFacilitator)
       .sort((a, b) => b.fluencyScore - a.fluencyScore)
       .map(m => ({
         name: m.fullName,
@@ -270,11 +318,18 @@ export class SessionReportComponent implements OnInit {
       }));
   });
 
-  // Top score = highest fluency among all members
+  // Facilitator members listed separately (they facilitated but were not scored)
+  facilitators = computed<string[]>(() => {
+    const scores = this.summary()?.memberScores ?? [];
+    return scores.filter(m => m.isFacilitator).map(m => m.fullName);
+  });
+
+  // Top score = highest fluency among performance members only
   topScore = computed<number>(() => {
     const scores = this.summary()?.memberScores ?? [];
-    if (scores.length === 0) return 0;
-    return Math.round(Math.max(...scores.map(m => m.fluencyScore)));
+    const performers = scores.filter(m => !m.isFacilitator);
+    if (performers.length === 0) return 0;
+    return Math.round(Math.max(...performers.map(m => m.fluencyScore)));
   });
 
   ngOnInit() {

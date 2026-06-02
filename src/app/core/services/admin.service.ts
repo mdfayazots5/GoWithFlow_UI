@@ -221,4 +221,25 @@ export class AdminService {
     });
     return this.http.get(`${this.baseUrl}/reports/export`, { params: httpParams, responseType: 'blob' });
   }
+
+  // ── Cohort Management ────────────────────────────────────────
+  getCohorts(): Observable<any[]> {
+    return this.http.get<any>(`${this.baseUrl}/cohorts`).pipe(map(r => r.data ?? []));
+  }
+
+  createCohort(payload: { cohortName: string; description?: string }): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/cohorts`, payload).pipe(map(r => r.data));
+  }
+
+  assignUserToCohort(userId: number, cohortId: number | null): Observable<any> {
+    return this.http.patch<any>(`${this.baseUrl}/cohorts/assign`, { userId, cohortId });
+  }
+
+  getCohortMembers(cohortId: number): Observable<any[]> {
+    return this.http.get<any>(`${this.baseUrl}/cohorts/${cohortId}/members`).pipe(map(r => r.data ?? []));
+  }
+
+  getCohortAnalytics(cohortId: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/cohorts/${cohortId}/analytics`).pipe(map(r => r.data));
+  }
 }

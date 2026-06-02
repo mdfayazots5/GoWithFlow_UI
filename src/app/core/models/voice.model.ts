@@ -31,6 +31,8 @@ export interface TurnState {
   reReadCount: number;
   maxReReads: number;
   nextUtterance?: string;
+  /** True when the active speaker is a facilitator (Interviewer, Tutor, Coach). No scoring on these turns. */
+  isFacilitatorTurn: boolean;
 }
 
 export interface UtteranceData {
@@ -60,6 +62,15 @@ export interface MemberScore {
   confidenceScore: number;
   mistakeCount: number;
   listenerRating: number;
+  /** True when this member played a facilitator role (Interviewer, Tutor, Coach). Excluded from performance scoreboard. */
+  isFacilitator: boolean;
+}
+
+export interface VocabularySummary {
+  wordsPracticedThisSession: number;
+  totalWordsInBank: number;
+  wordsDueForReview: number;
+  wordsPracticed: string[];
 }
 
 export interface SessionSummary {
@@ -68,4 +79,47 @@ export interface SessionSummary {
   scriptTitle: string;
   grammarFocusTag: string;
   totalMistakesAllMembers: number;
+  /** Populated for Vocabulary Sprint sessions only. */
+  vocabularySummary?: VocabularySummary;
+}
+
+// ── Post-Session Review ───────────────────────────────────────────────────────
+
+export interface GrammarError {
+  expectedPhrase: string;
+  spokenPhrase: string;
+  errorType: string;
+  position: number;
+}
+
+export interface PronunciationIssue {
+  word: string;
+  expectedPhonetic: string;
+  issueNote: string;
+}
+
+export interface SessionReviewTurn {
+  turnIndex: number;
+  speakerLabel: string;
+  isFacilitatorTurn: boolean;
+  englishText: string;
+  transcribedText?: string;
+  fluencyScore: number;
+  confidenceScore: number;
+  speakingSpeedWpm: number;
+  overallScore: number;
+  hesitationWords: string[];
+  grammarErrors: GrammarError[];
+  pronunciationIssues: PronunciationIssue[];
+  wasAnalyzed: boolean;
+}
+
+export interface SessionReview {
+  sessionId: number;
+  scriptTitle: string;
+  category: string;
+  grammarFocusTag: string;
+  totalTurns: number;
+  averageOverallScore: number;
+  turns: SessionReviewTurn[];
 }

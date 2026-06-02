@@ -6,6 +6,7 @@ import { SessionService } from '@core/services/session.service';
 import { AuthService } from '@core/services/auth.service';
 import { WebsocketService } from '@core/services/websocket.service';
 import { ToastService } from '@core/services/toast.service';
+import { AudioArchiveService } from '@core/services/audio-archive.service';
 import {
   LucideAngularModule,
   Copy,
@@ -38,8 +39,9 @@ export class LobbyComponent implements OnInit, OnDestroy {
   private sessionService = inject(SessionService);
   private authService = inject(AuthService);
   private wsService = inject(WebsocketService);
-  private toast = inject(ToastService);
-  private router = inject(Router);
+  private toast          = inject(ToastService);
+  private router         = inject(Router);
+  private audioArchiveSvc = inject(AudioArchiveService);
 
   readonly CopyIcon = Copy;
   readonly CheckIcon = CheckCircle2;
@@ -63,6 +65,7 @@ export class LobbyComponent implements OnInit, OnDestroy {
   isHost = signal(false);
   showScript = signal(false);
   currentUserId = signal(localStorage.getItem('gwf_userId') ?? '');
+  audioConsentEnabled = signal(this.audioArchiveSvc.getConsent());
 
   slots = computed(() => {
     const max = this.state()?.session?.maxMembers ?? this.state()?.members?.length ?? 0;
@@ -192,6 +195,12 @@ export class LobbyComponent implements OnInit, OnDestroy {
       navigator.clipboard.writeText(this.state()!.session.joinCode);
       this.toast.success('Code copied!');
     }
+  }
+
+  toggleAudioConsent() {
+    const newValue = !this.audioConsentEnabled();
+    this.audioConsentEnabled.set(newValue);
+    this.audioArchiveSvc.setConsent(newValue);
   }
 
   toggleReady() {

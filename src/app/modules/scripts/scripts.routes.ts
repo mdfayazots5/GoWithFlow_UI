@@ -10,5 +10,9 @@ export const SCRIPTS_ROUTES: Routes = [
     path: 'upload',
     data: { title: 'Upload Script' },
     loadComponent: () => import('./script-upload/script-upload.component').then(m => m.ScriptUploadComponent)
+  },
+  {
+    path: 'prepare/:scriptId',
+    loadComponent: () => import('./script-prepare/script-prepare.component').then(m => m.ScriptPrepareComponent)
   }
 ];

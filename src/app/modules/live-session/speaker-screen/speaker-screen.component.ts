@@ -9,7 +9,8 @@ import { SessionPreferencesService } from '@core/services/session-preferences.se
 import { VoiceBroadcastService } from '@core/services/voice-broadcast.service';
 import { VoiceRecorderComponent } from '../../voice/voice-recorder/voice-recorder.component';
 import { VoiceFeedbackComponent } from '../../voice/voice-feedback/voice-feedback.component';
-import { VoiceSessionResult } from '@core/services/voice/voice-recognition.engine';
+import { VoiceRecognitionEngine, VoiceSessionResult } from '@core/services/voice/voice-recognition.engine';
+import { AudioArchiveService } from '@core/services/audio-archive.service';
 
 @Component({
   selector: 'app-speaker-screen',
@@ -26,9 +27,11 @@ export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDe
   @ViewChild(VoiceRecorderComponent) voiceRecorder?: VoiceRecorderComponent;
 
   private liveSessionService = inject(LiveSessionService);
-  private toast = inject(ToastService);
-  private sessionPrefs = inject(SessionPreferencesService);
-  private voiceBroadcast = inject(VoiceBroadcastService);
+  private toast              = inject(ToastService);
+  private sessionPrefs       = inject(SessionPreferencesService);
+  private voiceBroadcast     = inject(VoiceBroadcastService);
+  private voiceEngine        = inject(VoiceRecognitionEngine);
+  private audioArchiveSvc    = inject(AudioArchiveService);
 
   readonly NoteIcon = CheckCircle2;
   readonly EyeIcon = Eye;
@@ -66,9 +69,10 @@ export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDe
     return 'clamp(0.9rem, 3vw, 1.15rem)';
   }
 
-  /** Show Try Again whenever the backend allows re-reads */
+  /** Show Try Again for performance turns only when the backend allows re-reads. Hidden on facilitator turns. */
   get showReReadButton(): boolean {
-    return this.turnState.reReadAllowed
+    return !this.turnState.isFacilitatorTurn
+      && this.turnState.reReadAllowed
       && this.turnState.reReadCount < this.turnState.maxReReads;
   }
 
@@ -87,6 +91,9 @@ export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDe
     this.words.set(this.turnState.utterance.englishText.split(' '));
 
     if (isTurnChange) {
+      // Configure audio capture for this turn
+      this.voiceEngine.enableAudioCapture(this.audioArchiveSvc.getConsent());
+
       this.resetPhase();
       this.tryRestoreFromStorage();
 
@@ -192,6 +199,16 @@ export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDe
 
     // Save to backend non-blocking (backend uses UPSERT — no 400 on re-record)
     this.liveSessionService.saveVoiceAnalysis(this.turnState.sessionId, analysis).subscribe();
+
+    // Upload audio clip if user opted in to audio archiving
+    if (this.audioArchiveSvc.getConsent() && this.voiceEngine.lastAudioBlob) {
+      this.audioArchiveSvc.uploadClip(
+        this.voiceEngine.lastAudioBlob,
+        this.turnState.sessionId,
+        this.turnState.turnIndex
+      ).subscribe(); // best-effort, non-blocking
+      this.voiceEngine.lastAudioBlob = null;
+    }
 
     // Auto Submit on Stop: bypass feedback screen, submit immediately
     if (this.sessionPrefs.prefs.autoSubmitOnStop) {

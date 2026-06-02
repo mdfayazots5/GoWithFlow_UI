@@ -2,17 +2,19 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
 import { LucideAngularModule, FileText, BookOpen, List, Search, Plus, Eye, Power, Download, X, Hash, Tag, Calendar, Layers, Users, CircleCheck, CircleX } from 'lucide-angular';
+import { RouterLink } from '@angular/router';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { Router } from '@angular/router';
 import { ToastService } from '@core/services/toast.service';
 import { ScriptService } from '@core/services/script.service';
+import { ChallengeService } from '@core/services/challenge.service';
 import { Script } from '@core/models/script.model';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 
 @Component({
   selector: 'app-admin-scripts',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, MatPaginatorModule],
+  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, MatPaginatorModule, RouterLink],
   template: `
     <!-- Script Detail Side Panel -->
     @if (selectedScript()) {
@@ -73,15 +75,51 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
             </div>
           </div>
 
-          <div class="mt-auto px-6 py-5 border-t border-gray-100 flex gap-3">
-            <button
-              class="flex-1 h-11 font-black text-sm uppercase tracking-widest rounded-xl border-2 transition-all"
-              [class]="selectedScript()!.active
-                ? 'border-red-400 text-red-500 hover:bg-red-50'
-                : 'border-green-400 text-green-600 hover:bg-green-50'"
-              (click)="toggleScript(selectedScript()!)">
-              {{ selectedScript()!.active ? 'Deactivate' : 'Activate' }}
-            </button>
+          <!-- Version History section -->
+          @if (scriptVersions().length > 0) {
+            <div class="px-6 py-4 border-b border-gray-100">
+              <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted mb-3">Version History</p>
+              <div class="space-y-2">
+                @for (v of scriptVersions(); track v.versionNumber) {
+                  <div class="flex items-center justify-between p-2.5 bg-gw-bg rounded-xl">
+                    <div>
+                      <p class="text-[10px] font-black text-gw-text italic">v{{ v.versionNumber }}</p>
+                      <p class="text-[8px] text-gw-text-muted">{{ v.uploadedDate | date:'MMM d, yyyy' }}</p>
+                      @if (v.versionNotes) {
+                        <p class="text-[8px] italic text-gw-text-muted truncate max-w-[160px]">{{ v.versionNotes }}</p>
+                      }
+                    </div>
+                    @if (v.versionNumber < scriptVersions()[0].versionNumber) {
+                      <button (click)="rollbackToVersion(selectedScript()!.id, v.versionNumber)"
+                        class="text-[8px] font-black uppercase tracking-wider text-gw-primary hover:underline italic px-2 py-1">
+                        Rollback
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            </div>
+          }
+
+          <div class="mt-auto px-6 py-5 border-t border-gray-100 space-y-2">
+            <div class="flex gap-2">
+              <button
+                class="flex-1 h-11 font-black text-sm uppercase tracking-widest rounded-xl border-2 transition-all"
+                [class]="selectedScript()!.active
+                  ? 'border-red-400 text-red-500 hover:bg-red-50'
+                  : 'border-green-400 text-green-600 hover:bg-green-50'"
+                (click)="toggleScript(selectedScript()!)">
+                {{ selectedScript()!.active ? 'Deactivate' : 'Activate' }}
+              </button>
+              <button (click)="duplicateScript(selectedScript()!)"
+                class="flex-1 h-11 font-black text-sm uppercase tracking-widest rounded-xl border-2 border-gw-primary/30 text-gw-primary hover:bg-gw-primary/5 transition-all">
+                Duplicate
+              </button>
+              <button (click)="setWeeklyChallenge(selectedScript()!)"
+                class="flex-1 h-11 font-black text-sm uppercase tracking-widest rounded-xl border-2 border-amber-400 text-amber-600 hover:bg-amber-50 transition-all">
+                Set Challenge
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -103,11 +141,17 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
             </p>
           </div>
         </div>
-        <button (click)="goToUpload()"
-          class="flex items-center gap-2 h-10 px-4 bg-gw-primary text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-sm hover:opacity-90 transition-opacity">
-          <i-lucide [img]="PlusIcon" size="15"></i-lucide>
-          Upload Script
-        </button>
+        <div class="flex items-center gap-2">
+          <a routerLink="/admin/script-analytics"
+            class="flex items-center gap-2 h-10 px-4 bg-gw-bg text-gw-text-muted font-black text-xs uppercase tracking-widest rounded-xl hover:bg-gw-primary/10 hover:text-gw-primary transition-all">
+            Analytics
+          </a>
+          <button (click)="goToUpload()"
+            class="flex items-center gap-2 h-10 px-4 bg-gw-primary text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-sm hover:opacity-90 transition-opacity">
+            <i-lucide [img]="PlusIcon" size="15"></i-lucide>
+            Upload Script
+          </button>
+        </div>
       </div>
 
       <!-- Stats Row -->
@@ -286,8 +330,9 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
   `]
 })
 export class AdminScriptsComponent implements OnInit {
-  private scriptService = inject(ScriptService);
-  private toast         = inject(ToastService);
+  private scriptService   = inject(ScriptService);
+  private toast           = inject(ToastService);
+  private challengeSvc    = inject(ChallengeService);
   private router        = inject(Router);
 
   readonly ScriptIcon    = FileText;
@@ -314,6 +359,7 @@ export class AdminScriptsComponent implements OnInit {
   currentPage     = signal(0);
   currentPageSize = signal(12);
   selectedScript  = signal<any | null>(null);
+  scriptVersions  = signal<any[]>([]);
 
   searchControl = new FormControl('');
 
@@ -360,6 +406,39 @@ export class AdminScriptsComponent implements OnInit {
 
   viewDetails(script: any) {
     this.selectedScript.set(script);
+    this.scriptVersions.set([]);
+    this.scriptService.getVersionHistory(script.id).subscribe({
+      next: (versions: any[]) => this.scriptVersions.set(versions ?? []),
+      error: () => {}
+    });
+  }
+
+  setWeeklyChallenge(script: any) {
+    this.challengeSvc.setWeeklyChallenge(Number(script.id)).subscribe({
+      next: () => this.toast.success(`"${script.title}" set as this week's challenge`),
+      error: () => this.toast.error('Failed to set weekly challenge')
+    });
+  }
+
+  duplicateScript(script: any) {
+    this.scriptService.duplicateScript(Number(script.id)).subscribe({
+      next: (newId: any) => {
+        this.toast.success(`Script duplicated — new script ID: ${newId}`);
+        this.loadScripts();
+      },
+      error: () => this.toast.error('Failed to duplicate script')
+    });
+  }
+
+  rollbackToVersion(scriptId: string, versionNumber: number) {
+    this.scriptService.rollbackScriptVersion(Number(scriptId), versionNumber).subscribe({
+      next: () => {
+        this.toast.success(`Rolled back to version ${versionNumber}`);
+        this.loadScripts();
+        this.selectedScript.set(null);
+      },
+      error: () => this.toast.error('Rollback failed')
+    });
   }
 
   toggleScript(script: any) {

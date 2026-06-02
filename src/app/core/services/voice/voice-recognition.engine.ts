@@ -51,13 +51,18 @@ export class VoiceRecognitionEngine implements OnDestroy {
   private apiConfidences: number[] = [];
   private isIOS = false;
 
-  // HESITATION WORDS — covers Indian English patterns too
-  private hesitationPatterns = [
-    'um', 'uh', 'er', 'err', 'hmm', 'hm',
-    'like', 'you know', 'i mean', 'basically',
-    'actually', 'literally', 'kind of', 'sort of',
-    'so', 'well', // only when isolated at turn start
-  ];
+  // ─── Audio Archive Support ──────────────────────────────────────────────────
+  private mediaRecorder: MediaRecorder | null = null;
+  private audioChunks: BlobPart[] = [];
+  private captureAudio = false;
+  lastAudioBlob: Blob | null = null;
+
+  enableAudioCapture(enabled: boolean): void {
+    this.captureAudio = enabled;
+    if (!enabled) this.lastAudioBlob = null;
+  }
+
+  // Filler phrase detection delegated to TranscriptNormalizer.detectFillerPhrases().
 
   constructor(
     private vad: AudioActivityDetector,
@@ -97,6 +102,21 @@ export class VoiceRecognitionEngine implements OnDestroy {
     // Step 2: Start waveform / VAD
     await this.vad.start();
 
+    // Step 2b: Start audio capture if opt-in is enabled
+    if (this.captureAudio) {
+      this.audioChunks = [];
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        this.mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        this.mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) this.audioChunks.push(e.data); };
+        this.mediaRecorder.onstop = () => {
+          this.lastAudioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+          stream.getTracks().forEach(t => t.stop());
+        };
+        this.mediaRecorder.start(100);
+      } catch { /* audio capture is best-effort */ }
+    }
+
     // Step 3: Start recognition with retry logic
     return new Promise((resolve, reject) => {
       this.startRecognition(expectedText, resolve, reject);
@@ -107,6 +127,10 @@ export class VoiceRecognitionEngine implements OnDestroy {
     this.cleanupSilenceTimeout();
     if (this.recognition) {
       try { this.recognition.stop(); } catch (e) { /* ignore */ }
+    }
+    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+      try { this.mediaRecorder.stop(); } catch { /* ignore */ }
+      this.mediaRecorder = null;
     }
     this.vad.stop();
     this.state$.next('idle');
@@ -315,15 +339,9 @@ export class VoiceRecognitionEngine implements OnDestroy {
   }
 
   // ─── HESITATION DETECTION ───────────────────────────────────────────────────
+  // Uses TranscriptNormalizer.detectFillerPhrases() for full filler phrase coverage.
   private detectHesitations(transcript: string): string[] {
-    const lower = transcript.toLowerCase();
-    const found: string[] = [];
-    for (const pattern of this.hesitationPatterns) {
-      const regex = new RegExp(`\\b${pattern}\\b`, 'gi');
-      const matches = lower.match(regex);
-      if (matches) found.push(...matches.map(m => m.toLowerCase()));
-    }
-    return found;
+    return this.normalizer.detectFillerPhrases(transcript);
   }
 
   // ─── REPEATED WORDS DETECTION ───────────────────────────────────────────────

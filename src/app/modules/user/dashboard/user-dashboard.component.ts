@@ -1,14 +1,19 @@
 // File: src/app/modules/user/dashboard/user-dashboard.component.ts
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   LucideAngularModule,
   Flame, Zap, Trophy, TrendingUp, Gamepad2, PlusCircle,
-  Book, ChevronRight, AlertCircle, CheckCircle2
+  Book, ChevronRight, AlertCircle, CheckCircle2,
+  X, Calendar, Target, BookOpen, RotateCcw, ArrowRight, Clock, Star
 } from 'lucide-angular';
 import { AuthService } from '@core/services/auth.service';
 import { UserStateService } from '@core/services/user-state.service';
+import { UserService } from '@core/services/user.service';
+import { MistakeService } from '@core/services/mistake.service';
+import { ChallengeService } from '@core/services/challenge.service';
 import { RouterLink } from '@angular/router';
+import { catchError, of } from 'rxjs';
 
 @Component({
   selector: 'app-user-dashboard',
@@ -38,6 +43,178 @@ import { RouterLink } from '@angular/router';
           </div>
         </div>
 
+        <!-- ── Weekly Report Card (shown once per week, dismissible) ── -->
+        @if (showWeeklyReport() && weeklyReport()) {
+          <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden animate-in slide-in-from-top-2 duration-300">
+            <div class="flex items-center justify-between px-5 py-3 border-b border-gw-bg">
+              <div class="flex items-center gap-2">
+                <i-lucide [img]="CalendarIcon" size="14" class="text-gw-primary flex-shrink-0"></i-lucide>
+                <p class="text-[10px] font-black text-gw-primary uppercase tracking-widest italic">This Week's Report</p>
+              </div>
+              <button (click)="dismissWeeklyReport()" class="text-gw-text-muted hover:text-gw-text transition-colors">
+                <i-lucide [img]="CloseIcon" size="16"></i-lucide>
+              </button>
+            </div>
+
+            @if (weeklyReport()!.isReengagement) {
+              <div class="px-5 py-4 space-y-2">
+                <p class="text-sm font-bold text-gw-text italic">You haven't practiced this week.</p>
+                @if (weeklyReport()!.lastSessionDate) {
+                  <p class="text-xs text-gw-text-muted italic">Last session: {{ weeklyReport()!.lastSessionDate | date:'MMM d' }}</p>
+                }
+                @if (weeklyReport()!.recommendedScript1Id) {
+                  <a [routerLink]="['/scripts']" class="inline-flex items-center gap-1.5 mt-2 text-[10px] font-black text-gw-primary uppercase tracking-widest italic hover:underline">
+                    Pick up where you left off <i-lucide [img]="ArrowIcon" size="12"></i-lucide>
+                  </a>
+                }
+              </div>
+            } @else {
+              <div class="px-5 py-4 space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                  <div class="text-center">
+                    <p class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Sessions</p>
+                    <p class="text-xl font-black text-gw-text italic">{{ weeklyReport()!.sessionsThisWeek }}</p>
+                  </div>
+                  <div class="text-center">
+                    <p class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Practice</p>
+                    <p class="text-xl font-black text-gw-text italic">{{ weeklyReport()!.practiceMinutesThisWeek }}m</p>
+                  </div>
+                  <div class="text-center">
+                    <p class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Errors</p>
+                    <p class="text-xl font-black text-gw-text italic">{{ weeklyReport()!.errorsDetectedThisWeek }}</p>
+                  </div>
+                  <div class="text-center">
+                    <p class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Resolved</p>
+                    <p class="text-xl font-black text-gw-success italic">{{ weeklyReport()!.errorsResolvedThisWeek }}</p>
+                  </div>
+                </div>
+                @if (weeklyReport()!.topImprovementMetric) {
+                  <div class="px-3 py-2 bg-gw-success/5 border border-gw-success/20 rounded-xl">
+                    <p class="text-[9px] font-bold text-gw-success italic">{{ weeklyReport()!.topImprovementMetric }}</p>
+                  </div>
+                }
+                @if (weeklyReport()!.weakestGrammarTag) {
+                  <p class="text-[9px] text-gw-text-muted italic">
+                    Work on: <span class="font-black text-gw-text">{{ weeklyReport()!.weakestGrammarTag }}</span>
+                  </p>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <!-- ── Weekly Challenge Banner ──────────────────────────────── -->
+        @if (activeChallenge()?.hasActiveChallenge) {
+          <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
+            <div class="flex items-center gap-2 px-5 py-3 border-b border-gw-bg"
+                 style="background: linear-gradient(135deg, rgba(61,90,153,0.04), rgba(224,123,57,0.04))">
+              <i-lucide [img]="StarIcon" size="14" class="text-amber-500 flex-shrink-0"></i-lucide>
+              <p class="text-[10px] font-black text-gw-text-muted uppercase tracking-widest italic">Weekly Challenge</p>
+              <span class="ml-auto text-[9px] font-bold text-gw-text-muted">{{ activeChallenge()!.daysRemaining }} days left</span>
+            </div>
+            <div class="px-5 py-4 space-y-3">
+              <div>
+                <p class="text-sm font-black text-gw-text">{{ activeChallenge()!.scriptTitle }}</p>
+                <p class="text-[10px] font-bold text-gw-text-muted uppercase tracking-wide mt-0.5">
+                  {{ activeChallenge()!.category }} · Level {{ activeChallenge()!.complexityLevel }}
+                </p>
+              </div>
+              @if (activeChallenge()!.userBestScore > 0) {
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] font-black text-gw-text-muted uppercase tracking-widest">Your best:</span>
+                  <span class="text-sm font-black text-gw-primary">{{ activeChallenge()!.userBestScore | number:'1.0-1' }}%</span>
+                </div>
+              }
+              @if (activeChallenge()!.leaderboard?.length) {
+                <div class="space-y-1">
+                  @for (entry of activeChallenge()!.leaderboard.slice(0,3); track entry.rank) {
+                    <div class="flex items-center gap-2 text-[10px]">
+                      <span class="w-4 font-black text-gw-text-muted text-right">{{ entry.rank }}.</span>
+                      <span class="flex-1 font-semibold text-gw-text truncate">{{ entry.fullName }}</span>
+                      <span class="font-black text-gw-primary">{{ entry.bestScore | number:'1.0-1' }}%</span>
+                    </div>
+                  }
+                </div>
+              }
+              <a [routerLink]="['/scripts']" [queryParams]="{ scriptId: activeChallenge()!.scriptId }"
+                 class="flex items-center justify-center gap-2 h-9 w-full bg-gw-primary text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:opacity-90 transition-opacity no-underline">
+                {{ activeChallenge()!.userAttemptCount > 0 ? 'Try Again' : 'Accept Challenge' }}
+                <i-lucide [img]="ArrowIcon" size="12"></i-lucide>
+              </a>
+            </div>
+          </div>
+        }
+
+        <!-- ── Goal Progress Panel ──────────────────────────────────── -->
+        @if (goalProgress()?.hasActiveGoal) {
+          <a routerLink="/user/goals"
+             class="block bg-white rounded-2xl border border-gw-card-border shadow-sm p-5 hover:border-gw-primary transition-all group no-underline">
+            <div class="flex items-start justify-between gap-3 mb-3">
+              <div>
+                <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted italic">Active Goal</p>
+                <p class="text-sm font-black text-gw-text italic mt-0.5">{{ goalProgress()!.goalLabel }}</p>
+              </div>
+              <span class="text-[8px] font-black uppercase tracking-wider px-2 py-1 rounded-lg italic flex-shrink-0"
+                [class.bg-gw-success/10]="goalProgress()!.trendLabel === 'Improving'"
+                [class.text-gw-success]="goalProgress()!.trendLabel === 'Improving'"
+                [class.bg-amber-50]="goalProgress()!.trendLabel === 'Stable'"
+                [class.text-amber-500]="goalProgress()!.trendLabel === 'Stable'"
+                [class.bg-gw-error/10]="goalProgress()!.trendLabel === 'Declining'"
+                [class.text-gw-error]="goalProgress()!.trendLabel === 'Declining'">
+                {{ goalProgress()!.trendLabel }}
+              </span>
+            </div>
+            <div class="h-2 bg-gw-bg rounded-full overflow-hidden mb-1.5">
+              <div class="h-full bg-gw-primary rounded-full transition-all duration-700"
+                [style.width.%]="goalProgress()!.progressPercent">
+              </div>
+            </div>
+            <div class="flex items-center justify-between text-[8px] font-bold text-gw-text-muted italic">
+              <span>{{ goalProgress()!.sessionsCompleted }}/{{ goalProgress()!.sessionsTarget }} sessions</span>
+              <span>{{ goalProgress()!.estimatedWeeksRemaining }} weeks remaining</span>
+            </div>
+          </a>
+        } @else {
+          <a routerLink="/user/goals"
+             class="block bg-gw-bg border border-dashed border-gw-card-border rounded-2xl p-4 text-center hover:border-gw-primary transition-all group no-underline">
+            <p class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted italic group-hover:text-gw-primary">Set a Learning Goal →</p>
+          </a>
+        }
+
+        <!-- ── Guided Learning Path ─────────────────────────────────── -->
+        @if ((learningPath()?.recommendations?.length || 0) > 0) {
+          <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
+            <div class="flex items-center justify-between px-5 py-3.5 border-b border-gw-bg">
+              <div class="flex items-center gap-2">
+                <i-lucide [img]="TargetIcon" size="14" class="text-gw-accent flex-shrink-0"></i-lucide>
+                <p class="text-[10px] font-black text-gw-text-muted uppercase tracking-widest">Recommended Next</p>
+              </div>
+            </div>
+            <div class="divide-y divide-gw-bg">
+              @for (rec of learningPath()!.recommendations; track rec.scriptId) {
+                <div class="flex items-start gap-3 px-5 py-4">
+                  <div class="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
+                       [style.background]="recIconBg(rec.recommendationType)">
+                    <i-lucide [img]="recIcon(rec.recommendationType)" size="14"
+                              [style.color]="recIconColor(rec.recommendationType)"></i-lucide>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-gw-text truncate">{{ rec.scriptTitle }}</p>
+                    <p class="text-[9px] font-bold text-gw-text-muted mt-0.5 uppercase tracking-wide">
+                      {{ rec.category }} · Level {{ rec.complexityLevel }}
+                    </p>
+                    <p class="text-[9px] text-gw-text-muted italic mt-1 leading-tight">{{ rec.reasonText }}</p>
+                  </div>
+                  <a [routerLink]="['/scripts']" [queryParams]="{ scriptId: rec.scriptId }"
+                     class="shrink-0 w-8 h-8 rounded-xl bg-gw-primary/10 flex items-center justify-center text-gw-primary hover:bg-gw-primary hover:text-white transition-all">
+                    <i-lucide [img]="ArrowIcon" size="14"></i-lucide>
+                  </a>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
         <!-- ── Pending Repractice Alert ─────────────────────────────── -->
         @if ((dashboard()?.pendingRepracticeCount || 0) > 0) {
           <a routerLink="/user/progress"
@@ -59,6 +236,32 @@ import { RouterLink } from '@angular/router';
             <div class="w-7 h-7 rounded-lg flex items-center justify-center
                         bg-gw-primary text-white shrink-0 group-hover:opacity-90 transition-opacity">
               <i-lucide [img]="ChevronIcon" size="14"></i-lucide>
+            </div>
+          </a>
+        }
+
+        <!-- ── Reviews Due Today ────────────────────────────────────── -->
+        @if ((dueForReview()?.dueCount || 0) > 0) {
+          <a routerLink="/user/my-mistakes"
+             class="flex items-center justify-between gap-3 px-4 py-3.5
+                    bg-white rounded-2xl border border-amber-200 shadow-sm
+                    hover:border-amber-400 transition-colors group no-underline">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                   style="background: rgba(245,158,11,0.08);">
+                <i-lucide [img]="ClockIcon" size="15" style="color:#F59E0B;"></i-lucide>
+              </div>
+              <div>
+                <p class="text-sm font-bold text-gw-text">Grammar reviews due</p>
+                <p class="text-[10px] font-semibold text-gw-text-muted mt-0.5">
+                  {{ dueForReview()!.dueCount }} mistake{{ dueForReview()!.dueCount === 1 ? '' : 's' }} ready for spaced review
+                </p>
+              </div>
+            </div>
+            <div class="w-7 h-7 rounded-lg flex items-center justify-center
+                        shrink-0 group-hover:opacity-90 transition-opacity"
+                 style="background: rgba(245,158,11,0.15);">
+              <i-lucide [img]="ChevronIcon" size="14" style="color:#F59E0B;"></i-lucide>
             </div>
           </a>
         }
@@ -210,30 +413,134 @@ import { RouterLink } from '@angular/router';
   `,
   styles: [`:host { display: block; }`]
 })
-export class UserDashboardComponent {
-  private auth      = inject(AuthService);
-  private userState = inject(UserStateService);
+export class UserDashboardComponent implements OnInit {
+  private auth          = inject(AuthService);
+  private userState     = inject(UserStateService);
+  private userSvc       = inject(UserService);
+  private mistakeSvc    = inject(MistakeService);
+  private challengeSvc  = inject(ChallengeService);
 
   today = new Date();
 
-  // ── Read directly from state service — no API calls here ──────
+  // ── Dashboard state from state service ──────────────────────
   dashboard = this.userState.dashboard;
+
+  // ── Weekly report ────────────────────────────────────────────
+  weeklyReport  = signal<any>(null);
+  showWeeklyReport = signal(false);
+
+  // ── Learning path ────────────────────────────────────────────
+  learningPath = signal<any>(null);
+
+  // ── Goal progress ─────────────────────────────────────────────
+  goalProgress = signal<any>(null);
+
+  // ── Spaced repetition due reviews ─────────────────────────────
+  dueForReview = signal<any>(null);
+
+  // ── Weekly challenge ──────────────────────────────────────────
+  activeChallenge = signal<any>(null);
 
   firstName = computed(() => {
     const name = this.auth.currentUser?.fullName?.trim();
     return name ? name.split(/\s+/)[0] : 'there';
   });
 
-  readonly FlameIcon  = Flame;
-  readonly ZapIcon    = Zap;
-  readonly TrophyIcon = Trophy;
-  readonly TrendIcon  = TrendingUp;
-  readonly PlayIcon   = Gamepad2;
-  readonly AddIcon    = PlusCircle;
-  readonly BookIcon   = Book;
+  readonly FlameIcon   = Flame;
+  readonly ZapIcon     = Zap;
+  readonly TrophyIcon  = Trophy;
+  readonly TrendIcon   = TrendingUp;
+  readonly PlayIcon    = Gamepad2;
+  readonly AddIcon     = PlusCircle;
+  readonly BookIcon    = Book;
   readonly ChevronIcon = ChevronRight;
-  readonly AlertIcon  = AlertCircle;
-  readonly CheckIcon  = CheckCircle2;
+  readonly AlertIcon   = AlertCircle;
+  readonly CheckIcon   = CheckCircle2;
+  readonly CloseIcon   = X;
+  readonly CalendarIcon = Calendar;
+  readonly TargetIcon   = Target;
+  readonly VocabIcon    = BookOpen;
+  readonly RepracticeIcon = RotateCcw;
+  readonly ArrowIcon    = ArrowRight;
+  readonly ClockIcon    = Clock;
+  readonly StarIcon     = Star;
+
+  ngOnInit() {
+    this.loadWeeklyReport();
+    this.loadLearningPath();
+    this.loadGoalProgress();
+    this.loadDueForReview();
+    this.loadActiveChallenge();
+  }
+
+  private loadWeeklyReport() {
+    // Show at most once per calendar week (tracked in localStorage)
+    const weekKey = `gwf_weekly_report_${this.currentISOWeek()}`;
+    if (localStorage.getItem(weekKey) === 'dismissed') return;
+
+    this.userSvc.getWeeklyReport().pipe(catchError(() => of(null))).subscribe(report => {
+      if (report) {
+        this.weeklyReport.set(report);
+        this.showWeeklyReport.set(true);
+      }
+    });
+  }
+
+  private loadLearningPath() {
+    this.userSvc.getLearningPath().pipe(catchError(() => of(null))).subscribe(path => {
+      if (path) this.learningPath.set(path);
+    });
+  }
+
+  private loadGoalProgress() {
+    this.userSvc.getGoalProgress().pipe(catchError(() => of(null))).subscribe(goal => {
+      this.goalProgress.set(goal);
+    });
+  }
+
+  private loadDueForReview() {
+    this.mistakeSvc.getDueForReview().pipe(catchError(() => of(null))).subscribe(data => {
+      if (data?.data) this.dueForReview.set(data.data);
+    });
+  }
+
+  private loadActiveChallenge() {
+    this.challengeSvc.getActiveChallenge().pipe(catchError(() => of(null))).subscribe(data => {
+      if (data) this.activeChallenge.set(data);
+    });
+  }
+
+  dismissWeeklyReport() {
+    const weekKey = `gwf_weekly_report_${this.currentISOWeek()}`;
+    localStorage.setItem(weekKey, 'dismissed');
+    this.showWeeklyReport.set(false);
+  }
+
+  private currentISOWeek(): string {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() + 4 - (d.getDay() || 7));
+    const yearStart = new Date(d.getFullYear(), 0, 1);
+    return `${d.getFullYear()}-W${Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7)}`;
+  }
+
+  recIcon(type: string) {
+    if (type === 'repractice') return this.RepracticeIcon;
+    if (type === 'low_score') return this.ZapIcon;
+    return this.VocabIcon;
+  }
+
+  recIconBg(type: string): string {
+    if (type === 'repractice') return 'rgba(224,123,57,0.08)';
+    if (type === 'low_score') return 'rgba(61,90,153,0.08)';
+    return 'rgba(46,125,50,0.08)';
+  }
+
+  recIconColor(type: string): string {
+    if (type === 'repractice') return '#E07B39';
+    if (type === 'low_score') return '#3D5A99';
+    return '#2E7D32';
+  }
 
   get greeting(): string {
     const h = new Date().getHours();

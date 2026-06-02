@@ -2,7 +2,7 @@
 import { Component, Input, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TurnState } from '@core/models/voice.model';
-import { LucideAngularModule, Mic, ThumbsUp, HelpCircle, AlertTriangle, MessageCircle, Volume2 } from 'lucide-angular';
+import { LucideAngularModule, Mic, ThumbsUp, AlertCircle, Volume2 } from 'lucide-angular';
 import { LiveSessionService } from '../live-session.service';
 import { VoiceBroadcastService } from '@core/services/voice-broadcast.service';
 
@@ -97,30 +97,32 @@ import { VoiceBroadcastService } from '@core/services/voice-broadcast.service';
         </div>
       }
 
-      <!-- Quick Feedback -->
-      <div class="space-y-2">
-        <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 italic text-center">Give Quick Feedback</p>
-        <div class="grid grid-cols-2 gap-2">
-          @for (action of feedbackActions; track action.label) {
-            <button
-              type="button"
-              (click)="sendFeedback(action.tag)"
-              class="flex items-center gap-2.5 px-3 py-3 rounded-xl border transition-all duration-200 active:scale-95 text-left"
-              [style.borderColor]="lastAction() === action.tag ? action.color : 'rgba(255,255,255,0.07)'"
-              [style.backgroundColor]="lastAction() === action.tag ? action.color + '2a' : 'rgba(255,255,255,0.04)'"
-            >
-              <div
-                class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors duration-200"
-                [style.backgroundColor]="action.color + '20'"
-                [style.color]="action.color"
+      <!-- Quick Feedback — suppressed on facilitator turns (Interviewer/Tutor/Coach) -->
+      @if (!turnState.isFacilitatorTurn) {
+        <div class="space-y-2">
+          <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 italic text-center">Give Quick Feedback</p>
+          <div class="grid grid-cols-2 gap-2">
+            @for (action of feedbackActions; track action.label) {
+              <button
+                type="button"
+                (click)="sendFeedback(action.tag)"
+                class="flex items-center gap-2.5 px-3 py-3 rounded-xl border transition-all duration-200 active:scale-95 text-left"
+                [style.borderColor]="lastAction() === action.tag ? action.color : 'rgba(255,255,255,0.07)'"
+                [style.backgroundColor]="lastAction() === action.tag ? action.color + '2a' : 'rgba(255,255,255,0.04)'"
               >
-                <i-lucide [img]="action.icon" size="14"></i-lucide>
-              </div>
-              <span class="text-[10px] font-black uppercase tracking-wider text-white/55 leading-tight">{{ action.label }}</span>
-            </button>
-          }
+                <div
+                  class="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors duration-200"
+                  [style.backgroundColor]="action.color + '20'"
+                  [style.color]="action.color"
+                >
+                  <i-lucide [img]="action.icon" size="14"></i-lucide>
+                </div>
+                <span class="text-[10px] font-black uppercase tracking-wider text-white/55 leading-tight">{{ action.label }}</span>
+              </button>
+            }
+          </div>
         </div>
-      </div>
+      }
 
       <!-- Your Turn Is Next -->
       <div class="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-[#3D5A99]/20 to-transparent border border-[#3D5A99]/25">
@@ -169,10 +171,8 @@ export class ListenerScreenComponent {
   lastAction = signal<string | null>(null);
 
   feedbackActions = [
-    { label: 'GOOD',      tag: 'Good',                 icon: ThumbsUp,      color: '#34d399' },
-    { label: 'HESITATED', tag: 'Hesitated',             icon: HelpCircle,    color: '#fbbf24' },
-    { label: 'MISTAKE',   tag: 'Mistake',               icon: AlertTriangle, color: '#f87171' },
-    { label: 'UNCLEAR',   tag: 'Unclear Pronunciation', icon: MessageCircle, color: '#818cf8' },
+    { label: 'GOOD',       tag: 'Good',       icon: ThumbsUp,    color: '#34d399' },
+    { label: 'NEEDS WORK', tag: 'Needs Work', icon: AlertCircle, color: '#fbbf24' },
   ];
 
   sendFeedback(tag: string) {

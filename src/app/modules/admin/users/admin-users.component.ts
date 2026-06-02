@@ -2,7 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AdminService, AdminUserListItem, AdminUserDetail } from '@core/services/admin.service';
-import { LucideAngularModule, Search, User, Phone, Globe, ArrowRight, Eye, UserX, UserCheck, BarChart2, Flame, Users, ChevronLeft, ChevronRight, X, AlertCircle, UserPlus, Pencil, EyeOff } from 'lucide-angular';
+import { LucideAngularModule, Search, User, Phone, ArrowRight, Eye, UserX, UserCheck, BarChart2, Flame, Users, ChevronLeft, ChevronRight, X, AlertCircle, UserPlus, Pencil, EyeOff } from 'lucide-angular';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { ToastService } from '@core/services/toast.service';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
@@ -66,10 +66,6 @@ import { Router } from '@angular/router';
             <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
               <i-lucide [img]="PhoneIcon" size="16" class="text-gw-text-muted flex-shrink-0"></i-lucide>
               <span class="text-sm font-bold text-gw-text">{{ selectedUser()!.mobileNumber }}</span>
-            </div>
-            <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
-              <i-lucide [img]="GlobeIcon" size="16" class="text-gw-text-muted flex-shrink-0"></i-lucide>
-              <span class="text-sm font-bold text-gw-text">{{ detailUser()?.preferredHintLanguage || '—' }}</span>
             </div>
           </div>
 
@@ -156,32 +152,17 @@ import { Router } from '@angular/router';
                 class="w-full h-10 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all">
             </div>
 
-            <!-- Age Group + Language row -->
-            <div class="grid grid-cols-2 gap-3">
-              <div>
-                <label class="block text-[10px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">Age Group <span class="text-red-500">*</span></label>
-                <select formControlName="ageGroup"
-                  class="w-full h-10 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all appearance-none cursor-pointer"
-                  [class.border-red-400]="userForm.get('ageGroup')?.invalid && userForm.get('ageGroup')?.touched">
-                  <option value="">Select</option>
-                  <option value="Child (6-12)">Child (6–12)</option>
-                  <option value="Teen (13-17)">Teen (13–17)</option>
-                  <option value="Adult (18+)">Adult (18+)</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-[10px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">Hint Language <span class="text-red-500">*</span></label>
-                <select formControlName="preferredHintLanguage"
-                  class="w-full h-10 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all appearance-none cursor-pointer"
-                  [class.border-red-400]="userForm.get('preferredHintLanguage')?.invalid && userForm.get('preferredHintLanguage')?.touched">
-                  <option value="">Select</option>
-                  <option value="Telugu">Telugu</option>
-                  <option value="Hindi">Hindi</option>
-                  <option value="Tamil">Tamil</option>
-                  <option value="Kannada">Kannada</option>
-                  <option value="None">None</option>
-                </select>
-              </div>
+            <!-- Age Group -->
+            <div>
+              <label class="block text-[10px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">Age Group <span class="text-red-500">*</span></label>
+              <select formControlName="ageGroup"
+                class="w-full h-10 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all appearance-none cursor-pointer"
+                [class.border-red-400]="userForm.get('ageGroup')?.invalid && userForm.get('ageGroup')?.touched">
+                <option value="">Select</option>
+                <option value="Child (6-12)">Child (6–12)</option>
+                <option value="Teen (13-17)">Teen (13–17)</option>
+                <option value="Adult (18+)">Adult (18+)</option>
+              </select>
             </div>
 
             <!-- Password -->
@@ -457,7 +438,6 @@ export class AdminUsersComponent implements OnInit {
   readonly DeactivateIcon = UserX;
   readonly ActivateIcon   = UserCheck;
   readonly PhoneIcon      = Phone;
-  readonly GlobeIcon      = Globe;
   readonly XIcon          = X;
   readonly ArrowIcon      = ArrowRight;
   readonly AddUserIcon    = UserPlus;
@@ -484,7 +464,7 @@ export class AdminUsersComponent implements OnInit {
     mobileNumber:          new FormControl('', [Validators.required, Validators.maxLength(16)]),
     email:                 new FormControl(''),
     ageGroup:              new FormControl('', Validators.required),
-    preferredHintLanguage: new FormControl('', Validators.required),
+    preferredHintLanguage: new FormControl('Telugu'),
     password:              new FormControl(''),
   });
 
@@ -583,8 +563,8 @@ export class AdminUsersComponent implements OnInit {
     this.adminService.getUserDetail(user.id).subscribe({
       next: detail => {
         this.userForm.patchValue({
-          email:                 detail.email || '',
-          preferredHintLanguage: detail.preferredHintLanguage,
+          email: detail.email || '',
+          preferredHintLanguage: 'Telugu',
         });
       },
       error: () => {}

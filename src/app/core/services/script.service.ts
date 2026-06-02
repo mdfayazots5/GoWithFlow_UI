@@ -73,8 +73,9 @@ export class ScriptService {
     return this.http.post<any>(`${this.baseUrl}/upload`, formData).pipe(map(res => res.data as ScriptUploadResponse));
   }
 
-  getSampleTemplate(): Observable<Blob> {
-    return this.http.get(`${this.baseUrl}/sample-template`, { responseType: 'blob' });
+  getSampleTemplate(category?: string): Observable<Blob> {
+    const params = category ? `?category=${encodeURIComponent(category)}` : '';
+    return this.http.get(`${this.baseUrl}/sample-template${params}`, { responseType: 'blob' });
   }
 
   downloadScript(scriptId: string): Observable<Blob> {
@@ -87,5 +88,26 @@ export class ScriptService {
 
   getVersionHistory(scriptId: string): Observable<ScriptVersion[]> {
     return this.http.get<ScriptVersion[]>(`${this.baseUrl}/${scriptId}/versions`);
+  }
+
+  getScriptDetail(scriptId: number | string): Observable<any> {
+    return this.http.get<{ data: any }>(`${this.baseUrl}/${scriptId}`).pipe(map(r => r.data));
+  }
+
+  getScriptAnalytics(category?: string): Observable<any[]> {
+    const params = category ? `?category=${encodeURIComponent(category)}` : '';
+    return this.http.get<{ data: any[] }>(`${this.baseUrl}/analytics${params}`).pipe(map(r => r.data));
+  }
+
+  getPromptData(category: string): Observable<any> {
+    return this.http.get<{ data: any }>(`${this.baseUrl}/prompt-data?category=${encodeURIComponent(category)}`).pipe(map(r => r.data));
+  }
+
+  rollbackScriptVersion(scriptId: number, version: number): Observable<any> {
+    return this.http.post<{ data: any }>(`${this.baseUrl}/${scriptId}/rollback?version=${version}`, {}).pipe(map(r => r.data));
+  }
+
+  duplicateScript(scriptId: number): Observable<any> {
+    return this.http.post<{ data: any }>(`${this.baseUrl}/${scriptId}/duplicate`, {}).pipe(map(r => r.data));
   }
 }

@@ -40,6 +40,16 @@ export const ADMIN_ROUTES: Routes = [
         path: 'reports/user/:id',
         data: { title: 'User Performance Report' },
         loadComponent: () => import('./reports/user-detail-report.component').then(m => m.UserDetailReportComponent)
+      },
+      {
+        path: 'script-analytics',
+        data: { title: 'Script Analytics' },
+        loadComponent: () => import('./script-analytics/admin-script-analytics.component').then(m => m.AdminScriptAnalyticsComponent)
+      },
+      {
+        path: 'cohorts',
+        data: { title: 'Cohort Management' },
+        loadComponent: () => import('./cohorts/admin-cohorts.component').then(m => m.AdminCohortsComponent)
       }
     ]
   }

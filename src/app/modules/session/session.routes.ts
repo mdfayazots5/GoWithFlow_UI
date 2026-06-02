@@ -26,6 +26,10 @@ export const SESSION_ROUTES: Routes = [
     loadComponent: () => import('./session-report/session-report.component').then(m => m.SessionReportComponent)
   },
   {
+    path: 'review/:sessionId',
+    loadComponent: () => import('./session-review/session-review.component').then(m => m.SessionReviewComponent)
+  },
+  {
     path: '',
     redirectTo: 'join',
     pathMatch: 'full'

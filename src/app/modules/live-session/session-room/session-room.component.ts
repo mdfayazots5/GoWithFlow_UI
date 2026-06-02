@@ -459,7 +459,10 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
         utterance: shiftEvent.nextUtterance,
         reReadAllowed: true,
         reReadCount: 0,
-        maxReReads: 2
+        maxReReads: 2,
+        // isFacilitatorTurn defaults false in the optimistic update; the canonical
+        // loadCurrentTurn() response immediately follows and sets the correct value.
+        isFacilitatorTurn: false
       });
       this.isSpeaker.set(String(shiftEvent.newActiveMemberId) === localStorage.getItem('gwf_userId'));
     }

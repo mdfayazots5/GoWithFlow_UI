@@ -32,4 +32,8 @@ export class MistakeService {
   getGrammarProgress(): Observable<GrammarProgress[]> {
     return this.http.get<{ data: GrammarProgress[] }>(`${this.baseUrl}/grammar-progress`).pipe(map(r => r.data));
   }
+
+  getGrammarProgressWithTrend(): Observable<any[]> {
+    return this.http.get<{ data: any[] }>(`${this.baseUrl}/grammar-trends`).pipe(map(r => r.data));
+  }
 }

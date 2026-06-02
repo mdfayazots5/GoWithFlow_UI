@@ -36,4 +36,8 @@ export class MistakeService {
   getGrammarProgress(): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/grammar-progress`);
   }
+
+  getDueForReview(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/due-for-review`);
+  }
 }

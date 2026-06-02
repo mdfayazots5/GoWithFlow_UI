@@ -3,7 +3,8 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ScriptService } from '@core/services/script.service';
-import { LucideAngularModule, Upload, CheckCircle2, AlertCircle, FileText, Download, ChevronRight, Save, Trash2, ArrowLeft } from 'lucide-angular';
+import { catchError, of } from 'rxjs';
+import { LucideAngularModule, Upload, CheckCircle2, AlertCircle, FileText, Download, ChevronRight, Save, Trash2, ArrowLeft, Copy, Check } from 'lucide-angular';
 import { ToastService } from '@core/services/toast.service';
 import { RouterLink } from '@angular/router';
 
@@ -76,10 +77,58 @@ import { RouterLink } from '@angular/router';
           </div>
 
           <div class="flex flex-col md:flex-row items-center justify-between gap-4 pt-4">
-            <button (click)="downloadTemplate()" class="h-12 px-8 border-2 border-gw-primary text-gw-primary font-black uppercase tracking-widest italic rounded-2xl hover:bg-gw-primary hover:text-white transition-all flex items-center gap-2">
-              <i-lucide [img]="DownloadIcon" size="18"></i-lucide>
-              Download Template
-            </button>
+            <div class="flex flex-col gap-2 w-full md:w-auto">
+              <span class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted italic">Download Category Template</span>
+              <div class="flex flex-wrap gap-2">
+                @for (cat of categoryTemplateOptions; track cat.value) {
+                  <button (click)="downloadTemplate(cat.value)"
+                    class="h-9 px-4 border font-black text-[9px] uppercase tracking-widest italic rounded-xl transition-all flex items-center gap-1.5"
+                    [class.border-gw-primary]="selectedCategoryForPrompt() !== cat.value"
+                    [class.text-gw-primary]="selectedCategoryForPrompt() !== cat.value"
+                    [class.hover:bg-gw-primary]="selectedCategoryForPrompt() !== cat.value"
+                    [class.hover:text-white]="selectedCategoryForPrompt() !== cat.value"
+                    [class.bg-gw-primary]="selectedCategoryForPrompt() === cat.value"
+                    [class.text-white]="selectedCategoryForPrompt() === cat.value"
+                    [class.border-transparent]="selectedCategoryForPrompt() === cat.value">
+                    <i-lucide [img]="DownloadIcon" size="13"></i-lucide>
+                    {{ cat.label }}
+                  </button>
+                }
+              </div>
+
+              <!-- Claude Prompt panel — shown after selecting a category -->
+              @if (selectedCategoryForPrompt()) {
+                <div class="mt-4 bg-gw-primary/5 border border-gw-primary/20 rounded-2xl overflow-hidden">
+                  <div class="flex items-center justify-between px-4 py-3 border-b border-gw-primary/15">
+                    <div>
+                      <p class="text-[9px] font-black uppercase tracking-widest text-gw-primary italic">
+                        Claude Prompt — {{ selectedCategoryForPrompt() }}
+                        @if (promptData()?.activeScriptCount > 0) {
+                          <span class="ml-2 normal-case font-semibold text-gw-text-muted not-italic">({{ promptData()!.activeScriptCount }} scripts in DB — tags included)</span>
+                        }
+                      </p>
+                      <p class="text-[8px] text-gw-text-muted italic mt-0.5">Copy → paste into claude.ai → get JSON → upload here</p>
+                    </div>
+                    <button (click)="copyPrompt()" [disabled]="promptLoading()"
+                      class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider italic transition-all disabled:opacity-50"
+                      [class.bg-gw-success]="promptCopied()"
+                      [class.text-white]="promptCopied()"
+                      [class.bg-gw-primary]="!promptCopied()"
+                      [class.text-white]="!promptCopied()">
+                      @if (promptLoading()) {
+                        <div class="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      } @else {
+                        <i-lucide [img]="promptCopied() ? CopiedIcon : CopyIcon" size="12"></i-lucide>
+                      }
+                      {{ promptLoading() ? 'Loading...' : promptCopied() ? 'Copied!' : 'Copy Prompt' }}
+                    </button>
+                  </div>
+                  <div class="px-4 py-3 max-h-48 overflow-y-auto">
+                    <pre class="text-[8px] text-gw-text-muted font-mono whitespace-pre-wrap leading-relaxed">{{ promptData()?.fullPrompt || buildClaudePrompt(selectedCategoryForPrompt()) }}</pre>
+                  </div>
+                </div>
+              }
+            </div>
             
             <button 
               [disabled]="!selectedFile() || isValidating()"
@@ -174,9 +223,10 @@ import { RouterLink } from '@angular/router';
                 <select formControlName="category" class="w-full h-14 bg-gw-bg/50 border-2 border-transparent focus:border-gw-primary rounded-2xl px-6 font-bold text-gw-text outline-none appearance-none transition-all">
                   <option value="Grammar Drill">Grammar Drill</option>
                   <option value="Roleplay">Roleplay</option>
-                  <option value="Interview">Interview</option>
-                  <option value="Vocabulary">Vocabulary</option>
+                  <option value="Mock Interview">Mock Interview</option>
+                  <option value="Vocabulary Sprint">Vocabulary Sprint</option>
                   <option value="Fluency Drill">Fluency Drill</option>
+                  <option value="Repractice Round">Repractice Round</option>
                 </select>
               </div>
 
@@ -238,16 +288,6 @@ import { RouterLink } from '@angular/router';
                 </div>
               </div>
 
-              <div class="space-y-2">
-                <label class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted px-2">Hint Language*</label>
-                <select formControlName="hintLanguage" class="w-full h-14 bg-gw-bg/50 border-2 border-transparent focus:border-gw-primary rounded-2xl px-6 font-bold text-gw-text outline-none appearance-none transition-all">
-                  <option value="Telugu">Telugu</option>
-                  <option value="Hindi">Hindi</option>
-                  <option value="Tamil">Tamil</option>
-                  <option value="Kannada">Kannada</option>
-                  <option value="None">None (English Only)</option>
-                </select>
-              </div>
             </form>
           </div>
 
@@ -380,15 +420,17 @@ export class ScriptUploadComponent {
   private scriptService = inject(ScriptService);
   private toast = inject(ToastService);
 
-  readonly UploadIcon = Upload;
-  readonly FileIcon = FileText;
+  readonly UploadIcon  = Upload;
+  readonly FileIcon    = FileText;
   readonly DownloadIcon = Download;
-  readonly NextIcon = ChevronRight;
-  readonly CheckIcon = CheckCircle2;
-  readonly ErrorIcon = AlertCircle;
-  readonly TrashIcon = Trash2;
-  readonly SaveIcon = Save;
+  readonly NextIcon    = ChevronRight;
+  readonly CheckIcon   = CheckCircle2;
+  readonly ErrorIcon   = AlertCircle;
+  readonly TrashIcon   = Trash2;
+  readonly SaveIcon    = Save;
   readonly BackArrowIcon = ArrowLeft;
+  readonly CopyIcon    = Copy;
+  readonly CopiedIcon  = Check;
 
   step = signal(1);
   isDragging = signal(false);
@@ -398,6 +440,10 @@ export class ScriptUploadComponent {
   showAllRows = signal(false);
   isSaving = signal(false);
   uploadResponse = signal<any>(null);
+  selectedCategoryForPrompt = signal<string>('');
+  promptCopied   = signal(false);
+  promptData     = signal<any>(null);
+  promptLoading  = signal(false);
   readonly previewLimit = 5;
 
   validatedRows = computed(() => this.validationResult()?.rows ?? []);
@@ -443,14 +489,149 @@ export class ScriptUploadComponent {
     this.selectedFile.set(null);
   }
 
-  downloadTemplate() {
-    this.scriptService.getSampleTemplate().subscribe(blob => {
+  readonly categoryTemplateOptions = [
+    { label: 'Grammar Drill',    value: 'Grammar Drill' },
+    { label: 'Roleplay',         value: 'Roleplay' },
+    { label: 'Mock Interview',   value: 'Mock Interview' },
+    { label: 'Vocabulary Sprint',value: 'Vocabulary Sprint' },
+    { label: 'Fluency Drill',    value: 'Fluency Drill' },
+    { label: 'Repractice Round', value: 'Repractice Round' },
+  ];
+
+  downloadTemplate(category: string) {
+    this.selectedCategoryForPrompt.set(category);
+    this.promptCopied.set(false);
+    this.promptData.set(null);
+    this.promptLoading.set(true);
+
+    // Fetch prompt data from DB in parallel with template download
+    this.scriptService.getPromptData(category).pipe(
+      catchError(() => of(null))
+    ).subscribe(data => {
+      this.promptData.set(data);
+      this.promptLoading.set(false);
+    });
+
+    this.scriptService.getSampleTemplate(category).subscribe(blob => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'sample-script-template.xlsx';
+      const safeName = category.replace(/\s+/g, '_');
+      a.download = `GoWithFlow_Template_${safeName}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
+    });
+  }
+
+  buildClaudePrompt(category: string): string {
+    const d = this.promptData();
+
+    // Pull from DB data if available, else fall back to static defaults
+    const speakerLabels    = d?.speakerLabels      ?? this.staticSpeakers(category);
+    const minRows          = d?.minRows            ?? this.staticMin(category);
+    const maxRows          = d?.maxRows            ?? this.staticMax(category);
+    const mandatoryColumns = d?.mandatoryColumns   ?? this.staticMandatory(category);
+    const approvedTags     = (d?.approvedGrammarTags as string[] | undefined)?.join(' | ')
+                             ?? 'Present Simple | Present Perfect | Past Simple | Modal Verbs | Formal Register | STAR Method | General Fluency';
+    const tagsInUse        = (d?.grammarTagsInUse as string[] | undefined)?.length
+                             ? (d!.grammarTagsInUse as string[]).join(', ')
+                             : '(no scripts yet — choose from the approved list below)';
+    const contextsInUse    = (d?.contextTagsInUse as string[] | undefined)?.length
+                             ? (d!.contextTagsInUse as string[]).join(', ')
+                             : '(no scripts yet — choose any realistic context)';
+    const activeCount      = d?.activeScriptCount ?? 0;
+
+    return `Generate a GoWithFlow script for the category: ${category}.
+${activeCount > 0 ? `(${activeCount} active script${activeCount !== 1 ? 's' : ''} already exist in the platform for this category — ensure your content is distinct.)` : ''}
+
+Output strict JSON only — no explanation, no markdown, no code fences.
+
+JSON structure required:
+{
+  "metadata": {
+    "scriptTitle": "[create a descriptive title]",
+    "category": "${category}",
+    "grammarFocusTag": "[choose from the list below]",
+    "contextTag": "[choose from the list below, or create a new realistic one]",
+    "complexityLevel": 3,
+    "targetAgeGroup": "Adult",
+    "hintLanguage": "Telugu"
+  },
+  "rows": [
+    {
+      "sequenceId": 1,
+      "speakerLabel": "[see speaker label rule below]",
+      "englishText": "[turn content — grammatically correct, under 512 chars]",
+      "hintText": "[Telugu translation of the sentence — required if category needs column D]",
+      "grammarTag": "[grammar tag or empty string]",
+      "contextTag": "[same as metadata contextTag — must match on every row]",
+      "focusWord": "[focus word or empty string]",
+      "pronunciationNote": "[IPA notation or empty string]"
+    }
+  ]
+}
+
+Category rules for ${category}:
+- Speaker labels: ${speakerLabels}
+- Row count: minimum ${minRows}, maximum ${maxRows}
+- Alternate speakers every turn — no speaker has 3+ consecutive turns
+- SequenceId starts at 1, increments by 1, no gaps
+- Mandatory columns: ${mandatoryColumns}
+
+Grammar tags already used in this category on the platform:
+${tagsInUse}
+
+Context tags already used in this category on the platform:
+${contextsInUse}
+
+Full approved GrammarTag list (use one of these — do not invent new tags):
+${approvedTags}
+
+Self-validate before outputting:
+1. SequenceId sequential with no gaps starting at 1
+2. Speaker labels match the category requirement exactly
+3. Row count is between ${minRows} and ${maxRows}
+4. All mandatory columns are populated on every applicable row
+5. FocusWord (if used) appears verbatim inside EnglishText on the same row
+6. Output is valid JSON — no trailing commas, no markdown fences`;
+  }
+
+  private staticSpeakers(cat: string): string {
+    const m: Record<string, string> = {
+      'Grammar Drill':    'Speaker A / Speaker B',
+      'Roleplay':         'Two real-world role names (e.g. Passenger, Check-In Agent)',
+      'Mock Interview':   'Interviewer / Candidate',
+      'Vocabulary Sprint':'Tutor / Learner',
+      'Fluency Drill':    'Speaker A / Speaker B',
+      'Repractice Round': 'Coach / Learner',
+    };
+    return m[cat] ?? 'Speaker A / Speaker B';
+  }
+  private staticMin(cat: string): number {
+    return { 'Grammar Drill': 12, 'Roleplay': 16, 'Mock Interview': 20, 'Vocabulary Sprint': 20, 'Fluency Drill': 30, 'Repractice Round': 14 }[cat] ?? 12;
+  }
+  private staticMax(cat: string): number {
+    return { 'Grammar Drill': 30, 'Roleplay': 40, 'Mock Interview': 50, 'Vocabulary Sprint': 40, 'Fluency Drill': 60, 'Repractice Round': 28 }[cat] ?? 30;
+  }
+  private staticMandatory(cat: string): string {
+    const m: Record<string, string> = {
+      'Grammar Drill':    'E (GrammarTag — same on all rows)',
+      'Mock Interview':   'E (GrammarTag), G (FocusWord)',
+      'Vocabulary Sprint':'D (HintText), G (FocusWord), H (PronunciationNote on Tutor rows)',
+      'Fluency Drill':    'E/G/H must be left blank',
+      'Repractice Round': 'D (HintText), E (GrammarTag — same on all rows)',
+    };
+    return m[cat] ?? 'E (GrammarTag — same on all rows)';
+  }
+
+  copyPrompt() {
+    const cat = this.selectedCategoryForPrompt();
+    if (!cat) return;
+    // Use DB prompt if available, fall back to locally built prompt
+    const prompt = this.promptData()?.fullPrompt || this.buildClaudePrompt(cat);
+    navigator.clipboard.writeText(prompt).then(() => {
+      this.promptCopied.set(true);
+      setTimeout(() => this.promptCopied.set(false), 3000);
     });
   }
 

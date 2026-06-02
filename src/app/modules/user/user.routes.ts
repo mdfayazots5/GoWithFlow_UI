@@ -25,5 +25,21 @@ export const USER_ROUTES: Routes = [
   {
     path: 'settings',
     loadComponent: () => import('./settings/user-settings.component').then(m => m.UserSettingsComponent)
+  },
+  {
+    path: 'vocabulary',
+    loadComponent: () => import('./vocabulary-bank/vocabulary-bank.component').then(m => m.VocabularyBankComponent)
+  },
+  {
+    path: 'interview-performance',
+    loadComponent: () => import('./interview-performance/interview-performance.component').then(m => m.InterviewPerformanceComponent)
+  },
+  {
+    path: 'pronunciation-timeline',
+    loadComponent: () => import('./pronunciation-timeline/pronunciation-timeline.component').then(m => m.PronunciationTimelineComponent)
+  },
+  {
+    path: 'goals',
+    loadComponent: () => import('./learning-goals/learning-goals.component').then(m => m.LearningGoalsComponent)
   }
 ];

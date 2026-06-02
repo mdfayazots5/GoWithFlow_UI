@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, from, map } from 'rxjs';
 import { environment } from '@env/environment';
-import { TurnState, VoiceAnalysisResponse, SessionSummary } from '@core/models/voice.model';
+import { TurnState, VoiceAnalysisResponse, SessionSummary, SessionReview } from '@core/models/voice.model';
 import { WebsocketService } from '@core/services/websocket.service';
 
 @Injectable({
@@ -75,5 +75,9 @@ export class LiveSessionService {
 
   leaveSession(sessionId: string): Observable<boolean> {
     return this.http.post<{ data: boolean }>(`${environment.apiBaseUrl}/sessions/${sessionId}/leave`, {}).pipe(map(r => r.data));
+  }
+
+  getSessionReview(sessionId: string): Observable<SessionReview> {
+    return this.http.get<{ data: SessionReview }>(`${this.baseUrl}/${sessionId}/review`).pipe(map(r => r.data));
   }
 }

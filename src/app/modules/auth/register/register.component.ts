@@ -103,23 +103,6 @@ import { LucideAngularModule, User, Mail, ChevronDown } from 'lucide-angular';
                 </div>
               </div>
 
-              <!-- Language -->
-              <div class="space-y-2">
-                <label class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted px-1">Hint Language</label>
-                <div class="relative">
-                  <select
-                    formControlName="preferredHintLanguage"
-                    class="w-full h-14 bg-gw-bg/50 border border-gw-card-border rounded-2xl px-4 font-bold text-gw-text focus:border-gw-primary outline-none appearance-none transition-all"
-                  >
-                    <option value="Telugu">Telugu</option>
-                    <option value="Hindi">Hindi</option>
-                    <option value="Tamil">Tamil</option>
-                    <option value="Kannada">Kannada</option>
-                    <option value="None">None</option>
-                  </select>
-                  <i-lucide [img]="DownIcon" size="16" class="absolute right-4 top-1/2 -translate-y-1/2 text-gw-text-muted pointer-events-none"></i-lucide>
-                </div>
-              </div>
             </div>
 
             <!-- Avatar Picker -->

@@ -1,12 +1,13 @@
 // File: src/app/modules/user/profile/profile.component.ts
-import { Component, inject, signal, OnInit, computed, effect } from '@angular/core';
+import { Component, inject, signal, OnInit, computed, effect, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
 import { UserService } from '@core/services/user.service';
 import { UserStateService } from '@core/services/user-state.service';
 import {
   LucideAngularModule,
   Mail, Smartphone, Calendar, Award, Flame, TrendingUp, Zap,
-  Edit2, LogOut, CheckCircle2
+  Edit2, LogOut, CheckCircle2, Download
 } from 'lucide-angular';
 import { AuthService } from '@core/services/auth.service';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
@@ -60,10 +61,6 @@ import { ToastService } from '@core/services/toast.service';
                   <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide"
                         style="background: rgba(61,90,153,0.08); color: #3D5A99;">
                     {{ profile()?.ageGroup }}
-                  </span>
-                  <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide"
-                        style="background: rgba(224,123,57,0.08); color: #E07B39;">
-                    {{ profile()?.preferredHintLanguage }} Hint
                   </span>
                   <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg
                                bg-amber-50 text-amber-600 text-[10px] font-bold uppercase tracking-wide">
@@ -173,6 +170,34 @@ import { ToastService } from '@core/services/toast.service';
           </div>
         </div>
 
+        <!-- ── Certificates ─────────────────────────────────────────── -->
+        @if (earnedCertificates().length > 0) {
+          <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
+            <div class="px-5 py-3.5 border-b border-gw-bg flex items-center justify-between">
+              <p class="text-[10px] font-black text-gw-text-muted uppercase tracking-widest">Certificates</p>
+              <span class="text-[9px] font-bold text-gw-text-muted">{{ earnedCertificates().length }}</span>
+            </div>
+            <div class="divide-y divide-gw-bg">
+              @for (cert of earnedCertificates(); track cert.code) {
+                <div class="flex items-center gap-3.5 px-5 py-3.5">
+                  <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                       style="background: rgba(224,123,57,0.08);">
+                    <i-lucide [img]="AwardIcon" size="15" style="color:#E07B39;"></i-lucide>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-gw-text">{{ cert.name }}</p>
+                    <p class="text-[9px] text-gw-text-muted mt-0.5">{{ cert.earnedDate | date:'MMMM d, y' }}</p>
+                  </div>
+                  <button (click)="downloadCertificate(cert)"
+                          class="w-8 h-8 rounded-lg bg-gw-bg flex items-center justify-center text-gw-text-muted hover:text-gw-primary hover:bg-gw-primary/10 transition-all">
+                    <i-lucide [img]="DownloadIcon" size="13"></i-lucide>
+                  </button>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
         <!-- ── Sign Out ──────────────────────────────────────────────── -->
         <button (click)="logout()"
                 class="w-full h-12 flex items-center justify-center gap-2.5
@@ -188,12 +213,13 @@ import { ToastService } from '@core/services/toast.service';
   `,
   styles: [`:host { display: block; }`]
 })
-export class ProfileComponent {
+export class ProfileComponent implements OnInit {
   private userService = inject(UserService);
   private userState   = inject(UserStateService);
   private authService = inject(AuthService);
   private fb          = inject(FormBuilder);
   private toast       = inject(ToastService);
+  private platformId  = inject(PLATFORM_ID);
 
   readonly EditIcon       = Edit2;
   readonly CheckIcon      = CheckCircle2;
@@ -202,6 +228,8 @@ export class ProfileComponent {
   readonly MailIcon       = Mail;
   readonly CalendarIcon   = Calendar;
   readonly LogoutIcon     = LogOut;
+  readonly AwardIcon      = Award;
+  readonly DownloadIcon   = Download;
 
   // ── Read directly from state service — no API calls here ──────
   profile   = this.userState.profile;
@@ -209,6 +237,14 @@ export class ProfileComponent {
 
   isEditing = signal(false);
   isLoading = signal(false);
+
+  // ── Certificates (milestone badges) ──────────────────────────
+  private readonly CERTIFICATE_CODES = new Set([
+    'GRAMMAR_FOUNDATION', 'INTERVIEW_READY', 'VOCABULARY_BUILDER',
+    'FLUENCY_MILESTONE', 'GRAMMAR_CORRECTOR', 'SCENARIO_MASTER'
+  ]);
+
+  earnedCertificates = signal<{ code: string; name: string; earnedDate: string }[]>([]);
 
   /** True only for ADMIN role */
   isAdmin = computed(() => this.profile()?.role === 'ADMIN');
@@ -248,6 +284,81 @@ export class ProfileComponent {
         this.editForm.patchValue({ fullName: p.fullName });
       }
     });
+  }
+
+  ngOnInit() {
+    this.userService.getBadges().subscribe({
+      next: (badges: any) => {
+        const earned = (Array.isArray(badges) ? badges : badges?.data ?? [])
+          .filter((b: any) => b.isEarned && this.CERTIFICATE_CODES.has(b.id ?? b.badgeCode))
+          .map((b: any) => ({
+            code:      b.id ?? b.badgeCode,
+            name:      b.name ?? b.badgeName,
+            earnedDate: b.earnedDate
+          }));
+        this.earnedCertificates.set(earned);
+      },
+      error: () => {}
+    });
+  }
+
+  downloadCertificate(cert: { code: string; name: string; earnedDate: string }) {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const userName = this.profile()?.fullName ?? 'Learner';
+    const canvas   = document.createElement('canvas');
+    canvas.width   = 800;
+    canvas.height  = 500;
+    const ctx      = canvas.getContext('2d')!;
+
+    // Background gradient
+    const grad = ctx.createLinearGradient(0, 0, 800, 500);
+    grad.addColorStop(0, '#1e3a6e');
+    grad.addColorStop(1, '#0f1f3d');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 800, 500);
+
+    // Gold border
+    ctx.strokeStyle = '#D4AF37';
+    ctx.lineWidth = 8;
+    ctx.strokeRect(20, 20, 760, 460);
+
+    // Title
+    ctx.fillStyle = '#D4AF37';
+    ctx.font = 'bold 36px Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('GoWithFlow Certificate', 400, 100);
+
+    // Certificate name
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 28px Georgia, serif';
+    ctx.fillText(cert.name, 400, 180);
+
+    // Awarded to
+    ctx.fillStyle = '#B0BEC5';
+    ctx.font = '20px Arial, sans-serif';
+    ctx.fillText('Awarded to', 400, 240);
+
+    // User name
+    ctx.fillStyle = '#D4AF37';
+    ctx.font = 'bold 32px Georgia, serif';
+    ctx.fillText(userName, 400, 295);
+
+    // Date
+    ctx.fillStyle = '#B0BEC5';
+    ctx.font = '16px Arial, sans-serif';
+    const date = cert.earnedDate ? new Date(cert.earnedDate).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }) : '';
+    ctx.fillText(date, 400, 360);
+
+    // Tagline
+    ctx.fillStyle = '#78909C';
+    ctx.font = '14px Arial, sans-serif';
+    ctx.fillText('English Fluency Practice Platform', 400, 440);
+
+    // Download
+    const link    = document.createElement('a');
+    link.download = `GoWithFlow_${cert.code}_Certificate.png`;
+    link.href     = canvas.toDataURL('image/png');
+    link.click();
   }
 
   toggleEdit() {
