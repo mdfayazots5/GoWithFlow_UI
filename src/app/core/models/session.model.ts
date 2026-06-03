@@ -41,18 +41,6 @@ export interface SessionPreview {
   slots: SessionSlot[];
 }
 
-export interface JoinSessionResponse {
-  sessionId: string;
-  sessionName: string;
-  joinCode: string;
-  sessionMode: string;
-  scriptTitle: string;
-  maxMembers: number;
-  sessionDuration: number;
-  canStart: boolean;
-  members: LobbyMember[];
-}
-
 export interface SessionSlot {
   slotIndex: number;
   slotName: string;
@@ -84,6 +72,7 @@ export interface SessionDetail extends Session {
     fluency: number;
     confidence: number;
     mistakes: number;
+    avatar?: string;
   }[];
 }
 

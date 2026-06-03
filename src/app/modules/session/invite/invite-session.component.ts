@@ -54,7 +54,7 @@ interface SlotAssignment {
 
             @if (slot.assignedUser) {
               <div class="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-green-50 border border-green-200">
-                <app-user-avatar [name]="slot.assignedUser.fullName" size="sm"></app-user-avatar>
+                <app-user-avatar [name]="slot.assignedUser.fullName" [avatarUrl]="slot.assignedUser.avatarUrl" size="sm"></app-user-avatar>
                 <span class="text-sm font-semibold text-gw-text">{{ slot.assignedUser.fullName }}</span>
                 <i-lucide [img]="CheckIcon" size="16" class="text-green-500 ml-auto shrink-0"></i-lucide>
               </div>
@@ -77,7 +77,7 @@ interface SlotAssignment {
                   @for (user of searchResults[slot.slotIndex]; track user.userId) {
                     <button (click)="assignUser(slot.slotIndex, user)"
                             class="w-full flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-gw-bg transition-colors text-left">
-                      <app-user-avatar [name]="user.fullName" size="xs"></app-user-avatar>
+                      <app-user-avatar [name]="user.fullName" [avatarUrl]="user.avatarUrl" size="xs"></app-user-avatar>
                       <span class="text-sm text-gw-text font-medium">{{ user.fullName }}</span>
                       <i-lucide [img]="AddIcon" size="14" class="text-gw-primary ml-auto shrink-0"></i-lucide>
                     </button>

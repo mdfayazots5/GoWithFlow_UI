@@ -2,7 +2,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { LucideAngularModule, Home, History, TrendingUp, AlertCircle } from 'lucide-angular';
+import { LucideAngularModule, Home, History, TrendingUp, RefreshCw } from 'lucide-angular';
 import { AuthService } from '@core/services/auth.service';
 
 @Component({
@@ -35,10 +35,10 @@ export class BottomNavComponent {
   private router = inject(Router);
 
   navItems = [
-    { label: 'Home',     path: '/user/dashboard',  icon: Home,         exact: true  },
-    { label: 'History',  path: '/session/history',  icon: History,      exact: false },
-    { label: 'Progress', path: '/user/progress',    icon: TrendingUp,   exact: false },
-    { label: 'Mistakes', path: '/user/my-mistakes', icon: AlertCircle,  exact: false }
+    { label: 'Home',     path: '/user/dashboard',   icon: Home,       exact: true  },
+    { label: 'Review',   path: '/user/my-mistakes',  icon: RefreshCw,  exact: false },
+    { label: 'Progress', path: '/user/progress',     icon: TrendingUp, exact: false },
+    { label: 'History',  path: '/session/history',   icon: History,    exact: false }
   ];
 
   showNav(): boolean {

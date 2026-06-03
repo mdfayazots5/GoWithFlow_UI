@@ -60,7 +60,7 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
               <!-- Details -->
               <div class="px-4 py-3 space-y-2.5">
                 <div class="flex items-center gap-2">
-                  <app-user-avatar [name]="inv.hostName" size="xs"></app-user-avatar>
+                  <app-user-avatar [name]="inv.hostName" [avatarUrl]="inv.hostAvatarUrl" size="xs"></app-user-avatar>
                   <p class="text-xs text-gw-text"><span class="font-semibold">{{ inv.hostName }}</span> invited you</p>
                 </div>
 

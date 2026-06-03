@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -105,23 +105,6 @@ import { LucideAngularModule, User, Mail, ChevronDown } from 'lucide-angular';
 
             </div>
 
-            <!-- Avatar Picker -->
-            <div class="space-y-4 pt-2">
-               <label class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted px-1">Choose Avatar</label>
-               <div class="flex justify-between">
-                  @for (seed of avatarSeeds; track seed) {
-                    <button
-                      type="button"
-                      (click)="setAvatar(seed)"
-                      class="w-[64px] h-[64px] rounded-full overflow-hidden border-4 transition-all"
-                      [class]="selectedAvatar() === seed ? 'border-gw-primary scale-110 shadow-lg' : 'border-transparent opacity-60 hover:opacity-100'"
-                    >
-                      <img [src]="'https://api.dicebear.com/7.x/avataaars/svg?seed=' + seed" class="w-full h-full object-cover">
-                    </button>
-                  }
-               </div>
-            </div>
-
             <button
               type="submit"
               [disabled]="registerForm.invalid || isLoading"
@@ -157,9 +140,6 @@ export class RegisterComponent implements OnInit {
   readonly MailIcon = Mail;
   readonly DownIcon = ChevronDown;
 
-  avatarSeeds = ['Felix', 'Aneka', 'Caleb', 'Bella'];
-  selectedAvatar = signal<string>('Felix');
-
   registerForm = this.fb.group({
     fullName: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(60)]],
     mobileNumber: ['', [Validators.required, Validators.pattern(/^[0-9]{10}$/)]],
@@ -179,17 +159,10 @@ export class RegisterComponent implements OnInit {
     });
   }
 
-  setAvatar(seed: string) {
-    this.selectedAvatar.set(seed);
-  }
-
   onSubmit() {
     if (this.registerForm.valid) {
       this.isLoading = true;
-      const payload = {
-        ...this.registerForm.value,
-        avatarUrl: `https://api.dicebear.com/7.x/avataaars/svg?seed=${this.selectedAvatar()}`
-      };
+      const payload = { ...this.registerForm.value };
 
       const mobile = this.registerForm.get('mobileNumber')?.value ?? '';
       this.auth.register(payload).subscribe({

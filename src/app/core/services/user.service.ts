@@ -13,7 +13,9 @@ export class UserService {
   private baseUrl = `${environment.apiBaseUrl}/users`;
 
   getProfile(): Observable<UserProfile> {
-    return this.http.get<{ data: UserProfile }>(`${this.baseUrl}/profile`).pipe(map(r => r.data));
+    return this.http.get<{ data: any }>(`${this.baseUrl}/profile`).pipe(
+      map(r => ({ ...r.data, avatar: r.data.avatarUrl ?? r.data.avatar ?? null }))
+    );
   }
 
   updateProfile(payload: { fullName: string; email?: string; ageGroup: string; preferredHintLanguage: string; avatarUrl?: string }): Observable<UserProfile> {
@@ -53,10 +55,11 @@ export class UserService {
             count: f.count ?? 0,
           })),
           allMemberScores: (d?.allMemberScores ?? []).map((s: any) => ({
-            name:       s.fullName       ?? '',
-            fluency:    s.fluencyScore   ?? 0,
+            name:       s.fullName        ?? '',
+            fluency:    s.fluencyScore    ?? 0,
             confidence: s.confidenceScore ?? 0,
-            mistakes:   s.mistakeCount   ?? 0,
+            mistakes:   s.mistakeCount    ?? 0,
+            avatar:     s.avatarUrl       ?? null,
           })),
         } as SessionDetail;
       })

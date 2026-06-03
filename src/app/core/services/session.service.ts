@@ -6,7 +6,6 @@ import {
   Session,
   CreateSessionResponse,
   SessionPreview,
-  JoinSessionResponse,
   LobbyState,
   LobbyMember,
   SessionInvitation,
@@ -79,33 +78,6 @@ export class SessionService {
             isReady: slot.isReady === true
           }))
         } as SessionPreview;
-      })
-    );
-  }
-
-  joinSession(payload: { joinCode: string, slotIndex: number }): Observable<JoinSessionResponse> {
-    return this.http.post<any>(`${this.baseUrl}/join`, payload).pipe(
-      map(res => {
-        const d = res.data;
-        return {
-          sessionId: String(d.sessionId),
-          sessionName: d.sessionName,
-          joinCode: d.joinCode,
-          sessionMode: d.sessionMode,
-          scriptTitle: d.scriptTitle,
-          maxMembers: d.maxMembers,
-          sessionDuration: d.sessionDuration,
-          canStart: d.canStart === true,
-          members: (d.members ?? []).map((m: any) => ({
-            userId: String(m.userId),
-            name: m.fullName,
-            avatar: m.avatarUrl ?? '',
-            ready: m.isReady === true,
-            isHost: m.isHost === true,
-            slotIndex: m.slotIndex,
-            slotName: m.slotName ?? ''
-          } as LobbyMember))
-        } as JoinSessionResponse;
       })
     );
   }

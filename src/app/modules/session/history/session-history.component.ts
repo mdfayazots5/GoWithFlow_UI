@@ -95,11 +95,6 @@ type Filter = typeof FILTERS[number];
             <p class="text-xs text-gw-text-muted">
               {{ activeFilter() === 'All' ? 'Join a session to start tracking your progress.' : 'No ' + (activeFilter() | titlecase) + ' sessions found.' }}
             </p>
-            <a routerLink="/session/join"
-               class="mt-1 h-9 px-5 bg-gw-primary text-white text-[11px] font-black uppercase
-                      tracking-widest rounded-xl flex items-center hover:opacity-90 transition-opacity no-underline">
-              Join a Session
-            </a>
           </div>
         }
 

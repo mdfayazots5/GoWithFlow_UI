@@ -14,6 +14,7 @@ import { VoiceBroadcastService } from '@core/services/voice-broadcast.service';
 
 type TurnShiftEvent = {
   newActiveMemberId: string | number;
+  newActiveMemberName: string;
   slotIndex: number;
   turnIndex: number;
   nextUtterance: TurnState['utterance'];
@@ -456,6 +457,7 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
         ...currentState,
         turnIndex: shiftEvent.turnIndex,
         activeMemberId: shiftEvent.newActiveMemberId,
+        activeMemberName: shiftEvent.newActiveMemberName,
         utterance: shiftEvent.nextUtterance,
         reReadAllowed: true,
         reReadCount: 0,

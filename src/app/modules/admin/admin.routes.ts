@@ -65,6 +65,11 @@ export const ADMIN_ROUTES: Routes = [
         path: 'cohorts',
         data: { title: 'Cohort Management' },
         loadComponent: () => import('./cohorts/admin-cohorts.component').then(m => m.AdminCohortsComponent)
+      },
+      {
+        path: 'cohorts/:id',
+        data: { title: 'Cohort Details' },
+        loadComponent: () => import('./cohorts/admin-cohort-detail.component').then(m => m.AdminCohortDetailComponent)
       }
     ]
   }

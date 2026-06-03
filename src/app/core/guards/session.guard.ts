@@ -8,6 +8,6 @@ export const sessionGuard: CanActivateFn = (route) => {
 
   if (token && sessionId) return true;
 
-  router.navigate(['/session/join']);
+  router.navigate(['/user/dashboard']);
   return false;
 };

@@ -18,9 +18,7 @@
           <span class="profile-role">Administrator</span>
         </div>
         <div class="avatar-wrap">
-          <div class="profile-avatar profile-avatar-icon">
-            <span class="topbar-avatar-initials">{{ adminInitials }}</span>
-          </div>
+          <app-user-avatar [name]="adminName()" [avatarUrl]="adminAvatarUrl()" size="sm"></app-user-avatar>
           <span class="avatar-online"></span>
         </div>
       </div>
@@ -29,10 +27,10 @@
         <div class="profile-menu" (click)="$event.stopPropagation()">
           <div class="profile-menu-header">
             <div class="profile-menu-avatar">
-              <span class="profile-menu-avatar-initials">{{ adminInitials }}</span>
+              <app-user-avatar [name]="adminName()" [avatarUrl]="adminAvatarUrl()" size="sm"></app-user-avatar>
             </div>
             <div>
-              <div class="profile-menu-name">{{ adminName }}</div>
+              <div class="profile-menu-name">{{ adminName() }}</div>
               <div class="profile-menu-role">Administrator</div>
             </div>
           </div>
@@ -63,7 +61,7 @@
       <span>Users</span>
     </a>
     <a routerLink="/admin/scripts" routerLinkActive="active" class="footer-nav-item">
-      <div class="nav-pill"><mat-icon>description</mat-icon></div>
+      <div class="nav-pill"><mat-icon>menu_book</mat-icon></div>
       <span>Scripts</span>
     </a>
     <a routerLink="/admin/reports" routerLinkActive="active" class="footer-nav-item">

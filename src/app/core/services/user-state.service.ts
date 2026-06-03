@@ -1,10 +1,4 @@
-// File: src/app/core/services/user-state.service.ts
-//
-// ARCHITECTURE: Single source of truth for all common user data.
-// bootstrap() is called ONCE after login / page-refresh confirmation.
-// All components read signals — zero per-navigation API calls.
-//
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, inject, signal, computed } from '@angular/core';
 import { UserService } from './user.service';
 import { UserProfile, StreakData } from '@core/models/user.model';
 
@@ -13,31 +7,23 @@ export class UserStateService {
   private userService = inject(UserService);
 
   // ── Public signals — read directly by components ──────────────
-  readonly profile  = signal<UserProfile | null>(null);
+  readonly profile   = signal<UserProfile | null>(null);
   readonly dashboard = signal<any>(null);
-  readonly streak   = signal<StreakData | null>(null);
+  readonly streak    = signal<StreakData | null>(null);
 
-  // Loading indicators (for skeleton/spinner states in templates)
-  readonly profileLoading  = signal(false);
+  /** Latest presigned avatar URL for the logged-in user. Updates on every profile load. */
+  readonly avatarUrl = computed(() => this.profile()?.avatar ?? null);
+
+  readonly profileLoading   = signal(false);
   readonly dashboardLoading = signal(false);
 
-  // ── Internal flags — prevent duplicate HTTP calls ─────────────
   private profileLoaded   = false;
   private dashboardLoaded = false;
   private streakLoaded    = false;
 
-  /** True after bootstrap() has been called at least once per session */
   private _bootstrapped = false;
   get isBootstrapped() { return this._bootstrapped; }
 
-  // ─────────────────────────────────────────────────────────────
-  // PUBLIC API
-  // ─────────────────────────────────────────────────────────────
-
-  /**
-   * Call once after login is confirmed (AppComponent on NavigationEnd).
-   * Idempotent — subsequent calls are a no-op (guarded by _bootstrapped flag).
-   */
   bootstrap(): void {
     if (this._bootstrapped) return;
     this._bootstrapped = true;
@@ -46,37 +32,27 @@ export class UserStateService {
     this._loadStreak();
   }
 
-  /**
-   * Directly push an updated profile into the signal.
-   * Use after a successful updateProfile() HTTP call so the UI
-   * reflects the change immediately — no extra GET required.
-   */
   setProfile(p: UserProfile): void {
     this.profile.set(p);
+    this._syncStoredAvatar(p.avatar ?? null);
   }
 
-  /**
-   * Force re-fetch profile from the server.
-   * Call when the user edits their name or other profile fields.
-   */
   refreshProfile(): void {
     this.profileLoaded = false;
     this._loadProfile();
   }
 
-  /**
-   * Force re-fetch dashboard from the server.
-   * Call after a session ends so stats and pending items update.
-   */
   refreshDashboard(): void {
     this.dashboardLoaded = false;
     this._loadDashboard();
   }
 
-  /**
-   * Wipe all cached state and reset loaded flags.
-   * Called by AuthService.logout() so the next login starts clean.
-   */
+  /** Immediately update the avatar URL in state and localStorage after upload. */
+  updateAvatar(presignedUrl: string): void {
+    this.profile.update(p => p ? { ...p, avatar: presignedUrl } : p);
+    this._syncStoredAvatar(presignedUrl);
+  }
+
   reset(): void {
     this.profile.set(null);
     this.dashboard.set(null);
@@ -87,10 +63,6 @@ export class UserStateService {
     this._bootstrapped   = false;
   }
 
-  // ─────────────────────────────────────────────────────────────
-  // PRIVATE LOADERS  (each guarded by a loaded flag)
-  // ─────────────────────────────────────────────────────────────
-
   private _loadProfile(): void {
     if (this.profileLoaded) return;
     this.profileLoading.set(true);
@@ -99,6 +71,8 @@ export class UserStateService {
         this.profile.set(res);
         this.profileLoaded = true;
         this.profileLoading.set(false);
+        // Keep localStorage in sync with the latest presigned URL from the API
+        this._syncStoredAvatar(res.avatar ?? null);
       },
       error: () => this.profileLoading.set(false)
     });
@@ -126,5 +100,18 @@ export class UserStateService {
       },
       error: () => {}
     });
+  }
+
+  /** Write latest avatarUrl back to gwf_user so currentUser stays fresh between refreshes. */
+  private _syncStoredAvatar(avatarUrl: string | null): void {
+    try {
+      const raw = localStorage.getItem('gwf_user');
+      if (!raw) return;
+      const user = JSON.parse(raw);
+      user.avatarUrl = avatarUrl;
+      localStorage.setItem('gwf_user', JSON.stringify(user));
+    } catch {
+      // localStorage unavailable — silently ignore
+    }
   }
 }

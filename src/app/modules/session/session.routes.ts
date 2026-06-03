@@ -10,10 +10,6 @@ export const SESSION_ROUTES: Routes = [
     loadComponent: () => import('./invite/invite-session.component').then(m => m.InviteSessionComponent)
   },
   {
-    path: 'join',
-    loadComponent: () => import('./join/join-session.component').then(m => m.JoinSessionComponent)
-  },
-  {
     path: 'lobby/:sessionId',
     loadComponent: () => import('./lobby/lobby.component').then(m => m.LobbyComponent)
   },
@@ -35,7 +31,7 @@ export const SESSION_ROUTES: Routes = [
   },
   {
     path: '',
-    redirectTo: 'join',
+    redirectTo: 'history',
     pathMatch: 'full'
   }
 ];

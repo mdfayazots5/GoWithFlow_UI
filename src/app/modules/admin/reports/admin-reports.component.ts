@@ -6,11 +6,12 @@ import { LucideAngularModule, Download, Eye, TrendingUp, TrendingDown, ChartBar,
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { Router } from '@angular/router';
 import { ToastService } from '@core/services/toast.service';
+import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.component';
 
 @Component({
   selector: 'app-admin-reports',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, MatPaginatorModule],
+  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, MatPaginatorModule, UserAvatarComponent],
   template: `
     <div class="space-y-5">
 
@@ -179,9 +180,7 @@ import { ToastService } from '@core/services/toast.service';
                     <!-- User -->
                     <td class="px-5 py-4">
                       <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-xl bg-gw-primary/10 flex items-center justify-center text-xs font-black text-gw-primary flex-shrink-0">
-                          {{ initials(row.fullName) }}
-                        </div>
+                        <app-user-avatar [name]="row.fullName" [avatarUrl]="row.avatarUrl" size="sm"></app-user-avatar>
                         <div>
                           <p class="text-sm font-bold text-gw-text">{{ row.fullName }}</p>
                           <p class="text-[11px] text-gw-text-muted font-medium">ID: {{ row.userId }}</p>

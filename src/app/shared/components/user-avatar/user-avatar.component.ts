@@ -1,11 +1,12 @@
-// File: src/app/shared/components/user-avatar/user-avatar.component.ts
 import { Component, Input, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 /**
- * Standard profile avatar — matches the design used on /user/profile.
- * Always renders initials on the app gradient.
- * Never uses external image services.
+ * Centralized avatar component — single source of truth for all user avatar display.
+ *
+ * Priority:
+ *   1. Shows [avatarUrl] image when provided and loads successfully.
+ *   2. Falls back to initials on image load error or when avatarUrl is null/empty.
  *
  * Sizes:
  *  xs  — 28px  (inline chips, tiny presence contexts)
@@ -14,8 +15,7 @@ import { CommonModule } from '@angular/common';
  *  lg  — 64px  (listener-screen speaker identity)
  *  xl  — 96px  (profile hero)
  *
- * Dark mode: set [dark]="true" to use a lighter border colour
- * that reads well on dark (#1A1A2E) backgrounds.
+ * [dark]="true" — lighter border for dark backgrounds.
  */
 @Component({
   selector: 'app-user-avatar',
@@ -30,21 +30,43 @@ import { CommonModule } from '@angular/common';
       [style.border]="borderStyle()"
       [style.box-shadow]="shadow()"
       [style.flex-shrink]="'0'"
+      [style.position]="'relative'"
+      [style.overflow]="'hidden'"
       class="flex items-center justify-center select-none"
       [attr.aria-label]="name + ' avatar'">
-      <span
-        [style.font-size.px]="fontSize()"
-        class="font-black text-white leading-none tracking-tight">
-        {{ initials() }}
-      </span>
+
+      <!-- Avatar image — hidden until loaded; replaced by initials on error -->
+      @if (avatarUrl && !imgError()) {
+        <img
+          [src]="avatarUrl"
+          [style.width.px]="px()"
+          [style.height.px]="px()"
+          style="object-fit:cover;position:absolute;inset:0;"
+          [alt]="name + ' avatar'"
+          (load)="imgLoaded.set(true)"
+          (error)="imgError.set(true)">
+      }
+
+      <!-- Initials — always rendered; visually hidden when image covers it -->
+      @if (!avatarUrl || imgError()) {
+        <span
+          [style.font-size.px]="fontSize()"
+          class="font-black text-white leading-none tracking-tight">
+          {{ initials() }}
+        </span>
+      }
     </div>
   `,
   styles: [`:host { display: inline-flex; }`]
 })
 export class UserAvatarComponent {
-  @Input() name  = '';
+  @Input() name      = '';
+  @Input() avatarUrl: string | null | undefined = null;
   @Input() size: 'xs' | 'sm' | 'md' | 'lg' | 'xl' = 'sm';
-  @Input() dark  = false;  // true when placed on dark backgrounds
+  @Input() dark      = false;
+
+  imgLoaded = signal(false);
+  imgError  = signal(false);
 
   initials = computed(() => {
     const n = this.name?.trim() ?? '';

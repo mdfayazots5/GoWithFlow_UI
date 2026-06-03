@@ -3,13 +3,15 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { LucideAngularModule, User, Mail, Phone, Camera, Save, CheckCircle, Mic } from 'lucide-angular';
 import { UserService } from '@core/services/user.service';
+import { UserStateService } from '@core/services/user-state.service';
 import { AuthService } from '@core/services/auth.service';
 import { SessionPreferencesService } from '@core/services/session-preferences.service';
+import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.component';
 
 @Component({
   selector: 'app-user-settings',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule],
+  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, UserAvatarComponent],
   template: `
     <div class="min-h-screen bg-gw-bg">
       <div class="max-w-lg mx-auto px-4 pt-2 pb-28 space-y-4 animate-in fade-in duration-500">
@@ -23,9 +25,11 @@ import { SessionPreferencesService } from '@core/services/session-preferences.se
         <!-- Avatar Section -->
         <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm p-5 flex flex-col items-center gap-3">
           <div class="relative group">
-            <div class="w-24 h-24 rounded-2xl border-4 border-white shadow-lg overflow-hidden bg-gw-bg">
-              <img [src]="avatarPreview" class="w-full h-full object-cover">
-            </div>
+            <app-user-avatar
+              [name]="settingsForm?.get('name')?.value || userName"
+              [avatarUrl]="avatarPreview"
+              size="xl">
+            </app-user-avatar>
             <label class="absolute -bottom-2 -right-2 bg-gw-primary text-white p-2.5 rounded-xl shadow-lg border-2 border-white cursor-pointer hover:opacity-90 active:scale-95 transition-all">
               <i-lucide [img]="CameraIcon" size="15"></i-lucide>
               <input type="file" (change)="onFileSelected($event)" class="hidden" accept="image/*">
@@ -146,7 +150,8 @@ export class UserSettingsComponent implements OnInit {
   readonly MicIcon    = Mic;
 
   settingsForm!: FormGroup;
-  avatarPreview = 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ravi';
+  avatarPreview: string | null = null;
+  userName = '';
   isSaving = false;
   isSaved  = false;
 
@@ -155,18 +160,21 @@ export class UserSettingsComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private userService: UserService,
+    private userState: UserStateService,
     private auth: AuthService,
     private sessionPrefs: SessionPreferencesService
   ) {}
 
   ngOnInit() {
     const user = this.auth.currentUser;
+    this.userName = user?.fullName ?? '';
     this.settingsForm = this.fb.group({
       name:   [user?.fullName     || '', [Validators.required]],
       email:  [user?.email        || '', [Validators.required, Validators.email]],
       mobile: [user?.mobileNumber || '', [Validators.required]]
     });
-    if (user?.avatarUrl) this.avatarPreview = user.avatarUrl;
+    // Use latest presigned URL from state (populated after bootstrap), fall back to stored value
+    this.avatarPreview = this.userState.avatarUrl() ?? user?.avatarUrl ?? null;
   }
 
   onFileSelected(event: any) {
@@ -175,7 +183,14 @@ export class UserSettingsComponent implements OnInit {
     const reader = new FileReader();
     reader.onload = (e: any) => this.avatarPreview = e.target.result;
     reader.readAsDataURL(file);
-    this.userService.uploadAvatar(file).subscribe();
+    this.userService.uploadAvatar(file).subscribe({
+      next: (url: string) => {
+        if (url) {
+          this.avatarPreview = url;
+          this.userState.updateAvatar(url);
+        }
+      }
+    });
   }
 
   onSubmit() {

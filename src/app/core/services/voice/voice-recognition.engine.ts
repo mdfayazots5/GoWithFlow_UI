@@ -39,7 +39,7 @@ export class VoiceRecognitionEngine implements OnDestroy {
   state$ = new BehaviorSubject<RecordingState>('idle');
   interimTranscript$ = new BehaviorSubject<string>('');
   waveformData$ = new BehaviorSubject<Uint8Array>(new Uint8Array(0));
-  volumeLevel$ = new BehaviorSubject<number>(0);  // 0–100
+  volumeLevel$ = new BehaviorSubject<number>(0);
 
   private destroy$ = new Subject<void>();
   private recognition: any = null;
@@ -49,7 +49,26 @@ export class VoiceRecognitionEngine implements OnDestroy {
   private silenceTimeout: any = null;
   private allFinalTranscripts: string[] = [];
   private apiConfidences: number[] = [];
+
+  // ─── Device detection ───────────────────────────────────────────────────────
+  // Detected once at construction; used to tune timeouts and thresholds.
+  // isIOS: true for iPhone / iPad (including iPads that send Macintosh UA in iOS 13+)
+  // isMobile: true for any touch device — iOS, Android, iPadOS
   private isIOS = false;
+  private _isMobile = false;
+
+  /** Exposed so SpeakerScreenComponent can skip auto-start on touch devices. */
+  get isMobileDevice(): boolean { return this._isMobile; }
+
+  // ─── Per-session flags ──────────────────────────────────────────────────────
+
+  // Set to true when a final transcript arrives with ≥ 2 meaningful words.
+  // Guards the VAD silence callback — we never finalise before the user has spoken.
+  private _hasSpoken = false;
+
+  // Set to true whenever we deliberately call recognition.stop() so that the
+  // resulting onend event does not trigger the restart path and play a second bell.
+  private _intentionalStop = false;
 
   // ─── Audio Archive Support ──────────────────────────────────────────────────
   private mediaRecorder: MediaRecorder | null = null;
@@ -62,47 +81,67 @@ export class VoiceRecognitionEngine implements OnDestroy {
     if (!enabled) this.lastAudioBlob = null;
   }
 
-  // Filler phrase detection delegated to TranscriptNormalizer.detectFillerPhrases().
-
   constructor(
     private vad: AudioActivityDetector,
     private scorer: PronunciationScorer,
     private normalizer: TranscriptNormalizer
   ) {
-    this.isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const ua = navigator.userAgent;
+    const isIPadDesktopUA = navigator.maxTouchPoints > 1 && /Macintosh/.test(ua);
+    this.isIOS    = /iPad|iPhone|iPod/.test(ua) || isIPadDesktopUA;
+    this._isMobile = this.isIOS || /Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+
+    console.debug('[VRE] Device detection', {
+      isIOS: this.isIOS,
+      isMobile: this._isMobile,
+      ua: ua.substring(0, 80)
+    });
+
     this.vad.onSilenceDetected(() => this.handleSilenceDetected());
-    this.vad.volumeLevel$.pipe(takeUntil(this.destroy$)).subscribe(v => {
-      this.volumeLevel$.next(v);
-    });
-    this.vad.waveformData$.pipe(takeUntil(this.destroy$)).subscribe(d => {
-      this.waveformData$.next(d);
-    });
+    this.vad.volumeLevel$.pipe(takeUntil(this.destroy$)).subscribe(v => this.volumeLevel$.next(v));
+    this.vad.waveformData$.pipe(takeUntil(this.destroy$)).subscribe(d => this.waveformData$.next(d));
   }
 
   // ─── MAIN ENTRY POINT ───────────────────────────────────────────────────────
   async startSession(expectedText: string): Promise<VoiceSessionResult> {
-    // Defensive guard: if a session is already active, stop it cleanly before starting
-    // a new one. Prevents allFinalTranscripts from being wiped mid-recording and avoids
-    // competing SpeechRecognition instances when startSession is called twice.
     if (this.state$.value !== 'idle') {
       this.stopSession();
     }
+
     this.state$.next('requesting');
     this.retryCount = 0;
+    this._hasSpoken = false;
+    this._intentionalStop = false;
     this.allFinalTranscripts = [];
     this.apiConfidences = [];
 
-    // Step 1: Request microphone permission explicitly (critical for mobile)
+    // Configure VAD thresholds for this device before starting.
+    // Mobile devices need more tolerance: longer silence hold-off and a
+    // quieter speech-detection threshold to cope with lower-gain mobile mics.
+    if (this._isMobile) {
+      this.vad.configure({
+        silenceThresholdDB: -55,  // must be quieter than -55 dB to count as silent
+        silenceDurationMs:  2500, // hold silence 2.5 s before firing (vs 1.2 s on desktop)
+        speechThresholdDB:  -30   // must exceed -30 dB to latch _hasSpeechStarted
+      });
+    } else {
+      this.vad.configure({
+        silenceThresholdDB: -50,
+        silenceDurationMs:  1200,
+        speechThresholdDB:  -35
+      });
+    }
+
+    console.debug('[VRE] startSession', { isMobile: this._isMobile, expectedText: expectedText.substring(0, 40) });
+
     const permitted = await this.requestMicPermission();
     if (!permitted) {
       this.state$.next('error');
       throw new Error('Microphone permission denied. Please allow microphone access and try again.');
     }
 
-    // Step 2: Start waveform / VAD
     await this.vad.start();
 
-    // Step 2b: Start audio capture if opt-in is enabled
     if (this.captureAudio) {
       this.audioChunks = [];
       try {
@@ -117,13 +156,13 @@ export class VoiceRecognitionEngine implements OnDestroy {
       } catch { /* audio capture is best-effort */ }
     }
 
-    // Step 3: Start recognition with retry logic
     return new Promise((resolve, reject) => {
       this.startRecognition(expectedText, resolve, reject);
     });
   }
 
   stopSession(): void {
+    this._intentionalStop = true;
     this.cleanupSilenceTimeout();
     if (this.recognition) {
       try { this.recognition.stop(); } catch (e) { /* ignore */ }
@@ -138,12 +177,30 @@ export class VoiceRecognitionEngine implements OnDestroy {
 
   // ─── MICROPHONE PERMISSION ──────────────────────────────────────────────────
   private async requestMicPermission(): Promise<boolean> {
+    // Use the Permissions API when available to avoid a redundant getUserMedia
+    // round-trip on mobile (two consecutive getUserMedia calls can cause iOS
+    // Safari to re-present the permission sheet or fail the second stream).
+    if (navigator.permissions) {
+      try {
+        const result = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+        if (result.state === 'granted') {
+          console.debug('[VRE] Mic permission already granted (Permissions API)');
+          return true;
+        }
+        if (result.state === 'denied') {
+          console.debug('[VRE] Mic permission denied (Permissions API)');
+          return false;
+        }
+        // 'prompt' — fall through to getUserMedia to trigger the prompt
+      } catch { /* Permissions API unsupported — fall through */ }
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Keep stream open — VAD will reuse it
-      stream.getTracks().forEach(t => t.stop()); // release, VAD gets its own
+      stream.getTracks().forEach(t => t.stop());
       return true;
     } catch (e) {
+      console.warn('[VRE] Mic permission denied via getUserMedia', e);
       return false;
     }
   }
@@ -165,59 +222,102 @@ export class VoiceRecognitionEngine implements OnDestroy {
     }
 
     this.recognition = new SpeechRecognition();
-
-    // ── CRITICAL SETTINGS ────────────────────────────────────────────────────
-    // en-IN covers Indian English accent. Highest single fix for Indian users.
     this.recognition.lang = 'en-IN';
-    this.recognition.continuous = !this.isIOS;  // iOS cannot do continuous
+    this.recognition.continuous = !this.isIOS;  // iOS cannot do continuous recognition
     this.recognition.interimResults = true;
-    this.recognition.maxAlternatives = 3;        // get top 3 guesses
+    this.recognition.maxAlternatives = 3;
 
     this.startTimeMs = Date.now();
     this.state$.next('listening');
 
-    // ── EVENT: interim results for live display ──────────────────────────────
+    console.debug('[VRE] Recognition started', {
+      continuous: this.recognition.continuous,
+      retryCount: this.retryCount
+    });
+
+    // ── EVENT: results (interim + final) ────────────────────────────────────
     this.recognition.onresult = (event: any) => {
       let interim = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
+
         if (result.isFinal) {
-          // Collect final — may arrive in multiple chunks
-          this.allFinalTranscripts.push(result[0].transcript.trim());
-          // Collect confidence from best alternative
+          const transcript = result[0].transcript.trim();
+          this.allFinalTranscripts.push(transcript);
           this.apiConfidences.push(result[0].confidence || 0.75);
-          // Reset silence timeout on each final chunk (2500ms — standard wait for more finals)
-          this.resetSilenceTimeout(() => this.finalize(expectedText, resolve));
+
+          const wordCount = transcript.split(/\s+/).filter((w: string) => w.length > 0).length;
+          if (wordCount >= 2) {
+            this._hasSpoken = true;
+          }
+
+          console.debug('[VRE] Final result', {
+            transcript: transcript.substring(0, 60),
+            wordCount,
+            _hasSpoken: this._hasSpoken,
+            totalFinals: this.allFinalTranscripts.length
+          });
+
+          // After a final result, wait for more speech before finalising.
+          // Mobile gets a longer window because natural inter-phrase pauses
+          // are longer and the speech API fires partials more aggressively.
+          const postFinalMs = this._isMobile ? 4500 : 2500;
+          this.resetSilenceTimeout(() => this.finalize(expectedText, resolve), postFinalMs);
+
         } else {
           interim += result[0].transcript;
-          // If no final result has arrived yet, keep pushing the fallback deadline.
-          // Without this, the 8000ms timer (started on mic press) fires mid-sentence
-          // when the user takes prep time + a full sentence exceeds 8s total.
-          // This ensures "8s from last speech activity", not "8s from mic press".
+
+          // While no final has arrived yet, keep pushing the fallback deadline
+          // so the timer measures "time since last speech activity", not
+          // "time since mic was pressed".  Mobile gets a longer fallback because
+          // users may take extra prep time and speak slower.
           if (this.allFinalTranscripts.length === 0) {
-            this.resetSilenceTimeout(() => this.finalize(expectedText, resolve), 8000);
+            const fallbackMs = this._isMobile ? 12000 : 8000;
+            this.resetSilenceTimeout(() => this.finalize(expectedText, resolve), fallbackMs);
           }
         }
       }
       this.interimTranscript$.next(interim);
 
-      // iOS: restart immediately after each result (no continuous mode)
-      // Guard: only restart if still in listening state — prevents restart after stopSession()
-      if (this.isIOS && this.state$.value === 'listening' && event.results[event.results.length - 1].isFinal) {
+      // iOS requires an explicit restart after each final result because
+      // continuous mode is not supported.  Guard with _intentionalStop so
+      // we do not restart after a deliberate stop-to-finalize.
+      if (this.isIOS
+          && !this._intentionalStop
+          && this.state$.value === 'listening'
+          && event.results[event.results.length - 1].isFinal) {
         try { this.recognition.start(); } catch (e) { /* already started */ }
       }
     };
 
-    // ── EVENT: no speech detected ────────────────────────────────────────────
+    // ── EVENT: no speech match ───────────────────────────────────────────────
     this.recognition.onnomatch = () => {
       this.interimTranscript$.next('');
     };
 
-    // ── EVENT: error handling with retry ────────────────────────────────────
+    // ── EVENT: error handling ────────────────────────────────────────────────
     this.recognition.onerror = (event: any) => {
+      console.warn('[VRE] Recognition error', { error: event.error, retryCount: this.retryCount, _hasSpoken: this._hasSpoken });
+
+      // 'no-speech' fires when the browser's own internal silence timer expires.
+      // If the user has already produced transcripts, this just means they paused —
+      // extend the window instead of retrying with a new recognition instance
+      // (which would play the browser's start bell again mid-speech).
+      if (event.error === 'no-speech') {
+        if (this.allFinalTranscripts.length > 0) {
+          console.debug('[VRE] no-speech after finals — extending timeout instead of retrying');
+          const extendMs = this._isMobile ? 4500 : 2500;
+          this.resetSilenceTimeout(() => this.finalize(expectedText, resolve), extendMs);
+          return;
+        }
+        // No transcripts yet — user genuinely has not spoken.
+        // Retry below (standard path) to give them another window.
+      }
+
       const retryable = ['network', 'audio-capture', 'no-speech'];
       if (retryable.includes(event.error) && this.retryCount < this.maxRetries) {
         this.retryCount++;
+        console.debug('[VRE] Retrying after error', { error: event.error, attempt: this.retryCount });
         setTimeout(() => this.startRecognition(expectedText, resolve, reject), 500);
       } else {
         this.state$.next('error');
@@ -228,22 +328,39 @@ export class VoiceRecognitionEngine implements OnDestroy {
 
     // ── EVENT: recognition ended ─────────────────────────────────────────────
     this.recognition.onend = () => {
-      // If we have final transcripts, finalize
+      console.debug('[VRE] onend', {
+        _intentionalStop: this._intentionalStop,
+        state: this.state$.value,
+        finals: this.allFinalTranscripts.length
+      });
+
+      // If we deliberately stopped recognition (e.g., finalize() or stopSession()),
+      // suppress any restart logic so the browser does not play a second start bell.
+      if (this._intentionalStop) return;
+
       if (this.allFinalTranscripts.length > 0 && this.state$.value === 'listening') {
+        // Recognition ended with captured speech — finalize now
         this.finalize(expectedText, resolve);
       } else if (this.state$.value === 'listening' && !this.isIOS) {
-        // Restart if ended unexpectedly without results
+        // Recognition ended unexpectedly before any speech.
+        // Restart to keep listening (Android Chrome sometimes fires onend
+        // mid-session even with continuous:true due to network or audio events).
         if (this.retryCount < this.maxRetries) {
           this.retryCount++;
+          console.debug('[VRE] Unexpected onend — restarting recognition', this.retryCount);
           setTimeout(() => {
-            try { this.recognition.start(); } catch (e) { /* ignore */ }
+            if (this.state$.value === 'listening') {
+              try { this.recognition.start(); } catch (e) { /* ignore */ }
+            }
           }, 300);
         }
       }
     };
 
-    // Start silence detection timer (fallback if VAD misses)
-    this.resetSilenceTimeout(() => this.finalize(expectedText, resolve), 8000);
+    // Initial fallback: if no activity at all within this window, finalise
+    // with whatever transcripts exist (or an empty result).
+    const fallbackMs = this._isMobile ? 12000 : 8000;
+    this.resetSilenceTimeout(() => this.finalize(expectedText, resolve), fallbackMs);
 
     try {
       this.recognition.start();
@@ -253,17 +370,31 @@ export class VoiceRecognitionEngine implements OnDestroy {
   }
 
   // ─── SILENCE HANDLING ───────────────────────────────────────────────────────
+
   private handleSilenceDetected(): void {
-    // Only finalize if we are listening and have something
-    if (this.state$.value === 'listening' && this.allFinalTranscripts.length > 0) {
-      this.cleanupSilenceTimeout();
-      // Small buffer to let recognition catch last word
-      setTimeout(() => {
-        if (this.recognition) {
-          try { this.recognition.stop(); } catch (e) { /* ignore */ }
-        }
-      }, 400);
+    // Guard: only act if we are listening AND the user has actually spoken.
+    // The VAD's own _hasSpeechStarted flag prevents this from firing on ambient
+    // startup noise, but _hasSpoken adds a second layer: we require a meaningful
+    // final transcript (≥ 2 words) before the silence path can stop recording.
+    if (this.state$.value !== 'listening') return;
+    if (!this._hasSpoken) {
+      console.debug('[VRE] VAD silence fired but _hasSpoken=false — ignoring');
+      return;
     }
+
+    console.debug('[VRE] VAD silence → stopping recognition', { finals: this.allFinalTranscripts.length });
+
+    this._intentionalStop = true;
+    this.cleanupSilenceTimeout();
+
+    // Small buffer to allow the speech API to deliver any last in-flight result
+    // before we actually stop.  Mobile gets slightly more time.
+    const stopDelayMs = this._isMobile ? 600 : 400;
+    setTimeout(() => {
+      if (this.recognition) {
+        try { this.recognition.stop(); } catch (e) { /* ignore */ }
+      }
+    }, stopDelayMs);
   }
 
   private resetSilenceTimeout(callback: () => void, ms = 2500): void {
@@ -279,59 +410,86 @@ export class VoiceRecognitionEngine implements OnDestroy {
   }
 
   // ─── FINALIZATION AND SCORING ────────────────────────────────────────────────
+
   private finalize(
     expectedText: string,
     resolve: (r: VoiceSessionResult) => void
   ): void {
     if (this.state$.value !== 'listening') return;
+
+    const elapsed    = Date.now() - this.startTimeMs;
+    const combined   = this.allFinalTranscripts.join(' ').trim();
+    const wordCount  = combined.split(/\s+/).filter(w => w.length > 0).length;
+
+    // Minimum duration guard:
+    // If the recording is very short and has almost no content, the trigger was
+    // almost certainly spurious (ambient noise, mic click, brief AGC artefact).
+    // Reschedule the timer and keep listening rather than emitting garbage.
+    const minMs  = this._isMobile ? 2000 : 800;
+    const minWords = 2;
+    if (elapsed < minMs && wordCount < minWords && !this._hasSpoken) {
+      console.debug('[VRE] Minimum-duration guard — rescheduling', { elapsed, wordCount });
+      const rescheduleMs = this._isMobile ? 4500 : 2500;
+      this.resetSilenceTimeout(() => this.finalize(expectedText, resolve), rescheduleMs);
+      return;
+    }
+
+    console.debug('[VRE] Finalizing', { elapsed, wordCount, _hasSpoken: this._hasSpoken, finals: this.allFinalTranscripts.length });
+
     this.state$.next('processing');
     this.cleanupSilenceTimeout();
+
+    // Stop recognition explicitly so the browser does not play another bell
+    // if it fires onend before we complete processing.
+    this._intentionalStop = true;
+    if (this.recognition) {
+      try { this.recognition.stop(); } catch (e) { /* ignore */ }
+    }
+
     this.vad.stop();
 
-    const durationMs = Date.now() - this.startTimeMs;
+    const durationMs = elapsed;
 
-    // Merge all final transcript chunks into one string
-    const rawTranscript = this.allFinalTranscripts.join(' ');
-
-    // Normalize both sides before scoring
-    const spokenNorm = this.normalizer.normalize(rawTranscript);
+    const spokenNorm   = this.normalizer.normalize(combined);
     const expectedNorm = this.normalizer.normalize(expectedText);
 
-    // Average API confidence
     const avgApiConfidence = this.apiConfidences.length > 0
       ? this.apiConfidences.reduce((a, b) => a + b, 0) / this.apiConfidences.length
       : 0.7;
 
-    // Score
     const scoreResult = this.scorer.score(spokenNorm, expectedNorm, avgApiConfidence);
 
-    // Hesitation detection on raw (not normalized) to preserve filler words
-    const hesitations = this.detectHesitations(rawTranscript);
-    const repeated = this.detectRepeatedWords(spokenNorm);
+    const hesitations = this.detectHesitations(combined);
+    const repeated    = this.detectRepeatedWords(spokenNorm);
 
-    // Speaking speed
-    const wordCount = spokenNorm.split(' ').filter(w => w.length > 0).length;
-    const minutes = durationMs / 60000;
-    const wpm = minutes > 0 ? Math.round(wordCount / minutes) : 0;
+    const wordCountFinal = spokenNorm.split(' ').filter(w => w.length > 0).length;
+    const minutes        = durationMs / 60000;
+    const wpm            = minutes > 0 ? Math.round(wordCountFinal / minutes) : 0;
 
-    // Confidence score: combines API confidence + hesitation penalty
     const hesitationPenalty = Math.min(hesitations.length * 5, 25);
-    const confidenceScore = Math.round((avgApiConfidence * 100) - hesitationPenalty);
+    const confidenceScore   = Math.round((avgApiConfidence * 100) - hesitationPenalty);
 
     const result: VoiceSessionResult = {
-      transcribedText: rawTranscript,
+      transcribedText: combined,
       expectedText,
-      fluencyScore: scoreResult.fluencyScore,
-      confidenceScore: Math.max(0, Math.min(100, confidenceScore)),
-      overallScore: scoreResult.overallScore,
+      fluencyScore:     scoreResult.fluencyScore,
+      confidenceScore:  Math.max(0, Math.min(100, confidenceScore)),
+      overallScore:     scoreResult.overallScore,
       speakingSpeedWpm: wpm,
-      hesitationWords: hesitations,
-      repeatedWords: repeated,
-      wordResults: scoreResult.wordResults,
-      pauseCount: this.vad.getPauseCount(),
+      hesitationWords:  hesitations,
+      repeatedWords:    repeated,
+      wordResults:      scoreResult.wordResults,
+      pauseCount:       this.vad.getPauseCount(),
       durationMs,
-      retryCount: this.retryCount
+      retryCount:       this.retryCount
     };
+
+    console.debug('[VRE] Session result', {
+      transcribed: combined.substring(0, 60),
+      overallScore: result.overallScore,
+      durationMs,
+      retryCount: result.retryCount
+    });
 
     this.state$.next('done');
     this.interimTranscript$.next('');
@@ -339,7 +497,6 @@ export class VoiceRecognitionEngine implements OnDestroy {
   }
 
   // ─── HESITATION DETECTION ───────────────────────────────────────────────────
-  // Uses TranscriptNormalizer.detectFillerPhrases() for full filler phrase coverage.
   private detectHesitations(transcript: string): string[] {
     return this.normalizer.detectFillerPhrases(transcript);
   }

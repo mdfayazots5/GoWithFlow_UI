@@ -56,6 +56,7 @@ export class AdminService {
           fluencyScore: a.fluencyScore,
           mistakeCount: a.mistakeCount,
           status:       a.sessionStatus,
+          avatarUrl:    a.avatarUrl || null,
         })),
         weakAreas: (res.data.topGrammarMistakes ?? []).map((g: any) => ({
           tag:        g.grammarTag,
@@ -152,6 +153,7 @@ export class AdminService {
           mostCommonMistakeType: r.mostCommonMistakeType || '—',
           improvementPercent:   r.improvementPercent ?? 0,
           lastSessionDate:      r.lastSessionDate || null,
+          avatarUrl:            r.avatarUrl || null,
         }))
       }))
     );
@@ -170,8 +172,17 @@ export class AdminService {
     ageGroup: string;
     preferredHintLanguage: string;
     password?: string;
+    avatar?: File | null;
   }): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}/users`, payload);
+    const form = new FormData();
+    form.append('fullName', payload.fullName);
+    form.append('mobileNumber', payload.mobileNumber);
+    if (payload.email) form.append('email', payload.email);
+    form.append('ageGroup', payload.ageGroup);
+    form.append('preferredHintLanguage', payload.preferredHintLanguage);
+    if (payload.password) form.append('password', payload.password);
+    if (payload.avatar)   form.append('avatar', payload.avatar);
+    return this.http.post<any>(`${this.baseUrl}/users`, form);
   }
 
   updateUser(userId: string, payload: {
@@ -181,8 +192,17 @@ export class AdminService {
     ageGroup: string;
     preferredHintLanguage: string;
     password?: string;
+    avatar?: File | null;
   }): Observable<any> {
-    return this.http.put<any>(`${this.baseUrl}/users/${userId}`, payload);
+    const form = new FormData();
+    form.append('fullName', payload.fullName);
+    form.append('mobileNumber', payload.mobileNumber);
+    if (payload.email) form.append('email', payload.email);
+    form.append('ageGroup', payload.ageGroup);
+    form.append('preferredHintLanguage', payload.preferredHintLanguage);
+    if (payload.password) form.append('password', payload.password);
+    if (payload.avatar)   form.append('avatar', payload.avatar);
+    return this.http.put<any>(`${this.baseUrl}/users/${userId}`, form);
   }
 
   getSessionHistory(params: {
@@ -223,14 +243,6 @@ export class AdminService {
   getSessionRecordings(sessionId: number | string): Observable<any[]> {
     return this.http.get<any>(`${this.baseUrl}/sessions/${sessionId}/recordings`).pipe(
       map(res => res.data ?? [])
-    );
-  }
-
-  uploadUserAvatar(userId: number | string, file: File): Observable<string> {
-    const form = new FormData();
-    form.append('file', file);
-    return this.http.post<any>(`${this.baseUrl}/users/${userId}/avatar`, form).pipe(
-      map(res => res.data ?? '')
     );
   }
 

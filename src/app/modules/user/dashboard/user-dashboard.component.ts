@@ -3,7 +3,7 @@ import { Component, inject, computed, signal, OnInit, OnDestroy } from '@angular
 import { CommonModule } from '@angular/common';
 import {
   LucideAngularModule,
-  Flame, Zap, Trophy, TrendingUp, Gamepad2, PlusCircle,
+  Flame, Zap, Trophy, TrendingUp, PlusCircle,
   Book, ChevronRight, AlertCircle, CheckCircle2,
   X, Calendar, Target, BookOpen, RotateCcw, ArrowRight, Clock, Star
 } from 'lucide-angular';
@@ -46,21 +46,7 @@ import { catchError, of, Subscription } from 'rxjs';
         </div>
 
         <!-- ── Quick Actions ─────────────────────────────────────────── -->
-        <div class="grid grid-cols-4 gap-2.5">
-
-          <a routerLink="/session/join"
-             class="bg-white rounded-2xl border border-gw-card-border shadow-sm
-                    flex flex-col items-center gap-2 py-4 px-2
-                    hover:border-gw-primary hover:shadow-md
-                    active:scale-95 transition-all no-underline">
-            <div class="w-11 h-11 rounded-xl flex items-center justify-center"
-                 style="background: rgba(61,90,153,0.08);">
-              <i-lucide [img]="PlayIcon" size="20" style="color:#3D5A99;"></i-lucide>
-            </div>
-            <span class="text-[10px] font-black text-gw-text uppercase tracking-wide text-center leading-tight">
-              Join
-            </span>
-          </a>
+        <div class="grid grid-cols-3 gap-2.5">
 
           <a routerLink="/session/create"
              class="bg-white rounded-2xl border border-gw-card-border shadow-sm
@@ -381,19 +367,29 @@ import { catchError, of, Subscription } from 'rxjs';
           } @else {
             <div class="divide-y divide-gw-bg">
               @for (session of dashboard()?.recentSessions?.slice(0, 3); track session.sessionId) {
-                <div class="flex items-center gap-3 px-5 py-3.5">
+                <a [routerLink]="['/session/detail', session.sessionId]"
+                   class="flex items-center gap-3 px-5 py-3.5 hover:bg-gw-bg/40 transition-colors no-underline group">
                   <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold text-gw-text truncate">{{ session.sessionName }}</p>
-                    <p class="text-[10px] font-semibold text-gw-text-muted mt-0.5">
-                      {{ session.createdDate | date:'MMM d, yyyy' }}
+                    <p class="text-sm font-semibold text-gw-text truncate group-hover:text-gw-primary transition-colors">
+                      {{ session.sessionName }}
                     </p>
+                    <p class="text-[10px] font-semibold text-gw-text-muted mt-0.5 truncate">
+                      {{ session.sessionMode }} · {{ session.duration }}min · {{ session.sessionDate | date:'MMM d, yyyy' }}
+                    </p>
+                    <p class="text-[9px] text-gw-text-muted/70 mt-0.5 truncate">{{ session.scriptTitle }}</p>
                   </div>
-                  <span class="shrink-0 px-2.5 py-1 rounded-lg text-xs font-bold"
-                        [style.background]="getScoreBg(session.myScore)"
-                        [style.color]="getScoreColor(session.myScore)">
-                    {{ session.myScore || 0 }}%
-                  </span>
-                </div>
+                  <div class="flex flex-col items-end gap-1 shrink-0">
+                    <span class="px-2.5 py-1 rounded-lg text-xs font-bold"
+                          [style.background]="getScoreBg(session.fluencyScore)"
+                          [style.color]="getScoreColor(session.fluencyScore)">
+                      {{ session.fluencyScore != null ? (session.fluencyScore | number:'1.0-1') + '%' : '—' }}
+                    </span>
+                    <span class="text-[8px] font-black uppercase tracking-wider"
+                          [style.color]="session.status === 'COMPLETED' ? '#166534' : '#92400E'">
+                      {{ session.status }}
+                    </span>
+                  </div>
+                </a>
               }
             </div>
           }
@@ -420,20 +416,52 @@ import { catchError, of, Subscription } from 'rxjs';
             </div>
           } @else {
             <div class="divide-y divide-gw-bg">
-              @for (mistake of dashboard()?.pendingMistakes?.slice(0, 3); track $index) {
-                <div class="flex items-center gap-3 px-5 py-3.5">
-                  <div class="flex-1 min-w-0">
-                    <p class="text-sm font-semibold text-gw-text truncate">"{{ mistake.text }}"</p>
-                    <p class="text-[10px] font-semibold text-gw-text-muted mt-0.5 uppercase tracking-wide">
-                      {{ mistake.type }}
-                    </p>
+              @for (mistake of dashboard()?.pendingMistakes?.slice(0, 3); track mistake.mistakeId) {
+                <div class="px-5 py-3.5">
+                  <div class="flex items-start justify-between gap-3">
+                    <div class="flex-1 min-w-0 space-y-1">
+                      <!-- Type + grammar tag badges -->
+                      <div class="flex items-center gap-1.5 flex-wrap">
+                        <span class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-gw-error/10 text-gw-error">
+                          {{ mistake.mistakeType }}
+                        </span>
+                        @if (mistake.grammarTag) {
+                          <span class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-gw-primary/10 text-gw-primary">
+                            {{ mistake.grammarTag }}
+                          </span>
+                        }
+                        @if (mistake.contextTag) {
+                          <span class="text-[9px] font-semibold px-2 py-0.5 rounded-md bg-gw-bg text-gw-text-muted">
+                            {{ mistake.contextTag }}
+                          </span>
+                        }
+                      </div>
+                      <!-- What was spoken -->
+                      @if (mistake.spokenText) {
+                        <p class="text-sm font-semibold text-gw-text truncate">"{{ mistake.spokenText }}"</p>
+                      }
+                      <!-- Expected utterance -->
+                      <p class="text-[10px] text-gw-text-muted truncate">
+                        Expected: <span class="font-semibold">{{ mistake.utteranceText }}</span>
+                      </p>
+                      <!-- Optional detail note -->
+                      @if (mistake.mistakeDetail) {
+                        <p class="text-[9px] text-gw-text-muted/80 italic truncate">{{ mistake.mistakeDetail }}</p>
+                      }
+                      <!-- Session / script source -->
+                      <p class="text-[9px] text-gw-text-muted/70 truncate">
+                        {{ mistake.sessionName }} · {{ mistake.scriptTitle }}
+                      </p>
+                      <!-- First occurrence date -->
+                      <p class="text-[9px] text-gw-text-muted/50">{{ mistake.firstOccurrence | date:'MMM d, yyyy' }}</p>
+                    </div>
+                    <a routerLink="/user/my-mistakes"
+                       class="shrink-0 h-8 px-3 rounded-xl text-[10px] font-bold
+                              bg-gw-primary text-white flex items-center mt-0.5
+                              hover:opacity-90 transition-opacity no-underline">
+                      Practice
+                    </a>
                   </div>
-                  <a routerLink="/user/my-mistakes"
-                     class="shrink-0 h-8 px-3 rounded-xl text-[10px] font-bold
-                            bg-gw-primary text-white flex items-center
-                            hover:opacity-90 transition-opacity no-underline">
-                    Practice
-                  </a>
                 </div>
               }
             </div>
@@ -490,7 +518,6 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
   readonly ZapIcon     = Zap;
   readonly TrophyIcon  = Trophy;
   readonly TrendIcon   = TrendingUp;
-  readonly PlayIcon    = Gamepad2;
   readonly AddIcon     = PlusCircle;
   readonly BookIcon    = Book;
   readonly ChevronIcon = ChevronRight;

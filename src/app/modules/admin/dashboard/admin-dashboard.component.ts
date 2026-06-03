@@ -161,9 +161,14 @@ import { AdminService } from '@core/services/admin.service';
                       <!-- User -->
                       <td class="px-5 py-3.5">
                         <div class="flex items-center gap-3">
-                          <div class="w-8 h-8 rounded-full bg-gw-primary flex items-center justify-center flex-shrink-0">
-                            <span class="text-[10px] font-black text-white leading-none">{{ initials(row.userName) }}</span>
-                          </div>
+                          @if (row.avatarUrl) {
+                            <img [src]="row.avatarUrl" [alt]="row.userName"
+                              class="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                          } @else {
+                            <div class="w-8 h-8 rounded-full bg-gw-primary flex items-center justify-center flex-shrink-0">
+                              <span class="text-[10px] font-black text-white leading-none">{{ initials(row.userName) }}</span>
+                            </div>
+                          }
                           <span class="text-sm font-bold text-gw-text">{{ row.userName }}</span>
                         </div>
                       </td>

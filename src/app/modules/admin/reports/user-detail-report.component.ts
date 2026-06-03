@@ -6,11 +6,12 @@ import { LucideAngularModule, ChevronLeft, BarChart2, TrendingUp, Save, FileText
 import { MatTableModule } from '@angular/material/table';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ToastService } from '@core/services/toast.service';
+import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.component';
 
 @Component({
   selector: 'app-user-detail-report',
   standalone: true,
-  imports: [CommonModule, RouterLink, LucideAngularModule, MatTableModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterLink, LucideAngularModule, MatTableModule, ReactiveFormsModule, UserAvatarComponent],
   template: `
     <div class="space-y-6 pb-12">
 
@@ -24,9 +25,7 @@ import { ToastService } from '@core/services/toast.service';
           <div class="w-7 h-7 border-2 border-gw-primary border-t-transparent rounded-full animate-spin"></div>
         } @else if (header()) {
           <div class="flex items-center gap-4">
-            <div class="w-12 h-12 rounded-2xl bg-gw-primary/10 flex items-center justify-center text-base font-black text-gw-primary">
-              {{ initials(header()!.fullName) }}
-            </div>
+            <app-user-avatar [name]="header()!.fullName" [avatarUrl]="header()!.avatarUrl" size="md"></app-user-avatar>
             <div>
               <h2 class="text-xl font-black text-gw-text">{{ header()!.fullName }}</h2>
               <div class="flex items-center gap-4 mt-0.5">

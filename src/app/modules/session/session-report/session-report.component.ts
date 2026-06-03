@@ -7,6 +7,7 @@ import { RepracticeService } from '../../repractice/repractice.service';
 import { SessionSummary, MemberScore } from '@core/models/voice.model';
 import { LucideAngularModule, CheckCircle2, Trophy, Clock, Target, Zap, ChevronRight, Home, Layout, TrendingUp, RefreshCw, AlertCircle, BookOpen } from 'lucide-angular';
 import { ToastService } from '@core/services/toast.service';
+import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.component';
 
 interface ScoreboardRow {
   name: string;
@@ -22,7 +23,7 @@ interface ScoreboardRow {
 @Component({
   selector: 'app-session-report',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, RouterLink],
+  imports: [CommonModule, LucideAngularModule, RouterLink, UserAvatarComponent],
   template: `
     <div class="min-h-screen bg-gw-bg pb-32">
 
@@ -145,10 +146,7 @@ interface ScoreboardRow {
                         </td>
                         <td class="px-6 py-5">
                           <div class="flex items-center gap-3">
-                            <img [src]="row.avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + row.name"
-                                 class="w-8 h-8 rounded-lg object-cover flex-shrink-0"
-                                 [alt]="row.name"
-                                 (error)="$any($event.target).src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + row.name">
+                            <app-user-avatar [name]="row.name" [avatarUrl]="row.avatarUrl" size="xs"></app-user-avatar>
                             <span class="font-bold italic text-gw-text text-sm">{{ row.name }}</span>
                           </div>
                         </td>

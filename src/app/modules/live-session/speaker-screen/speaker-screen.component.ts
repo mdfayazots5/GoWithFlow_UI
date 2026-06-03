@@ -97,8 +97,14 @@ export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDe
       this.resetPhase();
       this.tryRestoreFromStorage();
 
-      // Only schedule auto-start when we land fresh in recording phase (not page-refresh-restored)
-      if (this.analysisPhase === 'recording' && this.sessionPrefs.prefs.defaultVoiceStarter) {
+      // Auto-start is disabled on mobile and tablet devices.
+      // On touch devices the browser plays a system bell on every recognition.start()
+      // call; firing this automatically before the user is ready produces an
+      // unexpected bell and starts recording ambient noise.  Users on mobile must
+      // tap the mic button explicitly.
+      if (this.analysisPhase === 'recording'
+          && this.sessionPrefs.prefs.defaultVoiceStarter
+          && !this.voiceEngine.isMobileDevice) {
         this._pendingAutoStart = true;
       }
     }

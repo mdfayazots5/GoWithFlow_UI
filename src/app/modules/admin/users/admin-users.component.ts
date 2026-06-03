@@ -556,31 +556,34 @@ export class AdminUsersComponent implements OnInit {
     }
     if (this.avatarError()) return;
 
-    const v = this.userForm.value;
+    const v      = this.userForm.value;
+    const userId = this.editingUserId();
+    const file   = this.avatarFile();
     this.userSubmitting.set(true);
 
-    const userId = this.editingUserId();
-
-    const file = this.avatarFile();
-
-    const afterSave = (savedUserId: string | number) => {
-      if (!file) { this.toast.success(userId ? 'User updated successfully' : 'User created successfully'); this.closeUserModal(); this.loadUsers(); return; }
-      this.adminService.uploadUserAvatar(savedUserId, file).subscribe({
-        next: () => { this.toast.success(userId ? 'User updated successfully' : 'User created successfully'); this.closeUserModal(); this.loadUsers(); },
-        error: () => { this.toast.success(userId ? 'User updated (avatar upload failed)' : 'User created (avatar upload failed)'); this.closeUserModal(); this.loadUsers(); }
-      });
+    const payload = {
+      fullName:              v.fullName!,
+      mobileNumber:          v.mobileNumber!,
+      email:                 v.email || undefined,
+      ageGroup:              v.ageGroup!,
+      preferredHintLanguage: v.preferredHintLanguage!,
+      password:              v.password || undefined,
+      avatar:                file ?? undefined,
     };
 
     if (userId) {
-      this.adminService.updateUser(userId, {
-        fullName:              v.fullName!,
-        mobileNumber:          v.mobileNumber!,
-        email:                 v.email || undefined,
-        ageGroup:              v.ageGroup!,
-        preferredHintLanguage: v.preferredHintLanguage!,
-        password:              v.password || undefined,
-      }).subscribe({
-        next: () => afterSave(userId),
+      this.adminService.updateUser(userId, payload).subscribe({
+        next: (res) => {
+          const newAvatarUrl: string | null = res?.data ?? null;
+          this.toast.success('User updated successfully');
+          this.closeUserModal();
+          this.loadUsers();
+          if (newAvatarUrl) {
+            this.users.update(list =>
+              list.map(u => u.id === userId ? { ...u, avatar: newAvatarUrl } : u)
+            );
+          }
+        },
         error: (err) => {
           const msg = err?.error?.errors?.[0] || 'Failed to update user';
           this.toast.error(msg);
@@ -589,15 +592,12 @@ export class AdminUsersComponent implements OnInit {
         complete: () => this.userSubmitting.set(false)
       });
     } else {
-      this.adminService.createUser({
-        fullName:              v.fullName!,
-        mobileNumber:          v.mobileNumber!,
-        email:                 v.email || undefined,
-        ageGroup:              v.ageGroup!,
-        preferredHintLanguage: v.preferredHintLanguage!,
-        password:              v.password!,
-      }).subscribe({
-        next: (res) => afterSave(res?.data?.userId ?? res?.data?.id ?? userId),
+      this.adminService.createUser(payload).subscribe({
+        next: () => {
+          this.toast.success('User created successfully');
+          this.closeUserModal();
+          this.loadUsers();
+        },
         error: (err) => {
           const msg = err?.error?.errors?.[0] || 'Failed to create user';
           this.toast.error(msg);

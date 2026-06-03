@@ -152,7 +152,7 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
                   @for (member of detail()?.allMemberScores; track member.name) {
                     <tr class="hover:bg-gw-bg/20 transition-colors">
                        <td class="px-8 py-6 flex items-center gap-3">
-                          <app-user-avatar [name]="member.name" size="xs"></app-user-avatar>
+                          <app-user-avatar [name]="member.name" [avatarUrl]="member.avatar" size="xs"></app-user-avatar>
                           <span class="font-bold italic text-gw-text">{{ member.name }}</span>
                        </td>
                        <td class="px-8 py-6">
