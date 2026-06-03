@@ -7,11 +7,12 @@ import { RepracticeService } from '../../repractice/repractice.service';
 import { SessionDetail } from '@core/models/session.model';
 import { LucideAngularModule, Calendar, Clock, Award, Target, Zap, RotateCcw, BookOpen, ArrowRight, Info } from 'lucide-angular';
 import { ToastService } from '@core/services/toast.service';
+import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.component';
 
 @Component({
   selector: 'app-session-detail',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, RouterLink],
+  imports: [CommonModule, LucideAngularModule, RouterLink, UserAvatarComponent],
   template: `
     <div class="min-h-screen bg-gw-bg">
       <div class="max-w-lg mx-auto px-4 pt-2 pb-28 space-y-4 animate-in fade-in duration-500">
@@ -44,14 +45,14 @@ import { ToastService } from '@core/services/toast.service';
                </svg>
                <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
                   <span class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted italic">Fluency Score</span>
-                  <p class="text-4xl font-black italic">{{ detail()?.myPerformance?.fluency }}%</p>
+                  <p class="text-4xl font-black italic">{{ detail()?.myPerformance?.fluency | number:'1.0-1' }}%</p>
                </div>
             </div>
 
             <div class="grid grid-cols-3 w-full gap-4 border-t border-gw-bg pt-4">
                <div class="text-center space-y-1">
                   <span class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Confidence</span>
-                  <p class="text-lg font-black italic">{{ detail()?.myPerformance?.confidence }}%</p>
+                  <p class="text-lg font-black italic">{{ detail()?.myPerformance?.confidence | number:'1.0-1' }}%</p>
                </div>
                <div class="text-center space-y-1 border-x border-gw-bg">
                   <span class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Speed</span>
@@ -151,12 +152,12 @@ import { ToastService } from '@core/services/toast.service';
                   @for (member of detail()?.allMemberScores; track member.name) {
                     <tr class="hover:bg-gw-bg/20 transition-colors">
                        <td class="px-8 py-6 flex items-center gap-3">
-                          <img [src]="'https://api.dicebear.com/7.x/avataaars/svg?seed=' + member.name" class="w-8 h-8 rounded-lg bg-gw-bg">
+                          <app-user-avatar [name]="member.name" size="xs"></app-user-avatar>
                           <span class="font-bold italic text-gw-text">{{ member.name }}</span>
                        </td>
                        <td class="px-8 py-6">
                           <div class="flex items-center gap-2">
-                             <span class="text-sm font-black italic">{{ member.fluency }}%</span>
+                             <span class="text-sm font-black italic">{{ member.fluency | number:'1.0-1' }}%</span>
                              <div class="w-16 h-1 rounded-full bg-gw-bg flex-shrink-0">
                                 <div class="h-full bg-gw-primary rounded-full transition-all duration-1000" [style.width.%]="member.fluency"></div>
                              </div>
@@ -172,32 +173,6 @@ import { ToastService } from '@core/services/toast.service';
          </div>
       </div>
 
-      <!-- Final Actions -->
-      <div class="space-y-3">
-        <button (click)="practiceMistake()"
-          class="w-full h-14 bg-gw-primary text-white font-black uppercase tracking-widest
-                 rounded-2xl shadow-lg shadow-gw-primary/20 flex items-center justify-center gap-3
-                 hover:opacity-90 active:scale-[0.98] transition-all text-sm">
-          <i-lucide [img]="ZapIcon" size="18" class="text-gw-accent"></i-lucide>
-          Start Correction Round
-        </button>
-        <div class="grid grid-cols-2 gap-3">
-          <button routerLink="/scripts"
-            class="h-12 bg-white border border-gw-card-border text-gw-text font-black uppercase
-                   tracking-widest rounded-2xl flex items-center justify-center gap-2
-                   hover:bg-gw-bg transition-all text-xs">
-            <i-lucide [img]="BookIcon" size="15"></i-lucide>
-            View Script
-          </button>
-          <button (click)="practiceAgain()"
-            class="h-12 bg-white border border-gw-card-border text-gw-text font-black uppercase
-                   tracking-widest rounded-2xl flex items-center justify-center gap-2
-                   hover:bg-gw-bg transition-all text-xs">
-            <i-lucide [img]="RetryIcon" size="15"></i-lucide>
-            Practice Again
-          </button>
-        </div>
-      </div>
 
       </div>
     </div>
@@ -244,4 +219,5 @@ export class SessionDetailComponent implements OnInit {
   practiceAgain() {
     this.router.navigate(['/session/create'], { queryParams: { scriptId: this.detail()?.scriptId } });
   }
+
 }

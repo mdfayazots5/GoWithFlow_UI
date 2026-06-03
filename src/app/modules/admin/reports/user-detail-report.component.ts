@@ -175,8 +175,21 @@ import { ToastService } from '@core/services/toast.service';
                 <h3 class="text-sm font-black text-gw-text uppercase tracking-wider">Admin Notes</h3>
               </div>
               <div class="p-5 space-y-3">
+                @if (adminNotes().length > 0) {
+                  <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                    @for (note of adminNotes(); track note.adminNoteId) {
+                      <div class="bg-gw-bg rounded-xl p-3 space-y-1">
+                        <div class="flex justify-between items-center">
+                          <span class="text-[10px] font-black text-gw-primary uppercase tracking-wider">{{ note.adminName }}</span>
+                          <span class="text-[10px] text-gw-text-muted">{{ note.noteDate | date:'dd MMM yyyy, h:mm a' }}</span>
+                        </div>
+                        <p class="text-sm text-gw-text font-medium">{{ note.noteText }}</p>
+                      </div>
+                    }
+                  </div>
+                }
                 <textarea [formControl]="notesControl"
-                  class="w-full min-h-[140px] bg-gw-bg border border-transparent rounded-xl p-3 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all resize-none placeholder:text-gw-text-muted"
+                  class="w-full min-h-[100px] bg-gw-bg border border-transparent rounded-xl p-3 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all resize-none placeholder:text-gw-text-muted"
                   placeholder="Observations, feedback for this user..."></textarea>
                 <button (click)="saveNotes()" [disabled]="isSaving()"
                   class="w-full h-11 bg-gw-primary text-white font-black text-sm uppercase tracking-widest rounded-xl hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2">
@@ -214,6 +227,7 @@ export class UserDetailReportComponent implements OnInit {
   header          = computed(() => this.rawReport()?.userHeader ?? null);
   sessionHistory  = computed(() => this.rawReport()?.sessionHistoryList ?? []);
   weeklyScores    = computed(() => this.rawReport()?.weeklyScoreList ?? []);
+  adminNotes      = computed(() => this.rawReport()?.adminNotesList ?? []);
   mistakeBreakdown = computed(() => {
     const list: any[] = this.rawReport()?.mistakeBreakdownList ?? [];
     const total = list.reduce((s: number, i: any) => s + (i.mistakeCount || 0), 0);
@@ -249,15 +263,17 @@ export class UserDetailReportComponent implements OnInit {
 
   saveNotes() {
     const h = this.header();
-    if (!h) return;
+    if (!h || !this.notesControl.value?.trim()) return;
     this.isSaving.set(true);
     this.adminService.addAdminNote({
       targetUserId: h.userId,
-      noteText: this.notesControl.value || ''
+      noteText: this.notesControl.value.trim()
     }).subscribe({
       next: () => {
         this.isSaving.set(false);
-        this.toast.success('Notes saved');
+        this.notesControl.reset();
+        this.toast.success('Note saved');
+        this.loadReport(String(h.userId));
       },
       error: () => this.isSaving.set(false)
     });

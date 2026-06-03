@@ -27,7 +27,40 @@ export class UserService {
   }
 
   getSessionDetail(sessionId: string): Observable<SessionDetail> {
-    return this.http.get<{ data: SessionDetail }>(`${this.baseUrl}/sessions/${sessionId}/detail`).pipe(map(r => r.data));
+    return this.http.get<{ data: any }>(`${this.baseUrl}/sessions/${sessionId}/detail`).pipe(
+      map(r => {
+        const d = r.data;
+        const h = d?.sessionHeader ?? {};
+        return {
+          sessionName:     h.sessionName  ?? '',
+          sessionMode:     h.sessionMode  ?? '',
+          scriptTitle:     h.scriptTitle  ?? '',
+          sessionDuration: h.duration     ?? 0,
+          myPerformance: {
+            fluency:    d?.myPerformance?.fluencyScore    ?? 0,
+            confidence: d?.myPerformance?.confidenceScore ?? 0,
+            speedWpm:   d?.myPerformance?.speakingSpeedWpm ?? 0,
+            pauses:     d?.myPerformance?.pauseCount      ?? 0,
+          },
+          myMistakes: (d?.myMistakes ?? []).map((m: any) => ({
+            type:     m.mistakeType   ?? '',
+            said:     m.spokenText    ?? '',
+            shouldBe: m.utteranceText ?? '',
+            tag:      m.grammarTag    ?? '',
+          })),
+          listenerFeedbackReceived: (d?.listenerFeedbackReceived ?? []).map((f: any) => ({
+            tag:   f.tag   ?? '',
+            count: f.count ?? 0,
+          })),
+          allMemberScores: (d?.allMemberScores ?? []).map((s: any) => ({
+            name:       s.fullName       ?? '',
+            fluency:    s.fluencyScore   ?? 0,
+            confidence: s.confidenceScore ?? 0,
+            mistakes:   s.mistakeCount   ?? 0,
+          })),
+        } as SessionDetail;
+      })
+    );
   }
 
   getImprovementData(): Observable<ImprovementData> {

@@ -308,7 +308,8 @@ export class CorrectionRoundComponent implements OnInit, OnDestroy {
   finishSession() {
     if (this.session()) {
       this.repracticeService.completeRepracticeSession(this.session()!.id).subscribe(res => {
-        this.improvement.set(res.improvementPercent);
+        this.improvement.set(res?.improvementPercent ?? 0);
+        this.resolvedCount.set(res?.resolvedCount ?? 0);
         this.isComplete.set(true);
       });
     }

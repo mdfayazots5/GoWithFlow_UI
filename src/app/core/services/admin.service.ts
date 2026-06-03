@@ -29,6 +29,7 @@ export interface AdminUserListItem {
 export interface AdminUserDetail extends AdminUserListItem {
   email?: string;
   preferredHintLanguage: string;
+  avgFluencyScore: number;
   recentSessions: any[];
 }
 
@@ -110,6 +111,7 @@ export class AdminService {
           status:               d.isActive ? 'ACTIVE' : 'INACTIVE',
           email:                d.email,
           preferredHintLanguage: d.preferredHintLanguage,
+          avgFluencyScore:      d.avgFluencyScore ?? 0,
           recentSessions:       (d.recentSessions || []).map((s: any) => ({
             id:    s.sessionId ?? s.id,
             title: s.scriptTitle ?? s.title,

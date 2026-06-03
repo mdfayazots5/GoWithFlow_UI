@@ -55,7 +55,9 @@ import { Router } from '@angular/router';
               <p class="text-[9px] font-bold text-gw-text-muted uppercase tracking-wider mt-0.5">Streak</p>
             </div>
             <div class="bg-gw-bg rounded-xl p-3 text-center">
-              <p class="text-xl font-black text-gw-success">—</p>
+              <p class="text-xl font-black text-gw-success">
+                {{ detailUser() ? (detailUser()!.avgFluencyScore | number:'1.0-1') + '%' : '—' }}
+              </p>
               <p class="text-[9px] font-bold text-gw-text-muted uppercase tracking-wider mt-0.5">Avg Score</p>
             </div>
           </div>

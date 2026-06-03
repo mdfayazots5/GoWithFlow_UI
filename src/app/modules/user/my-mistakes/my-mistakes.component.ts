@@ -217,7 +217,7 @@ export class MyMistakesComponent implements OnInit {
 
   loadMistakes() {
     this.isLoading.set(true);
-    this.mistakeService.getMistakes({ mistakeType: this.activeTab() }).subscribe({
+    this.mistakeService.getMistakes({ mistakeType: this.activeTab(), isResolved: false }).subscribe({
       next: res => {
         this.mistakes.set(res.items ?? []);
         this.isLoading.set(false);
