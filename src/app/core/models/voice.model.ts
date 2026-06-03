@@ -58,6 +58,7 @@ export interface VoiceAnalysisResponse {
 export interface MemberScore {
   userId: number;
   fullName: string;
+  avatarUrl?: string | null;
   fluencyScore: number;
   confidenceScore: number;
   mistakeCount: number;

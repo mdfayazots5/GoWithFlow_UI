@@ -1,13 +1,12 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
-import { LucideAngularModule, FileText, BookOpen, List, Search, Plus, Eye, Power, Download, X, Hash, Tag, Calendar, Layers, Users, CircleCheck, CircleX } from 'lucide-angular';
+import { LucideAngularModule, FileText, BookOpen, List, Search, Plus, Eye, Download, CircleCheck, CircleX } from 'lucide-angular';
 import { RouterLink } from '@angular/router';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { Router } from '@angular/router';
 import { ToastService } from '@core/services/toast.service';
 import { ScriptService } from '@core/services/script.service';
-import { ChallengeService } from '@core/services/challenge.service';
 import { Script } from '@core/models/script.model';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 
@@ -16,116 +15,6 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, MatPaginatorModule, RouterLink],
   template: `
-    <!-- Script Detail Side Panel -->
-    @if (selectedScript()) {
-      <div class="fixed inset-0 z-50 flex justify-end" (click)="selectedScript.set(null)">
-        <div class="absolute inset-0 bg-black/30 backdrop-blur-sm"></div>
-        <div class="relative w-full max-w-sm bg-white h-full shadow-2xl flex flex-col overflow-y-auto" (click)="$event.stopPropagation()">
-          <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-            <h2 class="text-base font-black text-gw-text uppercase tracking-wider">Script Details</h2>
-            <button (click)="selectedScript.set(null)" class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gw-text-muted">
-              <i-lucide [img]="XIcon" size="18"></i-lucide>
-            </button>
-          </div>
-
-          <div class="px-6 py-5 border-b border-gray-100">
-            <div class="w-12 h-12 rounded-2xl bg-gw-primary/10 flex items-center justify-center mb-4">
-              <i-lucide [img]="ScriptIcon" size="22" class="text-gw-primary"></i-lucide>
-            </div>
-            <h3 class="text-base font-black text-gw-text leading-snug">{{ selectedScript()!.scriptTitle }}</h3>
-            <span class="inline-block mt-2 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider"
-              [class]="selectedScript()!.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'">
-              {{ selectedScript()!.active ? 'Active' : 'Inactive' }}
-            </span>
-          </div>
-
-          <div class="px-6 py-5 space-y-3 border-b border-gray-100">
-            <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Info</p>
-            <div class="space-y-2.5">
-              <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
-                <i-lucide [img]="TagIcon" size="15" class="text-gw-text-muted flex-shrink-0"></i-lucide>
-                <div><p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Category</p><p class="text-sm font-bold text-gw-text">{{ selectedScript()!.category }}</p></div>
-              </div>
-              <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
-                <i-lucide [img]="HashIcon" size="15" class="text-gw-text-muted flex-shrink-0"></i-lucide>
-                <div><p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Grammar Tag</p><p class="text-sm font-bold text-gw-text">{{ selectedScript()!.grammarFocusTag }}</p></div>
-              </div>
-              <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
-                <i-lucide [img]="UsersIcon" size="15" class="text-gw-text-muted flex-shrink-0"></i-lucide>
-                <div><p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Age Group</p><p class="text-sm font-bold text-gw-text">{{ selectedScript()!.targetAgeGroup }}</p></div>
-              </div>
-              <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
-                <i-lucide [img]="LayersIcon" size="15" class="text-gw-text-muted flex-shrink-0"></i-lucide>
-                <div><p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Complexity</p>
-                  <div class="flex gap-1 mt-0.5">
-                    @for (d of [1,2,3,4,5]; track d) {
-                      <span class="w-2.5 h-2.5 rounded-full" [class]="d <= selectedScript()!.complexityLevel ? 'bg-gw-primary' : 'bg-gray-200'"></span>
-                    }
-                  </div>
-                </div>
-              </div>
-              <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
-                <i-lucide [img]="LinesIcon" size="15" class="text-gw-text-muted flex-shrink-0"></i-lucide>
-                <div><p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Lines</p><p class="text-sm font-bold text-gw-text">{{ selectedScript()!.utteranceCount }}</p></div>
-              </div>
-              <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
-                <i-lucide [img]="CalendarIcon" size="15" class="text-gw-text-muted flex-shrink-0"></i-lucide>
-                <div><p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Uploaded</p><p class="text-sm font-bold text-gw-text">{{ selectedScript()!.uploadedDate | date:'d MMM y' }}</p></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Version History section -->
-          @if (scriptVersions().length > 0) {
-            <div class="px-6 py-4 border-b border-gray-100">
-              <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted mb-3">Version History</p>
-              <div class="space-y-2">
-                @for (v of scriptVersions(); track v.versionNumber) {
-                  <div class="flex items-center justify-between p-2.5 bg-gw-bg rounded-xl">
-                    <div>
-                      <p class="text-[10px] font-black text-gw-text italic">v{{ v.versionNumber }}</p>
-                      <p class="text-[8px] text-gw-text-muted">{{ v.uploadedDate | date:'MMM d, yyyy' }}</p>
-                      @if (v.versionNotes) {
-                        <p class="text-[8px] italic text-gw-text-muted truncate max-w-[160px]">{{ v.versionNotes }}</p>
-                      }
-                    </div>
-                    @if (v.versionNumber < scriptVersions()[0].versionNumber) {
-                      <button (click)="rollbackToVersion(selectedScript()!.id, v.versionNumber)"
-                        class="text-[8px] font-black uppercase tracking-wider text-gw-primary hover:underline italic px-2 py-1">
-                        Rollback
-                      </button>
-                    }
-                  </div>
-                }
-              </div>
-            </div>
-          }
-
-          <div class="mt-auto px-6 py-5 border-t border-gray-100 space-y-2">
-            <div class="flex gap-2">
-              <button
-                class="flex-1 h-11 font-black text-sm uppercase tracking-widest rounded-xl border-2 transition-all"
-                [class]="selectedScript()!.active
-                  ? 'border-red-400 text-red-500 hover:bg-red-50'
-                  : 'border-green-400 text-green-600 hover:bg-green-50'"
-                (click)="toggleScript(selectedScript()!)">
-                {{ selectedScript()!.active ? 'Deactivate' : 'Activate' }}
-              </button>
-              <button (click)="duplicateScript(selectedScript()!)"
-                class="flex-1 h-11 font-black text-sm uppercase tracking-widest rounded-xl border-2 border-gw-primary/30 text-gw-primary hover:bg-gw-primary/5 transition-all">
-                Duplicate
-              </button>
-              <button (click)="setWeeklyChallenge(selectedScript()!)"
-                class="flex-1 h-11 font-black text-sm uppercase tracking-widest rounded-xl border-2 border-amber-400 text-amber-600 hover:bg-amber-50 transition-all">
-                Set Challenge
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    }
-
-    <!-- Main Content -->
     <div class="space-y-5">
 
       <!-- Page Header -->
@@ -330,26 +219,19 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
   `]
 })
 export class AdminScriptsComponent implements OnInit {
-  private scriptService   = inject(ScriptService);
-  private toast           = inject(ToastService);
-  private challengeSvc    = inject(ChallengeService);
+  private scriptService = inject(ScriptService);
+  private toast         = inject(ToastService);
   private router        = inject(Router);
 
-  readonly ScriptIcon    = FileText;
-  readonly ActiveIcon    = BookOpen;
-  readonly LinesIcon     = List;
-  readonly SearchIcon    = Search;
-  readonly PlusIcon      = Plus;
-  readonly ViewIcon      = Eye;
+  readonly ScriptIcon     = FileText;
+  readonly ActiveIcon     = BookOpen;
+  readonly LinesIcon      = List;
+  readonly SearchIcon     = Search;
+  readonly PlusIcon       = Plus;
+  readonly ViewIcon       = Eye;
   readonly DeactivateIcon = CircleX;
-  readonly ActivateIcon  = CircleCheck;
-  readonly DownloadIcon  = Download;
-  readonly XIcon         = X;
-  readonly HashIcon      = Hash;
-  readonly TagIcon       = Tag;
-  readonly CalendarIcon  = Calendar;
-  readonly LayersIcon    = Layers;
-  readonly UsersIcon     = Users;
+  readonly ActivateIcon   = CircleCheck;
+  readonly DownloadIcon   = Download;
 
   scripts         = signal<any[]>([]);
   loading         = signal(false);
@@ -358,8 +240,6 @@ export class AdminScriptsComponent implements OnInit {
   totalUtterances = signal(0);
   currentPage     = signal(0);
   currentPageSize = signal(12);
-  selectedScript  = signal<any | null>(null);
-  scriptVersions  = signal<any[]>([]);
 
   searchControl = new FormControl('');
 
@@ -405,40 +285,7 @@ export class AdminScriptsComponent implements OnInit {
   }
 
   viewDetails(script: any) {
-    this.selectedScript.set(script);
-    this.scriptVersions.set([]);
-    this.scriptService.getVersionHistory(script.id).subscribe({
-      next: (versions: any[]) => this.scriptVersions.set(versions ?? []),
-      error: () => {}
-    });
-  }
-
-  setWeeklyChallenge(script: any) {
-    this.challengeSvc.setWeeklyChallenge(Number(script.id)).subscribe({
-      next: () => this.toast.success(`"${script.title}" set as this week's challenge`),
-      error: () => this.toast.error('Failed to set weekly challenge')
-    });
-  }
-
-  duplicateScript(script: any) {
-    this.scriptService.duplicateScript(Number(script.id)).subscribe({
-      next: (newId: any) => {
-        this.toast.success(`Script duplicated — new script ID: ${newId}`);
-        this.loadScripts();
-      },
-      error: () => this.toast.error('Failed to duplicate script')
-    });
-  }
-
-  rollbackToVersion(scriptId: string, versionNumber: number) {
-    this.scriptService.rollbackScriptVersion(Number(scriptId), versionNumber).subscribe({
-      next: () => {
-        this.toast.success(`Rolled back to version ${versionNumber}`);
-        this.loadScripts();
-        this.selectedScript.set(null);
-      },
-      error: () => this.toast.error('Rollback failed')
-    });
+    this.router.navigate(['/admin/scripts', script.id]);
   }
 
   toggleScript(script: any) {
@@ -446,9 +293,6 @@ export class AdminScriptsComponent implements OnInit {
     this.scriptService.updateScriptStatus({ scriptId: Number(script.id), isActive: goingActive }).subscribe({
       next: () => {
         this.toast.success(`Script ${goingActive ? 'activated' : 'deactivated'}`);
-        if (this.selectedScript()?.id === script.id) {
-          this.selectedScript.update(s => s ? { ...s, active: goingActive } : null);
-        }
         this.loadScripts();
       },
       error: () => this.toast.error('Failed to update script status')

@@ -220,6 +220,20 @@ export class AdminService {
     );
   }
 
+  getSessionRecordings(sessionId: number | string): Observable<any[]> {
+    return this.http.get<any>(`${this.baseUrl}/sessions/${sessionId}/recordings`).pipe(
+      map(res => res.data ?? [])
+    );
+  }
+
+  uploadUserAvatar(userId: number | string, file: File): Observable<string> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<any>(`${this.baseUrl}/users/${userId}/avatar`, form).pipe(
+      map(res => res.data ?? '')
+    );
+  }
+
   exportReports(params: any = {}): Observable<Blob> {
     let httpParams = new HttpParams();
     Object.keys(params).forEach(key => {

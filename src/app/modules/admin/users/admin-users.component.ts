@@ -2,7 +2,7 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AdminService, AdminUserListItem, AdminUserDetail } from '@core/services/admin.service';
-import { LucideAngularModule, Search, User, Phone, ArrowRight, Eye, UserX, UserCheck, BarChart2, Flame, Users, ChevronLeft, ChevronRight, X, AlertCircle, UserPlus, Pencil, EyeOff } from 'lucide-angular';
+import { LucideAngularModule, Search, Eye, UserX, UserCheck, BarChart2, Flame, Users, X, UserPlus, Pencil, EyeOff, Camera } from 'lucide-angular';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { ToastService } from '@core/services/toast.service';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
@@ -18,95 +18,6 @@ import { Router } from '@angular/router';
     MatPaginatorModule,
   ],
   template: `
-    <!-- User Detail Side Panel Overlay -->
-    @if (selectedUser()) {
-      <div class="fixed inset-0 z-50 flex justify-end" (click)="selectedUser.set(null)">
-        <div class="absolute inset-0 bg-black/30 backdrop-blur-sm"></div>
-        <div class="relative w-full max-w-sm bg-white h-full shadow-2xl flex flex-col overflow-y-auto" (click)="$event.stopPropagation()">
-          <!-- Panel Header -->
-          <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-            <h2 class="text-base font-black text-gw-text uppercase tracking-wider">User Profile</h2>
-            <button (click)="selectedUser.set(null)" class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gw-text-muted">
-              <i-lucide [img]="XIcon" size="18"></i-lucide>
-            </button>
-          </div>
-
-          <!-- Avatar + Name -->
-          <div class="flex flex-col items-center pt-8 pb-6 px-6 border-b border-gray-100">
-            <div class="w-20 h-20 rounded-2xl bg-gw-primary/10 flex items-center justify-center text-2xl font-black text-gw-primary mb-4">
-              {{ initials(selectedUser()!.name) }}
-            </div>
-            <h3 class="text-lg font-black text-gw-text">{{ selectedUser()!.name }}</h3>
-            <span class="text-xs font-bold text-gw-text-muted mt-1">{{ selectedUser()!.ageGroup }}</span>
-            <span class="mt-3 px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider"
-              [class]="selectedUser()!.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'">
-              {{ selectedUser()!.status }}
-            </span>
-          </div>
-
-          <!-- Stats Row -->
-          <div class="grid grid-cols-3 gap-3 px-6 py-5 border-b border-gray-100">
-            <div class="bg-gw-bg rounded-xl p-3 text-center">
-              <p class="text-xl font-black text-gw-accent">{{ selectedUser()!.sessions }}</p>
-              <p class="text-[9px] font-bold text-gw-text-muted uppercase tracking-wider mt-0.5">Sessions</p>
-            </div>
-            <div class="bg-gw-bg rounded-xl p-3 text-center">
-              <p class="text-xl font-black text-gw-primary">{{ selectedUser()!.streak }}</p>
-              <p class="text-[9px] font-bold text-gw-text-muted uppercase tracking-wider mt-0.5">Streak</p>
-            </div>
-            <div class="bg-gw-bg rounded-xl p-3 text-center">
-              <p class="text-xl font-black text-gw-success">
-                {{ detailUser() ? (detailUser()!.avgFluencyScore | number:'1.0-1') + '%' : '—' }}
-              </p>
-              <p class="text-[9px] font-bold text-gw-text-muted uppercase tracking-wider mt-0.5">Avg Score</p>
-            </div>
-          </div>
-
-          <!-- Contact -->
-          <div class="px-6 py-5 space-y-3 border-b border-gray-100">
-            <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Contact</p>
-            <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
-              <i-lucide [img]="PhoneIcon" size="16" class="text-gw-text-muted flex-shrink-0"></i-lucide>
-              <span class="text-sm font-bold text-gw-text">{{ selectedUser()!.mobileNumber }}</span>
-            </div>
-          </div>
-
-          <!-- Recent Sessions -->
-          @if (detailUser()?.recentSessions?.length) {
-            <div class="px-6 py-5 space-y-3">
-              <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Recent Sessions</p>
-              @for (session of detailUser()!.recentSessions; track session.id) {
-                <div class="flex items-center justify-between p-3 bg-gw-bg rounded-xl">
-                  <div class="min-w-0 flex-1">
-                    <p class="text-sm font-bold text-gw-text truncate">{{ session.title }}</p>
-                    <p class="text-[10px] text-gw-text-muted">{{ session.date | date:'mediumDate' }}</p>
-                  </div>
-                  <span class="text-sm font-black text-gw-success ml-3">{{ session.score }}%</span>
-                </div>
-              }
-            </div>
-          }
-
-          <!-- Actions -->
-          <div class="mt-auto px-6 py-5 border-t border-gray-100 flex gap-3">
-            <button
-              class="flex-1 h-12 bg-gw-primary text-white font-black text-sm uppercase tracking-widest rounded-xl shadow-sm hover:opacity-90 transition-opacity"
-              (click)="viewFullReport(selectedUser()!.id)">
-              Full Report
-            </button>
-            <button
-              class="h-12 px-5 border-2 font-black text-sm uppercase tracking-widest rounded-xl transition-all"
-              [class]="selectedUser()!.status === 'ACTIVE'
-                ? 'border-red-400 text-red-500 hover:bg-red-50'
-                : 'border-green-400 text-green-600 hover:bg-green-50'"
-              (click)="toggleStatus(selectedUser()!)">
-              {{ selectedUser()!.status === 'ACTIVE' ? 'Deactivate' : 'Activate' }}
-            </button>
-          </div>
-        </div>
-      </div>
-    }
-
     <!-- Add / Edit User Modal -->
     @if (showUserModal()) {
       <div class="fixed inset-0 z-50 flex items-center justify-center" (click)="closeUserModal()">
@@ -130,6 +41,45 @@ import { Router } from '@angular/router';
 
           <!-- Modal Form -->
           <form [formGroup]="userForm" (ngSubmit)="submitUserForm()" autocomplete="off" class="px-6 py-5 space-y-4">
+
+            <!-- Avatar Upload -->
+            <div class="flex flex-col items-center gap-2 pb-2">
+              <div class="relative">
+                <div class="w-20 h-20 rounded-2xl flex items-center justify-center text-2xl font-black text-gw-primary overflow-hidden transition-all"
+                  [class]="avatarError()
+                    ? 'bg-red-50 ring-2 ring-red-400'
+                    : 'bg-gw-primary/10'">
+                  @if (avatarPreview()) {
+                    <img [src]="avatarPreview()!" class="w-full h-full object-cover" alt="Avatar preview">
+                  } @else if (editingUserId() && currentAvatarUrl()) {
+                    <img [src]="currentAvatarUrl()!" class="w-full h-full object-cover" alt="Current avatar"
+                      (error)="$any($event.target).style.display='none'">
+                  } @else {
+                    {{ initials(userForm.get('fullName')?.value || '?') }}
+                  }
+                </div>
+                <label class="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-xl flex items-center justify-center cursor-pointer shadow-md hover:opacity-90 transition-all"
+                  [class]="avatarError() ? 'bg-red-400' : 'bg-gw-primary'">
+                  <i-lucide [img]="CameraIcon" size="13" class="text-white"></i-lucide>
+                  <input type="file" accept="image/*" class="hidden" (change)="onAvatarFileChange($event)">
+                </label>
+              </div>
+
+              <!-- File info or error -->
+              @if (avatarError()) {
+                <div class="flex items-start gap-1.5 w-full max-w-[220px] bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+                  <span class="text-red-500 font-black text-sm leading-none mt-0.5 flex-shrink-0">!</span>
+                  <p class="text-[11px] font-bold text-red-600 leading-snug">{{ avatarError() }}</p>
+                </div>
+              } @else if (avatarFile()) {
+                <div class="flex items-center gap-2 text-xs text-gw-text-muted">
+                  <span class="truncate max-w-[180px]">{{ avatarFile()!.name }}</span>
+                  <button type="button" (click)="clearAvatarFile()" class="text-red-400 hover:text-red-600 font-black flex-shrink-0">✕</button>
+                </div>
+              } @else {
+                <p class="text-[10px] text-gw-text-muted italic">Click camera to upload image (max 2 MB)</p>
+              }
+            </div>
 
             <!-- Full Name -->
             <div>
@@ -202,7 +152,7 @@ import { Router } from '@angular/router';
                 class="flex-1 h-11 border-2 border-gray-200 text-gw-text-muted font-black text-sm uppercase tracking-widest rounded-xl hover:border-gray-300 transition-all">
                 Cancel
               </button>
-              <button type="submit" [disabled]="userForm.invalid || userSubmitting()"
+              <button type="submit" [disabled]="userForm.invalid || userSubmitting() || !!avatarError()"
                 class="flex-1 h-11 bg-gw-primary text-white font-black text-sm uppercase tracking-widest rounded-xl shadow-sm hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed">
                 {{ userSubmitting() ? (editingUserId() ? 'Saving...' : 'Creating...') : (editingUserId() ? 'Save Changes' : 'Create User') }}
               </button>
@@ -323,8 +273,13 @@ import { Router } from '@angular/router';
                     <!-- User -->
                     <td class="px-5 py-4">
                       <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-xl bg-gw-primary/10 flex items-center justify-center text-xs font-black text-gw-primary flex-shrink-0">
-                          {{ initials(row.name) }}
+                        <div class="w-9 h-9 rounded-xl bg-gw-primary/10 flex items-center justify-center text-xs font-black text-gw-primary flex-shrink-0 overflow-hidden">
+                          @if (row.avatar) {
+                            <img [src]="row.avatar" class="w-full h-full object-cover"
+                              (error)="$any($event.target).style.display='none'" [alt]="row.name">
+                          } @else {
+                            {{ initials(row.name) }}
+                          }
                         </div>
                         <div class="min-w-0">
                           <p class="text-sm font-bold text-gw-text truncate">{{ row.name }}</p>
@@ -440,27 +395,30 @@ export class AdminUsersComponent implements OnInit {
   readonly ViewIcon       = Eye;
   readonly DeactivateIcon = UserX;
   readonly ActivateIcon   = UserCheck;
-  readonly PhoneIcon      = Phone;
   readonly XIcon          = X;
-  readonly ArrowIcon      = ArrowRight;
   readonly AddUserIcon    = UserPlus;
   readonly EditIcon       = Pencil;
   readonly EyeShowIcon    = Eye;
   readonly EyeOffIcon     = EyeOff;
+  readonly CameraIcon     = Camera;
 
-  users          = signal<AdminUserListItem[]>([]);
-  totalUsers     = signal(0);
-  loading        = signal(false);
-  selectedUser   = signal<AdminUserListItem | null>(null);
-  detailUser     = signal<AdminUserDetail | null>(null);
-  activeOnly     = signal(false);
+  users       = signal<AdminUserListItem[]>([]);
+  totalUsers  = signal(0);
+  loading     = signal(false);
+  activeOnly  = signal(false);
   currentPage    = signal(0);
   currentPageSize = signal(10);
 
-  showUserModal   = signal(false);
-  userSubmitting  = signal(false);
-  editingUserId   = signal<string | null>(null);
-  showPassword    = signal(false);
+  showUserModal    = signal(false);
+  userSubmitting   = signal(false);
+  editingUserId    = signal<string | null>(null);
+  showPassword     = signal(false);
+  avatarFile       = signal<File | null>(null);
+  avatarPreview    = signal<string | null>(null);
+  currentAvatarUrl = signal<string | null>(null);
+  avatarError      = signal<string | null>(null);
+
+  private readonly MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 
   userForm = new FormGroup({
     fullName:              new FormControl('', [Validators.required, Validators.maxLength(128)]),
@@ -531,18 +489,17 @@ export class AdminUsersComponent implements OnInit {
   }
 
   openDetail(user: AdminUserListItem) {
-    this.selectedUser.set(user);
-    this.detailUser.set(null);
-    this.adminService.getUserDetail(user.id).subscribe({
-      next: detail => this.detailUser.set(detail),
-      error: () => {}
-    });
+    this.router.navigate(['/admin/users', user.id]);
   }
 
   openAddModal() {
     this.editingUserId.set(null);
     this.showPassword.set(false);
+    this.avatarFile.set(null);
+    this.avatarPreview.set(null);
+    this.currentAvatarUrl.set(null);
     this.userForm.reset({ fullName: '', mobileNumber: '', email: '', ageGroup: '', preferredHintLanguage: 'Telugu', password: '' });
+    this.avatarError.set(null);
     const pwCtrl = this.userForm.get('password')!;
     pwCtrl.setValidators([Validators.required, Validators.minLength(6)]);
     pwCtrl.updateValueAndValidity();
@@ -552,6 +509,9 @@ export class AdminUsersComponent implements OnInit {
   openEditModal(user: AdminUserListItem) {
     this.editingUserId.set(user.id);
     this.showPassword.set(false);
+    this.avatarFile.set(null);
+    this.avatarPreview.set(null);
+    this.currentAvatarUrl.set(user.avatar || null);
     this.userForm.reset();
     const pwCtrl = this.userForm.get('password')!;
     pwCtrl.setValidators([Validators.minLength(6)]);
@@ -570,6 +530,7 @@ export class AdminUsersComponent implements OnInit {
           email: detail.email || '',
           preferredHintLanguage: 'Telugu',
         });
+        if (detail.avatar) this.currentAvatarUrl.set(detail.avatar);
       },
       error: () => {}
     });
@@ -580,6 +541,10 @@ export class AdminUsersComponent implements OnInit {
   closeUserModal() {
     this.showUserModal.set(false);
     this.editingUserId.set(null);
+    this.avatarFile.set(null);
+    this.avatarPreview.set(null);
+    this.currentAvatarUrl.set(null);
+    this.avatarError.set(null);
     this.userForm.reset({ fullName: '', mobileNumber: '', email: '', ageGroup: '', preferredHintLanguage: 'Telugu', password: '' });
     this.showPassword.set(false);
   }
@@ -589,11 +554,22 @@ export class AdminUsersComponent implements OnInit {
       this.userForm.markAllAsTouched();
       return;
     }
+    if (this.avatarError()) return;
 
     const v = this.userForm.value;
     this.userSubmitting.set(true);
 
     const userId = this.editingUserId();
+
+    const file = this.avatarFile();
+
+    const afterSave = (savedUserId: string | number) => {
+      if (!file) { this.toast.success(userId ? 'User updated successfully' : 'User created successfully'); this.closeUserModal(); this.loadUsers(); return; }
+      this.adminService.uploadUserAvatar(savedUserId, file).subscribe({
+        next: () => { this.toast.success(userId ? 'User updated successfully' : 'User created successfully'); this.closeUserModal(); this.loadUsers(); },
+        error: () => { this.toast.success(userId ? 'User updated (avatar upload failed)' : 'User created (avatar upload failed)'); this.closeUserModal(); this.loadUsers(); }
+      });
+    };
 
     if (userId) {
       this.adminService.updateUser(userId, {
@@ -604,11 +580,7 @@ export class AdminUsersComponent implements OnInit {
         preferredHintLanguage: v.preferredHintLanguage!,
         password:              v.password || undefined,
       }).subscribe({
-        next: () => {
-          this.toast.success('User updated successfully');
-          this.closeUserModal();
-          this.loadUsers();
-        },
+        next: () => afterSave(userId),
         error: (err) => {
           const msg = err?.error?.errors?.[0] || 'Failed to update user';
           this.toast.error(msg);
@@ -625,11 +597,7 @@ export class AdminUsersComponent implements OnInit {
         preferredHintLanguage: v.preferredHintLanguage!,
         password:              v.password!,
       }).subscribe({
-        next: () => {
-          this.toast.success('User created successfully');
-          this.closeUserModal();
-          this.loadUsers();
-        },
+        next: (res) => afterSave(res?.data?.userId ?? res?.data?.id ?? userId),
         error: (err) => {
           const msg = err?.error?.errors?.[0] || 'Failed to create user';
           this.toast.error(msg);
@@ -640,23 +608,41 @@ export class AdminUsersComponent implements OnInit {
     }
   }
 
-  viewFullReport(userId: string) {
-    this.router.navigate(['/admin/reports/user', userId]);
-  }
-
   toggleStatus(user: AdminUserListItem | AdminUserDetail) {
     const goingActive = user.status !== 'ACTIVE';
     this.adminService.updateUserStatus({ userId: Number(user.id), isActive: goingActive }).subscribe({
       next: () => {
         this.toast.success(`User ${goingActive ? 'activated' : 'deactivated'}`);
         this.loadUsers();
-        if (this.selectedUser()?.id === user.id) {
-          const newStatus = goingActive ? 'ACTIVE' : 'INACTIVE';
-          this.selectedUser.update(u => u ? { ...u, status: newStatus } : null);
-        }
       },
       error: () => this.toast.error('Failed to update user status')
     });
+  }
+
+  onAvatarFileChange(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+
+    if (file.size > this.MAX_AVATAR_BYTES) {
+      this.avatarError.set('Image must be under 2 MB. Please choose a smaller file.');
+      this.avatarFile.set(null);
+      this.avatarPreview.set(null);
+      return;
+    }
+
+    this.avatarError.set(null);
+    this.avatarFile.set(file);
+    const reader = new FileReader();
+    reader.onload = () => this.avatarPreview.set(reader.result as string);
+    reader.readAsDataURL(file);
+  }
+
+  clearAvatarFile() {
+    this.avatarFile.set(null);
+    this.avatarPreview.set(null);
+    this.avatarError.set(null);
   }
 
   initials(name: string): string {

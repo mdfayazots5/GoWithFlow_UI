@@ -10,6 +10,7 @@ import { ToastService } from '@core/services/toast.service';
 
 interface ScoreboardRow {
   name: string;
+  avatarUrl: string | null;
   fluency: number;
   confidence: number;
   rating: string;
@@ -144,9 +145,10 @@ interface ScoreboardRow {
                         </td>
                         <td class="px-6 py-5">
                           <div class="flex items-center gap-3">
-                            <img [src]="'https://api.dicebear.com/7.x/avataaars/svg?seed=' + row.name"
-                                 class="w-8 h-8 rounded-lg flex-shrink-0"
-                                 [alt]="row.name">
+                            <img [src]="row.avatarUrl || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + row.name"
+                                 class="w-8 h-8 rounded-lg object-cover flex-shrink-0"
+                                 [alt]="row.name"
+                                 (error)="$any($event.target).src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + row.name">
                             <span class="font-bold italic text-gw-text text-sm">{{ row.name }}</span>
                           </div>
                         </td>
@@ -252,7 +254,7 @@ interface ScoreboardRow {
             </button>
 
             <div class="grid grid-cols-2 gap-3">
-              <button [routerLink]="['/session', sessionId(), 'detail']"
+              <button [routerLink]="['/session/detail', sessionId()]"
                 class="h-14 bg-white border-2 border-gw-card-border text-gw-text font-black uppercase tracking-widest italic rounded-2xl flex items-center justify-center gap-2 hover:bg-gw-bg transition-all text-xs">
                 <i-lucide [img]="LayoutIcon" size="16"></i-lucide>
                 Detailed Report
@@ -309,6 +311,7 @@ export class SessionReportComponent implements OnInit {
       .sort((a, b) => b.fluencyScore - a.fluencyScore)
       .map(m => ({
         name: m.fullName,
+        avatarUrl: m.avatarUrl ?? null,
         fluency: Math.round(m.fluencyScore),
         confidence: Math.round(m.confidenceScore),
         rating: this.resolveRating(m.fluencyScore),

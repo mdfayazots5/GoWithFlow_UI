@@ -1,5 +1,5 @@
 // File: src/app/modules/user/dashboard/user-dashboard.component.ts
-import { Component, inject, computed, signal, OnInit } from '@angular/core';
+import { Component, inject, computed, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
   LucideAngularModule,
@@ -13,8 +13,9 @@ import { UserService } from '@core/services/user.service';
 import { MistakeService } from '@core/services/mistake.service';
 import { ChallengeService } from '@core/services/challenge.service';
 import { SessionService } from '@core/services/session.service';
+import { WebsocketService } from '@core/services/websocket.service';
 import { RouterLink } from '@angular/router';
-import { catchError, of } from 'rxjs';
+import { catchError, of, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-user-dashboard',
@@ -444,13 +445,16 @@ import { catchError, of } from 'rxjs';
   `,
   styles: [`:host { display: block; }`]
 })
-export class UserDashboardComponent implements OnInit {
+export class UserDashboardComponent implements OnInit, OnDestroy {
   private auth          = inject(AuthService);
   private userState     = inject(UserStateService);
   private userSvc       = inject(UserService);
   private mistakeSvc    = inject(MistakeService);
   private challengeSvc  = inject(ChallengeService);
   private sessionSvc    = inject(SessionService);
+  private wsService     = inject(WebsocketService);
+
+  private invitationSub?: Subscription;
 
   today = new Date();
 
@@ -509,6 +513,23 @@ export class UserDashboardComponent implements OnInit {
     this.loadDueForReview();
     this.loadActiveChallenge();
     this.loadPendingInvitations();
+    this.connectForInvitationNotifications();
+  }
+
+  ngOnDestroy() {
+    this.invitationSub?.unsubscribe();
+    this.wsService.disconnect();
+  }
+
+  private connectForInvitationNotifications() {
+    const userId = localStorage.getItem('gwf_userId') ?? '';
+    // Connect to session hub without a sessionId — the server still adds the user
+    // to their personal group (user_{userId}) for real-time invitation delivery.
+    this.wsService.connect(null, userId, 'session');
+
+    this.invitationSub = this.wsService.on('INVITATION_RECEIVED').subscribe(() => {
+      this.pendingInvitationCount.update(count => count + 1);
+    });
   }
 
   private loadWeeklyReport() {

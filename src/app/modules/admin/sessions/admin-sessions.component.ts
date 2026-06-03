@@ -4,10 +4,10 @@ import { ReactiveFormsModule, FormControl } from '@angular/forms';
 import {
   LucideAngularModule,
   Activity, CheckCircle2, TrendingUp,
-  Search, Users, Calendar, Clock,
-  X, Eye, AlertTriangle, User,
+  Search, X, Eye,
 } from 'lucide-angular';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { Router } from '@angular/router';
 import { AdminService } from '@core/services/admin.service';
 import { ToastService } from '@core/services/toast.service';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
@@ -17,124 +17,6 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, MatPaginatorModule],
   template: `
-
-    <!-- ═══════════════════════════════════════════════════════════ -->
-    <!--  Session Detail Side Panel                                  -->
-    <!-- ═══════════════════════════════════════════════════════════ -->
-    @if (selectedSession()) {
-      <div class="fixed inset-0 z-50 flex justify-end" (click)="selectedSession.set(null)">
-        <div class="absolute inset-0 bg-black/30 backdrop-blur-sm"></div>
-        <div
-          class="relative w-full max-w-sm bg-white h-full shadow-2xl flex flex-col overflow-y-auto"
-          (click)="$event.stopPropagation()">
-
-          <!-- Panel Header -->
-          <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
-            <h2 class="text-base font-black text-gw-text uppercase tracking-wider">Session Details</h2>
-            <button
-              (click)="selectedSession.set(null)"
-              class="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gw-text-muted">
-              <i-lucide [img]="XIcon" size="18"></i-lucide>
-            </button>
-          </div>
-
-          <!-- Session Identity -->
-          <div class="px-6 py-5 border-b border-gray-100">
-            <div class="w-12 h-12 rounded-2xl bg-gw-primary/10 flex items-center justify-center mb-4">
-              <i-lucide [img]="SessionIcon" size="22" class="text-gw-primary"></i-lucide>
-            </div>
-            <h3 class="text-base font-black text-gw-text leading-snug">{{ selectedSession()!.sessionName }}</h3>
-            <span
-              class="inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider"
-              [class]="statusBgClass(selectedSession()!.status)">
-              <span class="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                [class]="statusDotClass(selectedSession()!.status)"></span>
-              {{ statusLabel(selectedSession()!.status) }}
-            </span>
-          </div>
-
-          <!-- Session Info Grid -->
-          <div class="px-6 py-5 space-y-3">
-            <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Info</p>
-            <div class="space-y-2.5">
-
-              <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
-                <span class="text-[11px] font-black text-gw-text-muted flex-shrink-0 w-[15px] text-center">#</span>
-                <div>
-                  <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Session Code</p>
-                  <p class="text-sm font-bold text-gw-text tracking-widest">{{ selectedSession()!.joinCode }}</p>
-                </div>
-              </div>
-
-              <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
-                <i-lucide [img]="UserIcon" size="15" class="text-gw-text-muted flex-shrink-0"></i-lucide>
-                <div>
-                  <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Host</p>
-                  <p class="text-sm font-bold text-gw-text">{{ selectedSession()!.hostName || '—' }}</p>
-                </div>
-              </div>
-
-              <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
-                <i-lucide [img]="UsersIcon" size="15" class="text-gw-text-muted flex-shrink-0"></i-lucide>
-                <div>
-                  <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Members</p>
-                  <p class="text-sm font-bold text-gw-text">{{ selectedSession()!.memberCount }}</p>
-                </div>
-              </div>
-
-              <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
-                <i-lucide [img]="CalendarIcon" size="15" class="text-gw-text-muted flex-shrink-0"></i-lucide>
-                <div>
-                  <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Date</p>
-                  <p class="text-sm font-bold text-gw-text">
-                    {{ selectedSession()!.sessionDate | date:'d MMM y, h:mm a' }}
-                  </p>
-                </div>
-              </div>
-
-              <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
-                <i-lucide [img]="ClockIcon" size="15" class="text-gw-text-muted flex-shrink-0"></i-lucide>
-                <div>
-                  <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Duration</p>
-                  <p class="text-sm font-bold text-gw-text">
-                    {{ selectedSession()!.durationMin > 0 ? selectedSession()!.durationMin + ' min' : '—' }}
-                  </p>
-                </div>
-              </div>
-
-              <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
-                <i-lucide [img]="ScoreIcon" size="15" class="text-gw-text-muted flex-shrink-0"></i-lucide>
-                <div>
-                  <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Avg Fluency</p>
-                  <p class="text-sm font-bold"
-                    [class]="fluencyTextClass(selectedSession()!.avgFluency)">
-                    {{ selectedSession()!.avgFluency > 0
-                        ? (selectedSession()!.avgFluency | number:'1.0-1') + '%'
-                        : '—' }}
-                  </p>
-                </div>
-              </div>
-
-              <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
-                <i-lucide [img]="MistakeIcon" size="15" class="text-gw-text-muted flex-shrink-0"></i-lucide>
-                <div>
-                  <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Mistakes</p>
-                  <p class="text-sm font-bold"
-                    [class]="selectedSession()!.mistakeCount > 0 ? 'text-red-500' : 'text-gw-text'">
-                    {{ selectedSession()!.mistakeCount }}
-                  </p>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </div>
-      </div>
-    }
-
-    <!-- ═══════════════════════════════════════════════════════════ -->
-    <!--  Main Content                                               -->
-    <!-- ═══════════════════════════════════════════════════════════ -->
     <div class="space-y-5">
 
       <!-- Page Header -->
@@ -393,27 +275,22 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
 export class AdminSessionsComponent implements OnInit {
   private adminService = inject(AdminService);
   private toast        = inject(ToastService);
+  private router       = inject(Router);
 
   // ── Icon references ─────────────────────────────────────────────
   readonly SessionIcon   = Activity;
   readonly CompletedIcon = CheckCircle2;
   readonly ScoreIcon     = TrendingUp;
   readonly SearchIcon    = Search;
-  readonly UsersIcon     = Users;
-  readonly CalendarIcon  = Calendar;
-  readonly ClockIcon     = Clock;
   readonly XIcon         = X;
   readonly ViewIcon      = Eye;
-  readonly MistakeIcon   = AlertTriangle;
-  readonly UserIcon      = User;
 
   // ── State ────────────────────────────────────────────────────────
-  sessions        = signal<any[]>([]);
-  loading         = signal(false);
-  totalCount      = signal(0);
-  currentPage     = signal(0);
-  currentSize     = signal(20);
-  selectedSession = signal<any | null>(null);
+  sessions    = signal<any[]>([]);
+  loading     = signal(false);
+  totalCount  = signal(0);
+  currentPage = signal(0);
+  currentSize = signal(20);
 
   // ── Form controls ────────────────────────────────────────────────
   searchControl = new FormControl('');
@@ -483,7 +360,7 @@ export class AdminSessionsComponent implements OnInit {
   }
 
   viewDetails(session: any) {
-    this.selectedSession.set(session);
+    this.router.navigate(['/admin/sessions', session.sessionId], { state: { session } });
   }
 
   clearFilters() {

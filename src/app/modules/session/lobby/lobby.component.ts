@@ -114,9 +114,9 @@ export class LobbyComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.clearStartStatusPoll();
-    if (!this.hasLeft && this.sessionId) {
-      this.sessionService.leaveSession(this.sessionId).subscribe();
-    }
+    // Do not call leaveSession on destroy — a page reload would prematurely mark the
+    // member as left and abandon the session. The backend grace window (20 s) handles
+    // genuine disconnects; explicit leave is only issued via leaveSession().
     this.wsService.disconnect();
   }
 
@@ -209,13 +209,21 @@ export class LobbyComponent implements OnInit, OnDestroy {
 
   toggleReady() {
     const next = !this.isReady();
-    this.sessionService.updateReadyStatus({
-      sessionId: Number(this.state()!.session.id),
-      isReady: next
-    }).subscribe(() => {
-      this.isReady.set(next);
-      this.loadLobby(this.sessionId);
-    });
+    const userId = localStorage.getItem('gwf_userId') ?? '';
+    // Use the hub method so MEMBER_READY is broadcast to ALL clients (including the host)
+    // in a single round-trip. REST-only updates the DB but never broadcasts to the group.
+    this.wsService.emit('SetReady', this.sessionId, userId, next)
+      .then(() => this.isReady.set(next))
+      .catch(() => {
+        // Hub unavailable — fall back to REST; host sees change only on their next poll
+        this.sessionService.updateReadyStatus({
+          sessionId: Number(this.state()!.session.id),
+          isReady: next
+        }).subscribe(() => {
+          this.isReady.set(next);
+          this.loadLobby(this.sessionId);
+        });
+      });
   }
 
   startSession() {

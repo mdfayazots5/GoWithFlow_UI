@@ -27,9 +27,24 @@ export const ADMIN_ROUTES: Routes = [
         loadComponent: () => import('../scripts/script-upload/script-upload.component').then(m => m.ScriptUploadComponent)
       },
       {
+        path: 'scripts/:id',
+        data: { title: 'Script Details' },
+        loadComponent: () => import('./scripts/admin-script-detail.component').then(m => m.AdminScriptDetailComponent)
+      },
+      {
+        path: 'users/:id',
+        data: { title: 'User Profile' },
+        loadComponent: () => import('./users/admin-user-detail.component').then(m => m.AdminUserDetailComponent)
+      },
+      {
         path: 'sessions',
         data: { title: 'Session History' },
         loadComponent: () => import('./sessions/admin-sessions.component').then(m => m.AdminSessionsComponent)
+      },
+      {
+        path: 'sessions/:id',
+        data: { title: 'Session Details' },
+        loadComponent: () => import('./sessions/admin-session-detail.component').then(m => m.AdminSessionDetailComponent)
       },
       {
         path: 'reports',

@@ -11,7 +11,7 @@ export class WebsocketService {
   private messageSubjects: { [key: string]: Subject<any> } = {};
   private connectionStartPromise: Promise<void> | null = null;
 
-  connect(sessionId: string, userId: string, hubPath: 'session' | 'live-session'): void {
+  connect(sessionId: string | null, userId: string, hubPath: 'session' | 'live-session'): void {
     const token = localStorage.getItem('gwf_token');
     const hubUrl = `${environment.wsBaseUrl}/hubs/${hubPath}`;
 
@@ -19,8 +19,12 @@ export class WebsocketService {
       return;
     }
 
+    const qs = sessionId
+      ? `?access_token=${token}&sessionId=${sessionId}`
+      : `?access_token=${token}`;
+
     this.connection = new signalR.HubConnectionBuilder()
-      .withUrl(`${hubUrl}?access_token=${token}&sessionId=${sessionId}`)
+      .withUrl(`${hubUrl}${qs}`)
       .withAutomaticReconnect()
       .build();
 

@@ -8,19 +8,11 @@ import { ScriptService } from '@core/services/script.service';
 import { ToastService } from '@core/services/toast.service';
 import {
   LucideAngularModule,
-  MessageSquare,
-  Users,
-  Users2,
-  Mic2,
-  Zap,
-  RotateCcw,
-  Plus,
-  Minus,
   ChevronRight,
-  Layout,
+  Search,
+  Users,
   Clock,
-  Calendar,
-  Search
+  Layers
 } from 'lucide-angular';
 import { Script } from '@core/models/script.model';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
@@ -52,46 +44,27 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
             >
           </div>
 
-          <!-- Practice Mode -->
-          <div class="bg-white rounded-2xl border border-gw-card-border p-5">
-            <label class="block text-[10px] font-bold uppercase tracking-[0.22em] text-gw-text-muted mb-3">Practice Mode</label>
-            <div class="grid grid-cols-2 gap-2">
-              @for (mode of modes; track mode.value) {
-                <button
-                  type="button"
-                  (click)="selectMode(mode.value)"
-                  class="relative flex flex-col gap-2.5 rounded-xl border-2 p-3.5 text-left transition-all duration-150"
-                  [class.border-gw-primary]="createForm.get('sessionMode')?.value === mode.value"
-                  [class.bg-gw-primary]="createForm.get('sessionMode')?.value === mode.value"
-                  [class.border-gw-card-border]="createForm.get('sessionMode')?.value !== mode.value"
-                  [class.bg-gw-bg]="createForm.get('sessionMode')?.value !== mode.value"
-                >
-                  <span
-                    class="flex h-8 w-8 items-center justify-center rounded-lg transition-all"
-                    [class.bg-white]="createForm.get('sessionMode')?.value === mode.value"
-                    [class.text-gw-primary]="createForm.get('sessionMode')?.value === mode.value"
-                    [class.bg-white]="createForm.get('sessionMode')?.value !== mode.value"
-                    [class.text-gw-text-muted]="createForm.get('sessionMode')?.value !== mode.value"
-                  >
-                    <i-lucide [img]="mode.icon" size="16"></i-lucide>
-                  </span>
-                  <div>
-                    <p class="text-[11px] font-bold uppercase tracking-wide leading-tight"
-                       [class.text-white]="createForm.get('sessionMode')?.value === mode.value"
-                       [class.text-gw-text]="createForm.get('sessionMode')?.value !== mode.value">
-                      {{ mode.label }}
-                    </p>
-                    <p class="text-[10px] mt-0.5 leading-tight"
-                       [class.text-white]="createForm.get('sessionMode')?.value === mode.value"
-                       [class.text-gw-text-muted]="createForm.get('sessionMode')?.value !== mode.value"
-                       style="opacity: 0.75">
-                      {{ mode.caption }}
-                    </p>
-                  </div>
-                </button>
-              }
+          <!-- Session Type + Max Members — read-only, derived from script -->
+          @if (selectedScript()) {
+            <div class="grid grid-cols-2 gap-4">
+              <div class="bg-white rounded-2xl border border-gw-card-border p-4 flex flex-col gap-1">
+                <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-gw-text-muted">Session Type</p>
+                <div class="flex items-center gap-2 mt-1">
+                  <i-lucide [img]="LayersIcon" size="15" class="text-gw-primary shrink-0"></i-lucide>
+                  <p class="text-[13px] font-bold text-gw-text">{{ derivedMode() }}</p>
+                </div>
+                <p class="text-[10px] text-gw-text-muted italic">From script</p>
+              </div>
+              <div class="bg-white rounded-2xl border border-gw-card-border p-4 flex flex-col gap-1">
+                <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-gw-text-muted">Members</p>
+                <div class="flex items-center gap-2 mt-1">
+                  <i-lucide [img]="UsersIcon" size="15" class="text-gw-primary shrink-0"></i-lucide>
+                  <p class="text-[13px] font-bold text-gw-text">{{ derivedMaxMembers() }}</p>
+                </div>
+                <p class="text-[10px] text-gw-text-muted italic">From script</p>
+              </div>
             </div>
-          </div>
+          }
 
           <!-- Script Selection -->
           <div class="bg-white rounded-2xl border border-gw-card-border p-5">
@@ -143,40 +116,12 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
             }
           </div>
 
-          <!-- Members + Duration -->
-          <div class="grid grid-cols-2 gap-4">
-
-            <!-- Max Members -->
-            <div class="bg-white rounded-2xl border border-gw-card-border p-5">
-              <label class="block text-[10px] font-bold uppercase tracking-[0.22em] text-gw-text-muted mb-3">Members</label>
-              <div class="flex items-center gap-3">
-                <button type="button" (click)="adjustMembers(-1)"
-                  class="w-9 h-9 rounded-lg bg-gw-bg flex items-center justify-center text-gw-text-muted hover:bg-gw-primary hover:text-white transition-all shrink-0">
-                  <i-lucide [img]="MinusIcon" size="15"></i-lucide>
-                </button>
-                <span class="flex-1 text-center text-2xl font-extrabold text-gw-text">
-                  {{ createForm.get('maxMembers')?.value }}
-                </span>
-                <button type="button" (click)="adjustMembers(1)"
-                  class="w-9 h-9 rounded-lg bg-gw-bg flex items-center justify-center text-gw-text-muted hover:bg-gw-primary hover:text-white transition-all shrink-0">
-                  <i-lucide [img]="PlusIcon" size="15"></i-lucide>
-                </button>
-              </div>
-              <div class="flex gap-1 mt-3 justify-center">
-                @for (i of [1,2,3,4,5]; track i) {
-                  <div class="h-1 flex-1 rounded-full transition-all"
-                    [class.bg-gw-primary]="i <= createForm.get('maxMembers')?.value"
-                    [class.bg-gw-bg]="i > createForm.get('maxMembers')?.value">
-                  </div>
-                }
-              </div>
-            </div>
-
-            <!-- Duration + Expiry -->
-            <div class="bg-white rounded-2xl border border-gw-card-border p-5">
-              <label class="block text-[10px] font-bold uppercase tracking-[0.22em] text-gw-text-muted mb-3">Duration</label>
+          <!-- Duration + Expiry -->
+          <div class="bg-white rounded-2xl border border-gw-card-border p-5">
+            <label class="block text-[10px] font-bold uppercase tracking-[0.22em] text-gw-text-muted mb-3">Duration &amp; Room Expiry</label>
+            <div class="grid grid-cols-2 gap-3">
               <select formControlName="sessionDuration"
-                class="w-full h-10 bg-gw-bg rounded-xl px-3 text-[13px] font-bold text-gw-text border-2 border-transparent focus:border-gw-primary outline-none cursor-pointer mb-2">
+                class="w-full h-10 bg-gw-bg rounded-xl px-3 text-[13px] font-bold text-gw-text border-2 border-transparent focus:border-gw-primary outline-none cursor-pointer">
                 <option [value]="15">15 minutes</option>
                 <option [value]="30">30 minutes</option>
                 <option [value]="45">45 minutes</option>
@@ -189,7 +134,6 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
                 <option value="24hr">Expires in 24 hrs</option>
               </select>
             </div>
-
           </div>
 
           <!-- Submit Button -->
@@ -237,21 +181,42 @@ export class CreateSessionComponent implements OnInit {
   }
 
   readonly SearchIcon = Search;
-  readonly MinusIcon = Minus;
-  readonly PlusIcon = Plus;
   readonly NextIcon = ChevronRight;
+  readonly UsersIcon = Users;
+  readonly ClockIcon = Clock;
+  readonly LayersIcon = Layers;
 
-  modes = [
-    { value: 1, label: 'Grammar Drill', caption: 'Grammar-led practice', icon: MessageSquare },
-    { value: 2, label: 'Roleplay', caption: 'Dialogue role rehearsal', icon: Users },
-    { value: 3, label: 'Mock Interview', caption: 'Interview simulation', icon: Layout },
-    { value: 4, label: 'Vocabulary Sprint', caption: 'Quick word recall', icon: Zap },
-    { value: 5, label: 'Fluency Drill', caption: 'Flow and pace work', icon: Mic2 },
-    { value: 6, label: 'Repractice Round', caption: 'Repeat weak spots', icon: RotateCcw }
-  ];
+  private readonly categoryModeMap: Record<string, string> = {
+    'Grammar Drill': 'Grammar Drill',
+    'Roleplay': 'Roleplay',
+    'Mock Interview': 'Mock Interview',
+    'Interview': 'Mock Interview',
+    'Vocabulary Sprint': 'Vocabulary Sprint',
+    'Vocabulary': 'Vocabulary Sprint',
+    'Fluency Drill': 'Fluency Drill',
+    'Repractice Round': 'Repractice Round',
+    'Repetition': 'Repractice Round'
+  };
 
   isLoading = signal(false);
   selectedScript = signal<Script | null>(null);
+
+  derivedMode = computed(() => {
+    const cat = this.selectedScript()?.category ?? '';
+    return this.categoryModeMap[cat] ?? cat;
+  });
+
+  derivedMaxMembers = computed(() => {
+    // Distinct speaker labels count is not in the script list payload —
+    // the backend derives it from utterances on creation. Display category default.
+    const cat = this.selectedScript()?.category ?? '';
+    const defaults: Record<string, number> = {
+      'Grammar Drill': 2, 'Roleplay': 2, 'Mock Interview': 2,
+      'Interview': 2, 'Vocabulary Sprint': 2, 'Vocabulary': 2,
+      'Fluency Drill': 2, 'Repractice Round': 2, 'Repetition': 2
+    };
+    return defaults[cat] ?? 2;
+  });
 
   scriptSearch = new FormControl('');
   filteredScripts = signal<Script[]>([]);
@@ -262,8 +227,6 @@ export class CreateSessionComponent implements OnInit {
   private updateFormValid() {
     this.formValid.set(
       !!this.createForm.get('sessionName')?.valid &&
-      !!this.createForm.get('sessionMode')?.valid &&
-      !!this.createForm.get('maxMembers')?.valid &&
       !!this.createForm.get('sessionDuration')?.valid &&
       !!this.createForm.get('roomExpiry')?.valid &&
       !!this.createForm.get('scriptId')?.value
@@ -272,9 +235,7 @@ export class CreateSessionComponent implements OnInit {
 
   createForm: FormGroup = this.fb.group({
     sessionName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(60)]],
-    sessionMode: [1, Validators.required],
     scriptId: ['', Validators.required],
-    maxMembers: [4, [Validators.required, Validators.min(2), Validators.max(5)]],
     sessionDuration: [30, Validators.required],
     roomExpiry: ['1hr', Validators.required]
   });
@@ -314,9 +275,7 @@ export class CreateSessionComponent implements OnInit {
   }
 
   selectScript(script: Script) {
-    this.createForm.patchValue({
-      scriptId: script.id
-    });
+    this.createForm.patchValue({ scriptId: script.id });
     this.selectedScript.set(script);
     this.scriptSearch.setValue(script.scriptTitle, { emitEvent: false });
     this.showScriptDropdown.set(false);
@@ -330,18 +289,6 @@ export class CreateSessionComponent implements OnInit {
     this.showScriptDropdown.set(false);
   }
 
-  selectMode(modeValue: number) {
-    this.createForm.get('sessionMode')?.setValue(modeValue);
-  }
-
-  adjustMembers(delta: number) {
-    const current = this.createForm.get('maxMembers')?.value;
-    const next = current + delta;
-    if (next >= 2 && next <= 5) {
-      this.createForm.get('maxMembers')?.setValue(next);
-    }
-  }
-
   onSubmit() {
     if (!this.canCreateSession()) {
       this.createForm.markAllAsTouched();
@@ -352,8 +299,6 @@ export class CreateSessionComponent implements OnInit {
     const roomExpiryMap: Record<string, number> = { '1hr': 60, '6hr': 360, '24hr': 1440 };
     const payload = {
       sessionName: this.createForm.value.sessionName,
-      sessionMode: Number(this.createForm.value.sessionMode),
-      maxMembers: this.createForm.value.maxMembers,
       sessionDuration: this.createForm.value.sessionDuration,
       scriptId: Number(this.createForm.value.scriptId),
       roomExpiryMinutes: roomExpiryMap[this.createForm.value.roomExpiry] ?? 60

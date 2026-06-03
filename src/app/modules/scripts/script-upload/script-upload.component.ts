@@ -231,22 +231,6 @@ import { RouterLink } from '@angular/router';
               </div>
 
               <div class="space-y-2">
-                <label class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted px-2">Grammar Focus</label>
-                <select formControlName="grammarFocusTag" class="w-full h-14 bg-gw-bg/50 border-2 border-transparent focus:border-gw-primary rounded-2xl px-6 font-bold text-gw-text outline-none appearance-none transition-all">
-                  <option value="Have Been">Have Been</option>
-                  <option value="Has Been">Has Been</option>
-                  <option value="Must Be">Must Be</option>
-                  <option value="Should Be">Should Be</option>
-                  <option value="Can Be">Can Be</option>
-                  <option value="Was/Were">Was/Were</option>
-                  <option value="Did/Didn't">Did/Didn't</option>
-                  <option value="Will Be">Will Be</option>
-                  <option value="Had Been">Had Been</option>
-                  <option value="Would Have">Would Have</option>
-                </select>
-              </div>
-
-              <div class="space-y-2">
                 <label class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted px-2">Complexity*</label>
                 <div class="flex gap-3">
                   @for (level of [1, 2, 3, 4, 5]; track level) {
@@ -454,11 +438,11 @@ export class ScriptUploadComponent {
   metadataForm: FormGroup = this.fb.group({
     scriptTitle: ['', Validators.required],
     category: ['Grammar Drill', Validators.required],
-    grammarFocusTag: ['Have Been'],
-    contextTag: ['Office'],
+    grammarFocusTag: ['Have Been'],   // hidden default — derived from GrammarTag column on backend
+    contextTag: ['Office'],           // hidden default — admin analytics only
     complexityLevel: [3, Validators.required],
     targetAgeGroup: ['Adult', Validators.required],
-    hintLanguage: ['Telugu', Validators.required]
+    hintLanguage: ['Telugu']          // hardcoded — no UI control
   });
 
   onFileSelect(event: any) {
