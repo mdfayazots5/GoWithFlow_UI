@@ -22,7 +22,7 @@ export class VoiceFeedbackComponent implements OnChanges {
 
   overallBand: FeedbackBand | null = null;
   wordColorMap: { word: string; css: string; tooltip: string; isMissing: boolean }[] = [];
-  showDetailedBreakdown = false;
+  showDetailedBreakdown = true;
 
   private bands: { min: number; max: number; data: FeedbackBand }[] = [
     { min: 90, max: 100, data: { label: 'Excellent!',    emoji: '🌟', color: '#1B5E20', bg: '#E8F5E9' } },

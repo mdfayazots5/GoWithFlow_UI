@@ -358,7 +358,10 @@ export class VoiceRecognitionEngine implements OnDestroy {
 
     this.recognition = new SpeechRecognition();
     this.recognition.lang = 'en-IN';
-    this.recognition.continuous = !this.isIOS;  // iOS cannot do continuous recognition
+    // continuous=true only on desktop — mobile Chrome with continuous=true fires onend
+    // every ~5 s (internal browser timeout) causing restart bells mid-speech.
+    // With continuous=false the browser handles end-of-speech naturally and isFinal fires reliably.
+    this.recognition.continuous = !this.isIOS && !this._isMobile;
     this.recognition.interimResults = true;
     this.recognition.maxAlternatives = 3;
 
@@ -486,19 +489,26 @@ export class VoiceRecognitionEngine implements OnDestroy {
       // suppress any restart logic so the browser does not play a second start bell.
       if (this._intentionalStop) return;
 
-      if (this.allFinalTranscripts.length > 0 && this.state$.value === 'listening') {
-        // Recognition ended with captured speech — finalize now
-        this.finalize(expectedText, resolve);
-      } else if (this.state$.value === 'listening' && !this.isIOS) {
-        // Recognition ended unexpectedly before any speech.
-        // Create a fresh recognition instance — reusing the ended instance via
-        // .start() is unreliable on Android Chrome and silently fails.
+      if (this.state$.value !== 'listening') return;
+
+      if (this.allFinalTranscripts.length > 0) {
+        if (this._isMobile && !this.isIOS) {
+          // Mobile (continuous=false): onend fires after each utterance — restart
+          // for more speech. The silence timer fires finalize when user truly stops.
+          try { this.recognition.start(); } catch (e) { /* ignore */ }
+        } else {
+          // Desktop (continuous=true): onend with finals means recognition ended cleanly
+          this.finalize(expectedText, resolve);
+        }
+        // iOS: onresult already restarted recognition; silence timer handles finalize
+      } else if (!this.isIOS) {
+        // No finals yet — restart to keep listening
         if (this.retryCount < this.maxRetries) {
           this.retryCount++;
-          console.debug('[VRE] Unexpected onend — creating fresh recognition instance', this.retryCount);
+          console.debug('[VRE] Unexpected onend — restarting', this.retryCount);
           setTimeout(() => {
             if (this.state$.value === 'listening') {
-              this.startRecognition(expectedText, resolve, reject);
+              try { this.recognition.start(); } catch (e) { /* ignore */ }
             }
           }, 300);
         }
