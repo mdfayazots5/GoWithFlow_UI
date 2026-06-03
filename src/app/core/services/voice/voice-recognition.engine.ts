@@ -153,7 +153,13 @@ export class VoiceRecognitionEngine implements OnDestroy {
       throw new Error('Microphone permission denied. Please allow microphone access and try again.');
     }
 
-    await this.vad.start();
+    // Skip VAD on mobile — the VAD's getUserMedia stream conflicts with the
+    // Web Speech API's internal audio pipeline on Android Chrome, causing
+    // speech recognition to receive no audio (zero onresult events).
+    // On mobile, continuous=false lets the browser handle end-of-speech natively.
+    if (!this._isMobile) {
+      await this.vad.start();
+    }
 
     if (this.captureAudio) {
       this.audioChunks = [];
