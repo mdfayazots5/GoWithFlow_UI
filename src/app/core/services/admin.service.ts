@@ -114,10 +114,12 @@ export class AdminService {
           preferredHintLanguage: d.preferredHintLanguage,
           avgFluencyScore:      d.avgFluencyScore ?? 0,
           recentSessions:       (d.recentSessions || []).map((s: any) => ({
-            id:    s.sessionId ?? s.id,
-            title: s.scriptTitle ?? s.title,
-            date:  s.sessionDate ?? s.date,
-            score: s.fluencyScore ?? s.score,
+            id:           s.sessionId,
+            sessionName:  s.sessionName,
+            date:         s.date,
+            duration:     s.duration     ?? 0,
+            fluencyScore: s.fluencyScore ?? 0,
+            mistakeCount: s.mistakeCount ?? 0,
           })),
         } as AdminUserDetail;
       })

@@ -103,20 +103,38 @@ import {
                 <div class="overflow-x-auto">
                   <table class="w-full">
                     <thead>
-                      <tr class="border-b border-gw-card-border">
+                      <tr class="border-b border-gw-card-border bg-gw-bg/50">
                         <th class="px-5 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Session</th>
                         <th class="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gw-text-muted hidden sm:table-cell">Date</th>
-                        <th class="px-4 py-3 text-right text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Score</th>
+                        <th class="px-4 py-3 text-center text-[10px] font-black uppercase tracking-widest text-gw-text-muted hidden md:table-cell">Duration</th>
+                        <th class="px-4 py-3 text-center text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Score</th>
+                        <th class="px-4 py-3 text-center text-[10px] font-black uppercase tracking-widest text-gw-text-muted hidden sm:table-cell">Mistakes</th>
                       </tr>
                     </thead>
                     <tbody>
                       @for (s of user()!.recentSessions; track s.id) {
                         <tr class="border-b border-gw-card-border/50 last:border-0 hover:bg-gw-bg/40 transition-colors">
-                          <td class="px-5 py-3.5 text-sm font-bold text-gw-text">{{ s.title }}</td>
-                          <td class="px-4 py-3.5 text-xs text-gw-text-muted hidden sm:table-cell">
+                          <td class="px-5 py-3.5 text-sm font-bold text-gw-text max-w-[180px] truncate">
+                            {{ s.sessionName }}
+                          </td>
+                          <td class="px-4 py-3.5 text-xs text-gw-text-muted hidden sm:table-cell whitespace-nowrap">
                             {{ s.date | date:'d MMM y' }}
                           </td>
-                          <td class="px-4 py-3.5 text-right text-sm font-black text-gw-success">{{ s.score }}%</td>
+                          <td class="px-4 py-3.5 text-center text-xs text-gw-text-muted hidden md:table-cell whitespace-nowrap">
+                            {{ s.duration }}m
+                          </td>
+                          <td class="px-4 py-3.5 text-center">
+                            <span class="text-sm font-black"
+                                  [class]="s.fluencyScore >= 75 ? 'text-gw-success' : s.fluencyScore >= 50 ? 'text-amber-500' : 'text-red-500'">
+                              {{ s.fluencyScore | number:'1.0-0' }}%
+                            </span>
+                          </td>
+                          <td class="px-4 py-3.5 text-center hidden sm:table-cell">
+                            <span class="text-xs font-black px-2 py-0.5 rounded-lg"
+                                  [class]="s.mistakeCount === 0 ? 'bg-gw-success/10 text-gw-success' : 'bg-amber-50 text-amber-600'">
+                              {{ s.mistakeCount }}
+                            </span>
+                          </td>
                         </tr>
                       }
                     </tbody>
