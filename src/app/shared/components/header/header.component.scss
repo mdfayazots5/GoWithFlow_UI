@@ -3,17 +3,18 @@
 }
 
 .app-header {
-  height: 60px;
+  height: clamp(52px, 12vw, 60px);
   background: var(--gwf-card-bg);
   border-bottom: 1px solid var(--gwf-card-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 16px;
+  padding: 0 clamp(12px, 3vw, 16px);
   position: sticky;
   top: 0;
   z-index: 100;
   flex-shrink: 0;
+  overflow: hidden;
 }
 
 .header-left {
@@ -22,9 +23,12 @@
 }
 
 .header-logo {
-  font-size: 18px;
+  font-size: clamp(15px, 3.5vw, 18px);
   font-weight: 700;
   color: var(--gwf-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .header-right {

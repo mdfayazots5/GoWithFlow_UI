@@ -161,9 +161,9 @@ type PresenceToast = {
         </div>
       }
 
-      <!-- Main Content: flex-1, no outer scroll, content fills remaining height -->
-      <div class="flex-1 min-h-0 overflow-hidden">
-        <div class="max-w-[480px] mx-auto h-full px-4 py-3 flex flex-col justify-center">
+      <!-- Main Content: scrollable, safe-area aware -->
+      <div class="flex-1 min-h-0 overflow-y-auto">
+        <div class="max-w-[480px] mx-auto px-4 pt-3" style="padding-bottom: max(24px, env(safe-area-inset-bottom, 24px))">
           @if (isLoading()) {
             <div class="flex flex-col items-center gap-3">
               <div class="w-10 h-10 border-4 border-gw-primary border-t-transparent rounded-full animate-spin"></div>

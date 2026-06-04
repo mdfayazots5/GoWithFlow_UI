@@ -23,8 +23,8 @@
 // ── WAVEFORM ─────────────────────────────────────────────────────────────────
 .waveform-wrapper {
   width: 100%;
-  max-width: 300px;
-  height: 44px;
+  max-width: min(300px, 100%);
+  height: clamp(36px, 8vw, 44px);
   border-radius: 8px;
   overflow: hidden;
   background: rgba(61, 90, 153, 0.06);
@@ -39,12 +39,14 @@
 // ── INTERIM TRANSCRIPT ───────────────────────────────────────────────────────
 .interim-transcript {
   width: 100%;
-  max-width: 300px;
+  max-width: min(300px, 100%);
   min-height: 28px;
   padding: 6px 10px;
   background: rgba(61, 90, 153, 0.07);
   border-radius: 8px;
   border-left: 3px solid var(--ls-primary);
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .interim-text {
@@ -73,8 +75,8 @@
 
 // ── MIC BUTTON ───────────────────────────────────────────────────────────────
 .mic-button {
-  width: 70px;
-  height: 70px;
+  width: clamp(58px, 14vw, 70px);
+  height: clamp(58px, 14vw, 70px);
   border-radius: 50%;
   background: var(--ls-primary);
   border: none;
@@ -85,6 +87,7 @@
   box-shadow: 0 4px 14px rgba(61, 90, 153, 0.35);
   transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
   position: relative;
+  flex-shrink: 0;
 
   &:hover:not(:disabled) {
     background: #2d4a80;

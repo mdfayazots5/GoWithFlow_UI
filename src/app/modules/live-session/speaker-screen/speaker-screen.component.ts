@@ -62,11 +62,11 @@ export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDe
   /** Dynamic font size: shorter questions get larger text, longer ones shrink gracefully */
   get questionFontSize(): string {
     const len = this.turnState?.utterance?.englishText?.length ?? 0;
-    if (len <= 25)  return 'clamp(1.9rem, 6.5vw, 2.75rem)';
-    if (len <= 50)  return 'clamp(1.55rem, 5vw, 2.25rem)';
-    if (len <= 80)  return 'clamp(1.25rem, 4vw, 1.75rem)';
-    if (len <= 120) return 'clamp(1.05rem, 3.5vw, 1.4rem)';
-    return 'clamp(0.9rem, 3vw, 1.15rem)';
+    if (len <= 25)  return 'clamp(1.15rem, 4.5vw, 1.55rem)';
+    if (len <= 50)  return 'clamp(1rem, 3.8vw, 1.3rem)';
+    if (len <= 80)  return 'clamp(0.9rem, 3.2vw, 1.15rem)';
+    if (len <= 120) return 'clamp(0.82rem, 2.8vw, 1.05rem)';
+    return 'clamp(0.75rem, 2.4vw, 0.95rem)';
   }
 
   /** Show Try Again for performance turns only when the backend allows re-reads. Hidden on facilitator turns. */
@@ -105,7 +105,10 @@ export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDe
       if (this.analysisPhase === 'recording'
           && this.sessionPrefs.prefs.defaultVoiceStarter
           && !this.voiceEngine.isMobileDevice) {
+        console.warn('[BELL] Auto-start queued — bell will fire in 700ms on desktop', { isMobile: this.voiceEngine.isMobileDevice });
         this._pendingAutoStart = true;
+      } else {
+        console.warn('[BELL] Auto-start SKIPPED — mobile device, user must tap mic', { isMobile: this.voiceEngine.isMobileDevice });
       }
     }
   }

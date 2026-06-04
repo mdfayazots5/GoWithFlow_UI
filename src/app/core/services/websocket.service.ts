@@ -16,7 +16,13 @@ export class WebsocketService {
     const hubUrl = `${environment.wsBaseUrl}/hubs/${hubPath}`;
 
     if (this.connection) {
-      return;
+      // If already connected to the same hub, reuse it
+      if (this.connection.baseUrl?.includes(`/hubs/${hubPath}`)) return;
+      // Different hub — disconnect first
+      this.connection.stop().catch(() => {});
+      this.connection = null;
+      this.connectionStartPromise = null;
+      this.messageSubjects = {};
     }
 
     const qs = sessionId

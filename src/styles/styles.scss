@@ -29,6 +29,7 @@
 html {
   font-size: 15px;
   -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
 }
 
 body {
@@ -37,8 +38,13 @@ body {
   color: var(--gwf-text);
   line-height: 1.6;
   overflow: hidden; /* CRITICAL: prevents body-level scroll */
+  overflow-x: hidden;
   margin: 0;
   padding: 0;
+}
+
+@media (max-width: 480px) {
+  html { font-size: 14px; }
 }
 
 /* 4. ALL Angular Material button MDC overrides */
@@ -162,12 +168,12 @@ body {
   margin-bottom: 8px;
 }
 .gwf-stat-card-value {
-  font-size: 24px;
+  font-size: clamp(18px, 4.5vw, 24px);
   font-weight: 700;
   line-height: 1.2;
 }
 .gwf-stat-card-label {
-  font-size: 12px;
+  font-size: clamp(10px, 2vw, 12px);
   color: var(--gwf-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -193,11 +199,13 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: clamp(16px, 4vw, 24px);
 }
 
 .gwf-page-title {
-  font-size: 22px;
+  font-size: clamp(17px, 4.5vw, 22px);
   font-weight: 700;
   margin: 0;
 }
@@ -314,12 +322,17 @@ body {
   }
 }
 
-/* 14. Mobile override */
+/* 14. Mobile overrides */
 @media (max-width: 480px) {
-  html {
-    font-size: 14px;
-  }
   .gwf-card {
-    padding: 16px;
+    padding: clamp(12px, 3vw, 16px);
+    border-radius: 10px;
+  }
+  .gwf-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .mat-mdc-cell {
+    font-size: 12px !important;
   }
 }

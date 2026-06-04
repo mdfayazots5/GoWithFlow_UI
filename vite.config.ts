@@ -27,6 +27,9 @@ export default defineConfig(() => {
       strictPort: true,
       host: '0.0.0.0',
       hmr: process.env['DISABLE_HMR'] !== 'true',
+      watch: {
+        ignored: ['**/android/**', '**/node_modules/**', '**/dist/**'],
+      },
       proxy: {
         '/api': {
           target: 'https://localhost:44378',

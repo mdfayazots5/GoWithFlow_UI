@@ -145,7 +145,14 @@ export class VoiceRecognitionEngine implements OnDestroy {
       });
     }
 
-    console.debug('[VRE] startSession', { isMobile: this._isMobile, expectedText: expectedText.substring(0, 40) });
+    console.debug('[VRE] startSession', { isMobile: this._isMobile, isCapacitorNative: this.isCapacitorNative, expectedText: expectedText.substring(0, 40) });
+
+    // On Capacitor native (Android/iOS), skip the web-based mic permission check —
+    // getUserMedia is blocked on HTTP dev server and the native plugin handles
+    // its own permission request inside startNativeSession().
+    if (this.isCapacitorNative) {
+      return this.startNativeSession(expectedText);
+    }
 
     const permitted = await this.requestMicPermission();
     if (!permitted) {
@@ -173,10 +180,6 @@ export class VoiceRecognitionEngine implements OnDestroy {
         };
         this.mediaRecorder.start(100);
       } catch { /* audio capture is best-effort */ }
-    }
-
-    if (this.isCapacitorNative) {
-      return this.startNativeSession(expectedText);
     }
 
     return new Promise((resolve, reject) => {
@@ -222,47 +225,116 @@ export class VoiceRecognitionEngine implements OnDestroy {
       }
     }
 
+    if (this._intentionalStop) {
+      this.state$.next('idle');
+      return this.buildEmptyResult(expectedText);
+    }
+
     this.startTimeMs = Date.now();
     this.state$.next('listening');
 
-    this.nativeSpeechListener = await NativeSpeechRecognition.addListener(
-      'partialResults',
-      (data: { matches: string[] }) => {
-        if (data.matches?.length > 0) {
-          this.interimTranscript$.next(data.matches[0]);
-        }
-      }
-    );
+    // plugin v7 — start() resolves immediately (fire-and-forget).
+    // Actual speech arrives via partialResults events. We resolve the promise
+    // after 2.5s of silence following the last partial result, or after 15s max.
+    return new Promise<VoiceSessionResult>(async (resolve, reject) => {
+      let latestTranscript = '';
+      let lastTranscriptSeen = '';
+      let silenceTimer: any = null;
+      let hardTimeout: any = null;
+      let settled = false;
 
-    try {
-      const result = await NativeSpeechRecognition.start({
+      const settle = (fn: () => void) => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(silenceTimer);
+        clearTimeout(hardTimeout);
+        // Remove listener without waiting — non-blocking
+        if (this.nativeSpeechListener) {
+          this.nativeSpeechListener.remove();
+          this.nativeSpeechListener = null;
+        }
+        this.interimTranscript$.next('');
+        fn();
+      };
+
+      const finalizeWithTranscript = () => settle(() => {
+        if (this._intentionalStop) {
+          this.state$.next('idle');
+          resolve(this.buildEmptyResult(expectedText));
+          return;
+        }
+        if (!latestTranscript) {
+          this.state$.next('error');
+          this.vad.stop();
+          reject(new Error('No speech detected. Please tap the mic and speak clearly.'));
+          return;
+        }
+        resolve(this.finalizeNative(expectedText, latestTranscript));
+      });
+
+      // If stopSession() is called externally (user taps mic to stop),
+      // finalize with whatever transcript was captured — don't discard speech.
+      const stopPoll = setInterval(() => {
+        if (this._intentionalStop) {
+          clearInterval(stopPoll);
+          NativeSpeechRecognition.stop().catch(() => {});
+          settle(() => {
+            if (latestTranscript) {
+              resolve(this.finalizeNative(expectedText, latestTranscript));
+            } else {
+              this.state$.next('idle');
+              resolve(this.buildEmptyResult(expectedText));
+            }
+          });
+        }
+      }, 100);
+
+      // Hard timeout — 15s max
+      hardTimeout = setTimeout(() => {
+        clearInterval(stopPoll);
+        NativeSpeechRecognition.stop().catch(() => {});
+        finalizeWithTranscript();
+      }, 15000);
+
+      // Await listener registration so the handle is stored before start() fires
+      this.nativeSpeechListener = await NativeSpeechRecognition.addListener(
+        'partialResults',
+        (data: { matches: string[] }) => {
+          if (settled) return;
+          if (data?.matches?.length > 0) {
+            latestTranscript = data.matches[0];
+            this.interimTranscript$.next(latestTranscript);
+
+            // Only reset silence timer when transcript actually changes
+            if (latestTranscript !== lastTranscriptSeen) {
+              lastTranscriptSeen = latestTranscript;
+              clearTimeout(silenceTimer);
+              silenceTimer = setTimeout(() => {
+                clearInterval(stopPoll);
+                NativeSpeechRecognition.stop().catch(() => {});
+                finalizeWithTranscript();
+              }, 2500);
+            }
+          }
+        }
+      );
+
+      if (settled) return; // stopSession() called while awaiting addListener
+
+      NativeSpeechRecognition.start({
         language: 'en-IN',
         maxResults: 3,
         partialResults: true,
         popup: false,
+      }).catch((e: any) => {
+        clearInterval(stopPoll);
+        settle(() => {
+          this.state$.next('error');
+          this.vad.stop();
+          reject(new Error(`Speech recognition error: ${e?.message ?? e}`));
+        });
       });
-
-      this.nativeSpeechListener.remove();
-      this.nativeSpeechListener = null;
-
-      if (this._intentionalStop) {
-        // stopSession() was called mid-recognition — return empty result
-        this.state$.next('idle');
-        return this.buildEmptyResult(expectedText);
-      }
-
-      const transcript = (result as any).matches?.[0] ?? '';
-      return this.finalizeNative(expectedText, transcript);
-
-    } catch (e: any) {
-      if (this.nativeSpeechListener) {
-        this.nativeSpeechListener.remove();
-        this.nativeSpeechListener = null;
-      }
-      this.vad.stop();
-      this.state$.next('error');
-      throw new Error(`Native speech recognition error: ${e?.message ?? e}`);
-    }
+    });
   }
 
   private finalizeNative(expectedText: string, transcript: string): VoiceSessionResult {
@@ -443,6 +515,7 @@ export class VoiceRecognitionEngine implements OnDestroy {
           && !this._intentionalStop
           && this.state$.value === 'listening'
           && event.results[event.results.length - 1].isFinal) {
+        console.warn('[BELL] iOS restart after final result — bell will fire', { finals: this.allFinalTranscripts.length });
         try { this.recognition.start(); } catch (e) { /* already started */ }
       }
     };
@@ -474,7 +547,7 @@ export class VoiceRecognitionEngine implements OnDestroy {
       const retryable = ['network', 'audio-capture', 'no-speech'];
       if (retryable.includes(event.error) && this.retryCount < this.maxRetries) {
         this.retryCount++;
-        console.debug('[VRE] Retrying after error', { error: event.error, attempt: this.retryCount });
+        console.warn('[BELL] Retry after error — bell will fire on restart', { error: event.error, attempt: this.retryCount });
         setTimeout(() => this.startRecognition(expectedText, resolve, reject), 500);
       } else {
         this.state$.next('error');
@@ -501,6 +574,7 @@ export class VoiceRecognitionEngine implements OnDestroy {
         if (this._isMobile && !this.isIOS) {
           // Mobile (continuous=false): onend fires after each utterance — restart
           // for more speech. The silence timer fires finalize when user truly stops.
+          console.warn('[BELL] Mobile onend restart after finals — bell will fire', { finals: this.allFinalTranscripts.length });
           try { this.recognition.start(); } catch (e) { /* ignore */ }
         } else {
           // Desktop (continuous=true): onend with finals means recognition ended cleanly
@@ -511,7 +585,7 @@ export class VoiceRecognitionEngine implements OnDestroy {
         // No finals yet — restart to keep listening
         if (this.retryCount < this.maxRetries) {
           this.retryCount++;
-          console.debug('[VRE] Unexpected onend — restarting', this.retryCount);
+          console.warn('[BELL] Unexpected onend — restarting, bell will fire', { attempt: this.retryCount });
           setTimeout(() => {
             if (this.state$.value === 'listening') {
               try { this.recognition.start(); } catch (e) { /* ignore */ }
@@ -526,6 +600,12 @@ export class VoiceRecognitionEngine implements OnDestroy {
     const fallbackMs = this._isMobile ? 12000 : 8000;
     this.resetSilenceTimeout(() => this.finalize(expectedText, resolve), fallbackMs);
 
+    console.warn('[BELL] Initial recognition.start() — bell will fire now', {
+      isMobile: this._isMobile,
+      isIOS: this.isIOS,
+      continuous: this.recognition.continuous,
+      retryCount: this.retryCount
+    });
     try {
       this.recognition.start();
     } catch (e) {

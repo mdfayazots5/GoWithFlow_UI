@@ -5,7 +5,8 @@ const config: CapacitorConfig = {
   appName: 'GoWithFlow',
   webDir: 'dist/analog/public',
   server: {
-    androidScheme: 'https'
+    url: 'http://10.147.254.186:4200',
+    cleartext: true
   }
 };
 

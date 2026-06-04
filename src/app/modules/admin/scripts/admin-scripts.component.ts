@@ -18,57 +18,58 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
     <div class="space-y-5">
 
       <!-- Page Header -->
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-gw-primary/10 flex items-center justify-center">
+      <div class="flex items-center justify-between gap-3 flex-wrap">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-10 h-10 rounded-2xl bg-gw-primary/10 flex items-center justify-center flex-shrink-0">
             <i-lucide [img]="ScriptIcon" size="20" class="text-gw-primary"></i-lucide>
           </div>
-          <div>
-            <h1 class="text-lg font-black text-gw-text uppercase tracking-wide">Scripts</h1>
+          <div class="min-w-0">
+            <h1 class="text-base font-black text-gw-text uppercase tracking-wide truncate">Scripts</h1>
             <p class="text-xs text-gw-text-muted font-medium">
               {{ loading() ? 'Loading...' : totalCount() + ' total scripts' }}
             </p>
           </div>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 flex-shrink-0">
           <a routerLink="/admin/script-analytics"
-            class="flex items-center gap-2 h-10 px-4 bg-gw-bg text-gw-text-muted font-black text-xs uppercase tracking-widest rounded-xl hover:bg-gw-primary/10 hover:text-gw-primary transition-all">
+            class="flex items-center gap-2 h-10 px-3 bg-gw-bg text-gw-text-muted font-black text-xs uppercase tracking-widest rounded-xl hover:bg-gw-primary/10 hover:text-gw-primary transition-all">
             Analytics
           </a>
           <button (click)="goToUpload()"
-            class="flex items-center gap-2 h-10 px-4 bg-gw-primary text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-sm hover:opacity-90 transition-opacity">
+            class="flex items-center gap-2 h-10 px-3 bg-gw-primary text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-sm hover:opacity-90 transition-opacity">
             <i-lucide [img]="PlusIcon" size="15"></i-lucide>
-            Upload Script
+            <span class="hidden sm:inline">Upload Script</span>
+            <span class="sm:hidden">Upload</span>
           </button>
         </div>
       </div>
 
       <!-- Stats Row -->
-      <div class="grid grid-cols-3 gap-4">
-        <div class="bg-white border border-gw-card-border rounded-2xl p-4 flex items-center gap-4 shadow-sm">
-          <div class="w-11 h-11 rounded-xl bg-gw-primary/10 flex items-center justify-center flex-shrink-0">
-            <i-lucide [img]="ScriptIcon" size="20" class="text-gw-primary"></i-lucide>
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div class="bg-white border border-gw-card-border rounded-2xl p-4 flex items-center gap-3 shadow-sm">
+          <div class="w-10 h-10 rounded-xl bg-gw-primary/10 flex items-center justify-center flex-shrink-0">
+            <i-lucide [img]="ScriptIcon" size="18" class="text-gw-primary"></i-lucide>
           </div>
-          <div>
-            <p class="text-2xl font-black text-gw-text leading-none">{{ totalCount() }}</p>
+          <div class="min-w-0">
+            <p class="text-xl font-black text-gw-text leading-none">{{ totalCount() }}</p>
             <p class="text-[10px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Total Scripts</p>
           </div>
         </div>
-        <div class="bg-white border border-gw-card-border rounded-2xl p-4 flex items-center gap-4 shadow-sm">
-          <div class="w-11 h-11 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
-            <i-lucide [img]="ActiveIcon" size="20" class="text-green-600"></i-lucide>
+        <div class="bg-white border border-gw-card-border rounded-2xl p-4 flex items-center gap-3 shadow-sm">
+          <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
+            <i-lucide [img]="ActiveIcon" size="18" class="text-green-600"></i-lucide>
           </div>
-          <div>
-            <p class="text-2xl font-black text-gw-text leading-none">{{ activeCount() }}</p>
+          <div class="min-w-0">
+            <p class="text-xl font-black text-gw-text leading-none">{{ activeCount() }}</p>
             <p class="text-[10px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Active Scripts</p>
           </div>
         </div>
-        <div class="bg-white border border-gw-card-border rounded-2xl p-4 flex items-center gap-4 shadow-sm">
-          <div class="w-11 h-11 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
-            <i-lucide [img]="LinesIcon" size="20" class="text-orange-500"></i-lucide>
+        <div class="bg-white border border-gw-card-border rounded-2xl p-4 flex items-center gap-3 shadow-sm">
+          <div class="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center flex-shrink-0">
+            <i-lucide [img]="LinesIcon" size="18" class="text-orange-500"></i-lucide>
           </div>
-          <div>
-            <p class="text-2xl font-black text-gw-text leading-none">{{ totalUtterances() }}</p>
+          <div class="min-w-0">
+            <p class="text-xl font-black text-gw-text leading-none">{{ totalUtterances() }}</p>
             <p class="text-[10px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Total Lines</p>
           </div>
         </div>

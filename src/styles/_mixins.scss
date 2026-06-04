@@ -40,7 +40,7 @@
   background: $color-card-bg;
   border: 1px solid $color-card-border;
   border-radius: $border-radius-lg;
-  padding: 20px;
+  padding: clamp(14px, 3vw, 20px);
   box-shadow: $shadow-sm;
 }
 
@@ -67,7 +67,7 @@
   color: #FFFFFF;
   border: none;
   border-radius: $border-radius-md;
-  padding: 8px 16px;
+  padding: clamp(7px, 1.5vw, 10px) clamp(12px, 3vw, 16px);
   font-weight: 500;
   cursor: pointer;
   transition: $transition-base;

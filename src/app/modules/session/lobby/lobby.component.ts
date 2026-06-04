@@ -100,6 +100,8 @@ export class LobbyComponent implements OnInit, OnDestroy {
   private startStatusPollHandle: ReturnType<typeof setTimeout> | null = null;
   private startStatusPollAttempts = 0;
 
+  private sessionActivePollHandle: any = null;
+
   ngOnInit() {
     this.route.params.subscribe(params => {
       this.sessionId = params['sessionId'];
@@ -108,16 +110,45 @@ export class LobbyComponent implements OnInit, OnDestroy {
         const userId = localStorage.getItem('gwf_userId') ?? '';
         this.wsService.connect(this.sessionId, userId, 'session');
         this.subscribeToLobbyEvents();
+        this.startSessionActivePoll();
       }
     });
   }
 
   ngOnDestroy() {
     this.clearStartStatusPoll();
+    this.stopSessionActivePoll();
     // Do not call leaveSession on destroy — a page reload would prematurely mark the
     // member as left and abandon the session. The backend grace window (20 s) handles
     // genuine disconnects; explicit leave is only issued via leaveSession().
     this.wsService.disconnect();
+  }
+
+  // Polls every 3s so participants don't miss SESSION_STARTED if SignalR drops
+  private startSessionActivePoll() {
+    this.sessionActivePollHandle = setInterval(() => {
+      if (this.hasLeft || !this.sessionId) {
+        this.stopSessionActivePoll();
+        return;
+      }
+      this.sessionService.getLobbyState(this.sessionId).subscribe({
+        next: (state) => {
+          if (state.session?.status === 'ACTIVE' && !this.hasLeft) {
+            this.stopSessionActivePoll();
+            this.hasLeft = true;
+            this.navigateToLiveSession(this.sessionId);
+          }
+        },
+        error: () => { /* ignore poll errors */ }
+      });
+    }, 3000);
+  }
+
+  private stopSessionActivePoll() {
+    if (this.sessionActivePollHandle) {
+      clearInterval(this.sessionActivePollHandle);
+      this.sessionActivePollHandle = null;
+    }
   }
 
   private subscribeToLobbyEvents() {
@@ -336,18 +367,8 @@ export class LobbyComponent implements OnInit, OnDestroy {
   }
 
   private navigateToLiveSession(sessionId: string) {
-    const targetUrl = `/live-session/room/${sessionId}`;
-
-    void this.router.navigateByUrl(targetUrl)
-      .then((navigated) => {
-        if (navigated === false && window.location.pathname !== targetUrl) {
-          window.location.assign(targetUrl);
-        }
-      })
-      .catch(() => {
-        if (window.location.pathname !== targetUrl) {
-          window.location.assign(targetUrl);
-        }
-      });
+    // Use full page redirect — bypasses Angular Router lazy-load issues in
+    // Capacitor WebView where navigateByUrl can silently fail or redirect to root.
+    window.location.href = `/live-session/room/${sessionId}`;
   }
 }
