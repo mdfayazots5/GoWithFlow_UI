@@ -1,4 +1,5 @@
 import { Injectable, signal, inject } from '@angular/core';
+import { Capacitor } from '@capacitor/core';
 import { WebsocketService } from './websocket.service';
 import { SessionPreferencesService } from './session-preferences.service';
 
@@ -34,6 +35,18 @@ export class VoiceBroadcastService {
 
   async startBroadcast(): Promise<void> {
     if (this.isBroadcasting()) return;
+
+    // On native (Capacitor APK) the microphone is needed EXCLUSIVELY by the native
+    // speech recognizer (a separate process — Google SpeechRecognizer) for
+    // pronunciation scoring. Android cannot reliably share a single mic between the
+    // WebView's getUserMedia (this WebRTC capture) and the recognizer's capture: the
+    // two contend and the recognizer intermittently receives no audio → "No speech
+    // detected". Scoring is the core feature, so live broadcast is skipped on native.
+    if (Capacitor.isNativePlatform()) {
+      console.debug('[VoiceBroadcast] Native platform — skipping mic broadcast so the speech recognizer keeps exclusive mic access');
+      return;
+    }
+
     try {
       this.localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
       this.isBroadcasting.set(true);
