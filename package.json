@@ -23,6 +23,7 @@
     "@angular/router": "^19.2.22",
     "@capacitor-community/speech-recognition": "^7.0.1",
     "@capacitor/android": "^8.4.0",
+    "@capacitor/app": "^8.1.0",
     "@capacitor/core": "^8.4.0",
     "@microsoft/signalr": "^10.0.0",
     "lucide-angular": "^0.474.0",

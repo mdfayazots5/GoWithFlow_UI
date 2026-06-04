@@ -11,6 +11,7 @@ import { VoiceRecorderComponent } from '../../voice/voice-recorder/voice-recorde
 import { VoiceFeedbackComponent } from '../../voice/voice-feedback/voice-feedback.component';
 import { VoiceRecognitionEngine, VoiceSessionResult } from '@core/services/voice/voice-recognition.engine';
 import { AudioArchiveService } from '@core/services/audio-archive.service';
+import { Capacitor } from '@capacitor/core';
 
 @Component({
   selector: 'app-speaker-screen',
@@ -46,10 +47,17 @@ export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDe
   showHint = signal(false);
   words = signal<string[]>([]);
 
+  /** Countdown seconds remaining before auto-submit fires (0 = not pending) */
+  autoSubmitSecondsLeft = signal(0);
+
   /** Set by ngOnChanges, consumed by ngAfterViewChecked once the recorder ViewChild is ready */
   private _pendingAutoStart = false;
   /** Timer handle — cancelled on turn change to prevent stale fire */
   private _autoStartTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** Auto-submit timer and countdown interval handles */
+  private _autoSubmitTimer: ReturnType<typeof setTimeout> | null = null;
+  private _countdownInterval: ReturnType<typeof setInterval> | null = null;
 
   /** sessionStorage key scoped to this speaker's turn — survives page refresh within the same tab */
   private get storageKey(): string {
@@ -88,6 +96,7 @@ export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDe
     const isTurnChange = !ts || ts.firstChange || (ts.previousValue?.turnIndex !== this.turnState.turnIndex);
 
     this._cancelAutoStart();
+    this._cancelAutoSubmitTimer();
     this.words.set(this.turnState.utterance.englishText.split(' '));
 
     if (isTurnChange) {
@@ -97,18 +106,14 @@ export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDe
       this.resetPhase();
       this.tryRestoreFromStorage();
 
-      // Auto-start is disabled on mobile and tablet devices.
-      // On touch devices the browser plays a system bell on every recognition.start()
-      // call; firing this automatically before the user is ready produces an
-      // unexpected bell and starts recording ambient noise.  Users on mobile must
-      // tap the mic button explicitly.
+      // Auto-start: the Web Speech API bell issue only affects mobile web browsers.
+      // On Capacitor native (Android APK) the native speech plugin starts silently —
+      // no bell — so auto-start is safe regardless of isMobileDevice.
+      const isMobileWebOnly = this.voiceEngine.isMobileDevice && !Capacitor.isNativePlatform();
       if (this.analysisPhase === 'recording'
           && this.sessionPrefs.prefs.defaultVoiceStarter
-          && !this.voiceEngine.isMobileDevice) {
-        console.warn('[BELL] Auto-start queued — bell will fire in 700ms on desktop', { isMobile: this.voiceEngine.isMobileDevice });
+          && !isMobileWebOnly) {
         this._pendingAutoStart = true;
-      } else {
-        console.warn('[BELL] Auto-start SKIPPED — mobile device, user must tap mic', { isMobile: this.voiceEngine.isMobileDevice });
       }
     }
   }
@@ -173,6 +178,7 @@ export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDe
 
   ngOnDestroy(): void {
     this._cancelAutoStart();
+    this._cancelAutoSubmitTimer();
   }
 
   // ─── RECORDING EVENTS ───────────────────────────────────────────────────────
@@ -219,13 +225,14 @@ export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDe
       this.voiceEngine.lastAudioBlob = null;
     }
 
-    // Auto Submit on Stop: bypass feedback screen, submit immediately
-    if (this.sessionPrefs.prefs.autoSubmitOnStop) {
-      this.onDoneSpeaking();
-      return;
-    }
-
+    // Always show the feedback screen first so users always see their score.
+    // Auto Submit: schedule a 3-second countdown, then submit automatically.
+    // Users can still submit early by tapping "Done Speaking".
     this.analysisPhase = 'feedback';
+
+    if (this.sessionPrefs.prefs.autoSubmitOnStop) {
+      this._scheduleAutoSubmit(3);
+    }
   }
 
   onVoiceError(message: string): void {
@@ -233,13 +240,65 @@ export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDe
     this.toast.show(message, 'error');
   }
 
+  // ─── AUTO SUBMIT COUNTDOWN ───────────────────────────────────────────────────
+
+  private _scheduleAutoSubmit(seconds: number): void {
+    this._cancelAutoSubmitTimer();
+    this.autoSubmitSecondsLeft.set(seconds);
+
+    console.log('[Speaker] Auto-submit scheduled', {
+      turnIndex: this.turnState.turnIndex,
+      delaySeconds: seconds
+    });
+
+    this._countdownInterval = setInterval(() => {
+      const next = this.autoSubmitSecondsLeft() - 1;
+      this.autoSubmitSecondsLeft.set(next);
+      if (next <= 0) {
+        this._cancelCountdownInterval();
+      }
+    }, 1000);
+
+    this._autoSubmitTimer = setTimeout(() => {
+      this._autoSubmitTimer = null;
+      if (this.analysisPhase === 'feedback' && !this.isSubmitting()) {
+        console.log('[Speaker] Auto-submit timer fired', { turnIndex: this.turnState.turnIndex });
+        this.onDoneSpeaking();
+      }
+    }, seconds * 1000);
+  }
+
+  private _cancelCountdownInterval(): void {
+    if (this._countdownInterval !== null) {
+      clearInterval(this._countdownInterval);
+      this._countdownInterval = null;
+    }
+  }
+
+  private _cancelAutoSubmitTimer(): void {
+    if (this._autoSubmitTimer !== null) {
+      clearTimeout(this._autoSubmitTimer);
+      this._autoSubmitTimer = null;
+    }
+    this._cancelCountdownInterval();
+    this.autoSubmitSecondsLeft.set(0);
+  }
+
   // ─── PHASE ACTIONS ──────────────────────────────────────────────────────────
 
   onDoneSpeaking(): void {
+    this._cancelAutoSubmitTimer();
     if (this.isSubmitting()) return;
     this.isSubmitting.set(true);
     const score = this.sessionResult?.overallScore || 0;
     const currentUserId = localStorage.getItem('gwf_userId') || '';
+
+    console.log('[Speaker] CompleteTurn emitting', {
+      sessionId: this.turnState.sessionId,
+      turnIndex: this.turnState.turnIndex,
+      score,
+      userId: currentUserId
+    });
 
     this.liveSessionService.completeTurnRealtime(
       this.turnState.sessionId,
@@ -248,12 +307,20 @@ export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDe
       score
     ).subscribe({
       next: () => {
-        this.clearFromStorage();  // Turn completed — remove persisted state for this turn
+        console.log('[Speaker] CompleteTurn hub call succeeded', {
+          turnIndex: this.turnState.turnIndex
+        });
+        this.clearFromStorage();
         this.isSubmitting.set(false);
         this.resetPhase();
         this.turnShifted.emit();
       },
-      error: () => {
+      error: (err: any) => {
+        const reason = err?.message || err?.toString() || 'unknown';
+        console.error('[Speaker] CompleteTurn hub call failed', {
+          turnIndex: this.turnState.turnIndex,
+          reason
+        });
         this.isSubmitting.set(false);
         this.toast.show('Failed to advance turn. Please try again.', 'error');
       }
@@ -261,6 +328,7 @@ export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDe
   }
 
   onSkip(): void {
+    this._cancelAutoSubmitTimer();
     if (this.voiceRecorder) {
       this.voiceRecorder.stopEarly();
     }
@@ -288,7 +356,15 @@ export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDe
     });
   }
 
+  /** Cancels any pending auto-submit and returns to the recording phase */
+  onRetryRecording(): void {
+    this._cancelAutoSubmitTimer();
+    this.sessionResult = null;
+    this.analysisPhase = 'recording';
+  }
+
   onReRead(): void {
+    this._cancelAutoSubmitTimer();
     const currentUserId = localStorage.getItem('gwf_userId') || '';
     this.liveSessionService.requestReReadRealtime(this.turnState.sessionId, currentUserId).subscribe(() => {
       this.resetPhase();
@@ -296,6 +372,7 @@ export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDe
   }
 
   private resetPhase(): void {
+    this._cancelAutoSubmitTimer();
     this.sessionResult = null;
     this.analysisPhase = 'recording';
   }

@@ -246,13 +246,16 @@ export class VoiceRecognitionEngine implements OnDestroy {
       let lastTranscriptSeen = '';
       let silenceTimer: any = null;
       let hardTimeout: any = null;
+      let noResultsTimer: any = null;
       let settled = false;
+      let nativeRestartDone = false;
 
       const settle = (fn: () => void) => {
         if (settled) return;
         settled = true;
         clearTimeout(silenceTimer);
         clearTimeout(hardTimeout);
+        clearTimeout(noResultsTimer);
         // Remove listener without waiting — non-blocking
         if (this.nativeSpeechListener) {
           this.nativeSpeechListener.remove();
@@ -297,9 +300,35 @@ export class VoiceRecognitionEngine implements OnDestroy {
       // Hard timeout — 15s max
       hardTimeout = setTimeout(() => {
         clearInterval(stopPoll);
+        clearTimeout(noResultsTimer);
         NativeSpeechRecognition.stop().catch(() => {});
         finalizeWithTranscript();
       }, 15000);
+
+      // No-results safety restart — if no partialResults arrive within 5s, stop
+      // and restart recognition. Handles two known failure modes on production APK:
+      // (1) Android SpeechRecognizer needs a moment to initialize on first use after
+      //     a fresh install — silent failure, no events, no error thrown.
+      // (2) en-US is tried on restart as it has wider device support than en-IN.
+      const scheduleNoResultsRestart = () => {
+        clearTimeout(noResultsTimer);
+        if (!nativeRestartDone) {
+          noResultsTimer = setTimeout(async () => {
+            if (settled || latestTranscript || nativeRestartDone) return;
+            nativeRestartDone = true;
+            console.warn('[VRE] Native: no partialResults in 5s — restarting with en-US');
+            NativeSpeechRecognition.stop().catch(() => {});
+            await new Promise<void>(r => setTimeout(r, 400));
+            if (settled) return;
+            NativeSpeechRecognition.start({
+              language: 'en-US',
+              maxResults: 3,
+              partialResults: true,
+              popup: false,
+            }).catch(() => { /* hard timeout handles final failure */ });
+          }, 5000);
+        }
+      };
 
       // Await listener registration so the handle is stored before start() fires
       this.nativeSpeechListener = await NativeSpeechRecognition.addListener(
@@ -309,6 +338,9 @@ export class VoiceRecognitionEngine implements OnDestroy {
           if (data?.matches?.length > 0) {
             latestTranscript = data.matches[0];
             this.interimTranscript$.next(latestTranscript);
+
+            // Cancel no-results restart — speech is coming in
+            clearTimeout(noResultsTimer);
 
             // Only reset silence timer when transcript actually changes
             if (latestTranscript !== lastTranscriptSeen) {
@@ -326,13 +358,16 @@ export class VoiceRecognitionEngine implements OnDestroy {
 
       if (settled) return; // stopSession() called while awaiting addListener
 
+      scheduleNoResultsRestart();
+
       NativeSpeechRecognition.start({
-        language: 'en-IN',
+        language: 'en-US',
         maxResults: 3,
         partialResults: true,
         popup: false,
       }).catch((e: any) => {
         clearInterval(stopPoll);
+        clearTimeout(noResultsTimer);
         settle(() => {
           this.state$.next('error');
           this.vad.stop();

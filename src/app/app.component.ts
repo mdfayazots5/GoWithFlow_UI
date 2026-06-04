@@ -9,6 +9,7 @@ import { LoaderComponent } from '@shared/components/loader/loader.component';
 import { filter } from 'rxjs';
 import { AuthService } from '@core/services/auth.service';
 import { UserStateService } from '@core/services/user-state.service';
+import { BackButtonService } from '@core/services/back-button.service';
 
 @Component({
   selector: 'app-root',
@@ -76,13 +77,15 @@ import { UserStateService } from '@core/services/user-state.service';
   `]
 })
 export class AppComponent {
-  private router    = inject(Router);
-  private auth      = inject(AuthService);
-  private userState = inject(UserStateService);
+  private router      = inject(Router);
+  private auth        = inject(AuthService);
+  private userState   = inject(UserStateService);
+  private backButton  = inject(BackButtonService);
 
   currentUrl = signal(this.router.url);
 
   constructor() {
+    this.backButton.init();
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {

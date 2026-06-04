@@ -121,6 +121,16 @@
         <!-- Action buttons — always visible, separated from scrollable content -->
         <div class="flex flex-col gap-2 pt-2 border-t border-white/5">
 
+          <!-- Auto-submit countdown indicator -->
+          @if (autoSubmitSecondsLeft() > 0) {
+            <div class="flex items-center justify-center gap-2 py-1.5 px-3 bg-white/[0.04] border border-white/[0.08] rounded-xl">
+              <span class="w-1.5 h-1.5 rounded-full bg-gw-primary animate-pulse flex-shrink-0"></span>
+              <span class="text-[10px] font-black uppercase tracking-widest text-white/45 italic">
+                Auto-submitting in {{ autoSubmitSecondsLeft() }}s — tap below to cancel
+              </span>
+            </div>
+          }
+
           <!-- Primary: Done Speaking -->
           <button
             (click)="onDoneSpeaking()"
@@ -136,7 +146,7 @@
           <div class="flex gap-3">
             @if (showReReadButton) {
               <button
-                (click)="analysisPhase = 'recording'; sessionResult = null"
+                (click)="onRetryRecording()"
                 class="flex-1 h-12 border border-white/15 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/55 flex items-center justify-center gap-2 hover:bg-white/5 hover:text-white/75 hover:border-white/25 active:scale-95 transition-all"
                 type="button"
               >

@@ -126,7 +126,7 @@ type PresenceToast = {
               <div class="flex items-center justify-between py-2.5 px-3.5 bg-white/[0.04] rounded-xl border border-white/[0.08]">
                 <div class="min-w-0 mr-3">
                   <p class="text-[11px] font-black text-white/80 italic">Auto Submit on Stop</p>
-                  <p class="text-[10px] text-white/35 mt-0.5 leading-tight">Skip feedback — submits when you stop recording</p>
+                  <p class="text-[10px] text-white/35 mt-0.5 leading-tight">Shows your score for 3s, then submits automatically</p>
                 </div>
                 <button
                   (click)="sessionPrefs.update({ autoSubmitOnStop: !sessionPrefs.prefs.autoSubmitOnStop })"
@@ -275,6 +275,10 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
   private memberNameMap = new Map<string, string>();
   private toastIdCounter = 0;
 
+  /** Set when SESSION_ENDED is received. Prevents loadCurrentTurn and onTurnShifted
+   *  from firing after navigation is already in progress. */
+  private _sessionEnded = false;
+
   private timeSeconds = 0;
   private timerInterval: any;
 
@@ -311,6 +315,13 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
 
     // ── Existing event listeners ──
     this.ws.on('TURN_SHIFT').subscribe((shiftEvent: TurnShiftEvent) => {
+      if (this._sessionEnded) return;
+      console.log('[Session] TURN_SHIFT received', {
+        sessionId,
+        newTurnIndex: shiftEvent.turnIndex,
+        newSpeakerId: shiftEvent.newActiveMemberId,
+        newSpeakerName: shiftEvent.newActiveMemberName
+      });
       this.speakerLeftAlert.set(false); // new speaker is active — clear the alert
       this.handleTurnShift(sessionId, shiftEvent);
     });
@@ -326,6 +337,9 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
     });
 
     this.ws.on('SESSION_ENDED').subscribe((data: { sessionId: number; summary: SessionSummary }) => {
+      console.log('[Session] SESSION_ENDED received', { sessionId, totalTurns: data?.summary?.totalTurns });
+      this._sessionEnded = true;
+
       // Persist elapsed time so the report page can display real duration
       sessionStorage.setItem(`gwf_session_duration_${sessionId}`, String(this.timeSeconds));
       sessionStorage.removeItem(`gwf_session_start_${sessionId}`);
@@ -414,16 +428,20 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
   // ── Existing methods (unchanged) ──
 
   private loadCurrentTurn(sessionId: string) {
+    // Do not reload if the session has already ended — navigation is in progress.
+    if (this._sessionEnded) return;
+
     this.loadError.set(null);
     this.liveSessionService.getCurrentTurn(sessionId).pipe(
       catchError(err => {
+        if (this._sessionEnded) return of(null); // session ended while request was in flight
         const msg = err?.error?.message || err?.error?.errors?.[0] || 'Failed to load session turn. Please retry.';
         this.loadError.set(msg);
         this.isLoading.set(false);
         return of(null);
       })
     ).subscribe(state => {
-      if (state) {
+      if (state && !this._sessionEnded) {
         this.updateState(state);
         this.isLoading.set(false);
       }
@@ -450,7 +468,18 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
   }
 
   private handleTurnShift(sessionId: string, shiftEvent: TurnShiftEvent) {
+    if (this._sessionEnded) return;
+
     const currentState = this.turnState();
+    const myUserId = localStorage.getItem('gwf_userId');
+    const willSpeak = String(shiftEvent.newActiveMemberId) === myUserId;
+
+    console.log('[Session] handleTurnShift — applying optimistic update', {
+      from: currentState?.turnIndex,
+      to: shiftEvent.turnIndex,
+      nextSpeaker: shiftEvent.newActiveMemberName,
+      iAmSpeaker: willSpeak
+    });
 
     if (currentState) {
       this.turnState.set({
@@ -466,14 +495,21 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
         // loadCurrentTurn() response immediately follows and sets the correct value.
         isFacilitatorTurn: false
       });
-      this.isSpeaker.set(String(shiftEvent.newActiveMemberId) === localStorage.getItem('gwf_userId'));
+      this.isSpeaker.set(willSpeak);
     }
 
     this.loadCurrentTurn(sessionId);
   }
 
   onTurnShifted() {
-    this.isLoading.set(true);
+    if (this._sessionEnded) return;
+    // Do NOT set isLoading=true here. handleTurnShift already applied the optimistic
+    // state update and called loadCurrentTurn when TURN_SHIFT arrived. Setting loading
+    // here would destroy and recreate SpeakerScreenComponent, cancelling its auto-start
+    // timers and forcing a second 700ms delay before recording can begin.
+    // Instead, just confirm canonical state — updateState's guard skips re-render
+    // when the turn index hasn't changed since the optimistic update.
+    console.log('[Session] onTurnShifted — confirming canonical state');
     this.loadCurrentTurn(this.turnState()!.sessionId);
   }
 
