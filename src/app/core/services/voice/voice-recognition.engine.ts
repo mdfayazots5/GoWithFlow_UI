@@ -60,7 +60,14 @@ export class VoiceRecognitionEngine implements OnDestroy {
   // isCapacitorNative: true when running inside Capacitor Android/iOS shell.
   // Web Speech API is unavailable in Capacitor WebView — native plugin path used instead.
   private isCapacitorNative = Capacitor.isNativePlatform();
-  private nativeSpeechListener: any = null;
+  private nativeSpeechListener: any = null;   // 'partialResults' handle
+  private nativeStateListener: any = null;    // 'listeningState' handle
+
+  // localStorage key for the last language that produced a transcript on THIS
+  // device. The native recognizer is the device default (often the offline SODA
+  // engine), which only serves languages whose offline model is installed — so we
+  // discover and remember the working one to avoid re-walking the chain each turn.
+  private readonly _langCacheKey = 'gwf_voice_lang';
 
   // ─── Device detection ───────────────────────────────────────────────────────
   // Detected once at construction; used to tune timeouts and thresholds.
@@ -202,6 +209,10 @@ export class VoiceRecognitionEngine implements OnDestroy {
         this.nativeSpeechListener.remove();
         this.nativeSpeechListener = null;
       }
+      if (this.nativeStateListener) {
+        this.nativeStateListener.remove();
+        this.nativeStateListener = null;
+      }
     } else if (this.recognition) {
       try { this.recognition.stop(); } catch (e) { /* ignore */ }
     }
@@ -215,9 +226,59 @@ export class VoiceRecognitionEngine implements OnDestroy {
   }
 
   // ─── CAPACITOR NATIVE RECOGNITION PATH ─────────────────────────────────────
-  // Used on Android (Capacitor WebView). Web Speech API is not available there.
-  // Android handles end-of-speech detection internally — VAD silence callback is
-  // a no-op on this path because recognition is null and _hasSpoken is never set.
+  // Runs on Android/iOS inside the Capacitor WebView, where the Web Speech API is
+  // unavailable. Uses @capacitor-community/speech-recognition, which drives the
+  // device's DEFAULT recognizer. On many Android phones that default is the OFFLINE
+  // SODA engine (com.google.android.tts), which only serves languages whose offline
+  // model is installed — frequently just the device locale. Requesting an
+  // uninstalled language (e.g. en-IN on an en-GB device) fails with an error the
+  // plugin SWALLOWS: in partialResults mode start() resolves the call immediately,
+  // then onError() rejects an already-resolved call and emits NO listeningState
+  // event. The JS side therefore sees nothing on a bad language.
+  //
+  // So we cannot detect a bad language from an error. Instead we walk a language
+  // fallback chain and use a per-attempt WATCHDOG: if an attempt produces no
+  // 'started'/'partialResults' signal within the window, we treat that language as
+  // unusable and advance to the next. The first language that yields a result is
+  // cached (localStorage) so subsequent turns succeed on the first try.
+
+  /**
+   * Ordered language fallback chain for native recognition, de-duplicated.
+   * Front-loads the languages most likely to be installed offline on this device.
+   */
+  private buildLanguageCandidates(cachedLang: string): (string | undefined)[] {
+    const out: (string | undefined)[] = [];
+    const push = (l: string | undefined) => {
+      if (l === undefined) { if (!out.includes(undefined)) out.push(undefined); return; }
+      const v = l.trim();
+      if (v && !out.some(c => typeof c === 'string' && c.toLowerCase() === v.toLowerCase())) out.push(v);
+    };
+
+    // 1. Previously-confirmed working language on this device — instant success.
+    if (cachedLang) push(cachedLang);
+
+    // 2. English variant matching the device region — most likely the installed
+    //    offline pack. 'en-GB' device → en-GB; non-English 'hi-IN' device → en-IN.
+    const devLang = (navigator.language || '').trim();
+    if (devLang) {
+      if (/^en\b/i.test(devLang)) push(devLang);
+      else {
+        const region = devLang.split('-')[1];
+        if (region) push(`en-${region.toUpperCase()}`);
+      }
+    }
+
+    // 3. Primary user base (Indian English), then global + common English packs.
+    push('en-IN');
+    push('en-US');
+    push('en-GB');
+
+    // 4. Device default — omit EXTRA_LANGUAGE so the recognizer uses whatever
+    //    offline pack IS installed (Locale.getDefault()). Guaranteed last resort.
+    push(undefined);
+
+    return out;
+  }
 
   private async startNativeSession(expectedText: string): Promise<VoiceSessionResult> {
     const { speechRecognition } = await NativeSpeechRecognition.checkPermissions();
@@ -225,7 +286,6 @@ export class VoiceRecognitionEngine implements OnDestroy {
       const { speechRecognition: granted } = await NativeSpeechRecognition.requestPermissions();
       if (granted !== 'granted') {
         this.state$.next('error');
-        this.vad.stop();
         throw new Error('Microphone permission denied. Please allow access in Settings and try again.');
       }
     }
@@ -238,34 +298,44 @@ export class VoiceRecognitionEngine implements OnDestroy {
     this.startTimeMs = Date.now();
     this.state$.next('listening');
 
-    // plugin v7 — start() resolves immediately (fire-and-forget).
-    // Actual speech arrives via partialResults events. We resolve the promise
-    // after 2.5s of silence following the last partial result, or after 15s max.
-    return new Promise<VoiceSessionResult>(async (resolve, reject) => {
+    let cachedLang = '';
+    try { cachedLang = localStorage.getItem(this._langCacheKey) || ''; } catch { /* ignore */ }
+    const candidates = this.buildLanguageCandidates(cachedLang);
+    console.debug('[VRE] Native session start', { deviceLang: navigator.language, cachedLang, candidates });
+
+    return new Promise<VoiceSessionResult>((resolve, reject) => {
+      const WATCHDOG_MS   = 4000;   // no signal in this window ⇒ language unusable
+      const SILENCE_MS    = 2500;   // pause after last partial ⇒ user finished
+      const HARD_CEIL_MS  = 20000;  // absolute ceiling
+      const RESTART_GAP_MS = 350;   // let the recognizer release before next start
+
       let latestTranscript = '';
-      let lastTranscriptSeen = '';
-      let silenceTimer: any = null;
-      let hardTimeout: any = null;
-      let noResultsTimer: any = null;
-      let settled = false;
-      let nativeRestartDone = false;
+      let lastPartialSeen  = '';
+      let langConfirmed    = false; // true once a 'started'/'partial' arrives — stop walking the chain
+      let attemptIndex     = 0;
+      let attemptToken     = 0;     // bumped each attempt; stale-attempt callbacks ignored
+      let settled          = false;
+
+      let silenceTimer:  any = null;
+      let watchdogTimer: any = null;
+      let hardTimeout:   any = null;
+      let stopPoll:      any = null;
 
       const settle = (fn: () => void) => {
         if (settled) return;
         settled = true;
         clearTimeout(silenceTimer);
+        clearTimeout(watchdogTimer);
         clearTimeout(hardTimeout);
-        clearTimeout(noResultsTimer);
-        // Remove listener without waiting — non-blocking
-        if (this.nativeSpeechListener) {
-          this.nativeSpeechListener.remove();
-          this.nativeSpeechListener = null;
-        }
+        clearInterval(stopPoll);
+        if (this.nativeSpeechListener) { this.nativeSpeechListener.remove(); this.nativeSpeechListener = null; }
+        if (this.nativeStateListener)  { this.nativeStateListener.remove();  this.nativeStateListener = null; }
         this.interimTranscript$.next('');
         fn();
       };
 
       const finalizeWithTranscript = () => settle(() => {
+        NativeSpeechRecognition.stop().catch(() => {});
         if (this._intentionalStop) {
           this.state$.next('idle');
           resolve(this.buildEmptyResult(expectedText));
@@ -273,18 +343,106 @@ export class VoiceRecognitionEngine implements OnDestroy {
         }
         if (!latestTranscript) {
           this.state$.next('error');
-          this.vad.stop();
           reject(new Error('No speech detected. Please tap the mic and speak clearly.'));
           return;
         }
         resolve(this.finalizeNative(expectedText, latestTranscript));
       });
 
-      // If stopSession() is called externally (user taps mic to stop),
-      // finalize with whatever transcript was captured — don't discard speech.
-      const stopPoll = setInterval(() => {
+      const confirmLanguage = (lang: string | undefined) => {
+        if (langConfirmed) return;
+        langConfirmed = true;
+        clearTimeout(watchdogTimer);
+        if (lang) { try { localStorage.setItem(this._langCacheKey, lang); } catch { /* ignore */ } }
+        console.debug('[VRE] Native language confirmed', { lang: lang ?? '(device default)' });
+      };
+
+      const advanceLanguage = () => {
+        if (settled || langConfirmed) return;   // never re-walk once a language works
+        attemptToken++;                          // invalidate the failed attempt's callbacks
+        clearTimeout(watchdogTimer);
+        clearTimeout(silenceTimer);
+        NativeSpeechRecognition.stop().catch(() => {});
+        attemptIndex++;
+        if (attemptIndex >= candidates.length) {
+          settle(() => {
+            this.state$.next('error');
+            reject(new Error('Speech recognition is unavailable on this device. Open Settings → System → Languages & input → Voice input and download an English voice model, then try again.'));
+          });
+          return;
+        }
+        setTimeout(() => startAttempt(), RESTART_GAP_MS);
+      };
+
+      const startAttempt = async () => {
+        if (settled) return;
+        const myToken = ++attemptToken;
+        const lang = candidates[attemptIndex];
+        const isCached = !!lang && lang === cachedLang;
+
+        if (this.nativeSpeechListener) { this.nativeSpeechListener.remove(); this.nativeSpeechListener = null; }
+        if (this.nativeStateListener)  { this.nativeStateListener.remove();  this.nativeStateListener = null; }
+
+        this.nativeSpeechListener = await NativeSpeechRecognition.addListener(
+          'partialResults',
+          (data: { matches: string[] }) => {
+            if (settled || myToken !== attemptToken) return;
+            if (data?.matches?.length > 0) {
+              confirmLanguage(lang);
+              latestTranscript = data.matches[0];
+              this.interimTranscript$.next(latestTranscript);
+              if (latestTranscript !== lastPartialSeen) {
+                lastPartialSeen = latestTranscript;
+                clearTimeout(silenceTimer);
+                silenceTimer = setTimeout(() => {
+                  NativeSpeechRecognition.stop().catch(() => {});
+                  finalizeWithTranscript();
+                }, SILENCE_MS);
+              }
+            }
+          }
+        );
+
+        this.nativeStateListener = await NativeSpeechRecognition.addListener(
+          'listeningState',
+          (data: { status: string }) => {
+            if (settled || myToken !== attemptToken) return;
+            if (data.status === 'started') { confirmLanguage(lang); return; }
+            if (data.status !== 'stopped') return;
+            // 'stopped' = end-of-speech (onEndOfSpeech). NOT emitted on a swallowed
+            // language error — those are caught by the watchdog instead.
+            if (latestTranscript) { finalizeWithTranscript(); return; }
+            if (!langConfirmed) { advanceLanguage(); return; }
+            finalizeWithTranscript(); // confirmed language but nothing intelligible
+          }
+        );
+
+        if (settled || myToken !== attemptToken) return;
+
+        console.debug('[VRE] Native start()', { attemptIndex, lang: lang ?? '(device default)', isCached });
+        NativeSpeechRecognition.start({ language: lang, maxResults: 3, partialResults: true, popup: false })
+          .catch((e: any) => {
+            if (settled || myToken !== attemptToken) return;
+            console.warn('[VRE] Native start() threw — advancing language', { lang, err: e?.message ?? e });
+            advanceLanguage();
+          });
+
+        // Watchdog: a bad language emits no partial/started and the error is
+        // swallowed, so silence here means "advance". Skipped for a cached,
+        // already-known-good language (a silent user must not trigger a swap).
+        clearTimeout(watchdogTimer);
+        if (!isCached) {
+          watchdogTimer = setTimeout(() => {
+            if (settled || myToken !== attemptToken || langConfirmed) return;
+            console.warn('[VRE] Watchdog fired — no speech signal, language likely not installed', { lang: lang ?? '(device default)' });
+            advanceLanguage();
+          }, WATCHDOG_MS);
+        }
+      };
+
+      // External stop (user taps mic) — finalize with whatever was captured.
+      stopPoll = setInterval(() => {
         if (this._intentionalStop) {
-          clearInterval(stopPoll);
           NativeSpeechRecognition.stop().catch(() => {});
           settle(() => {
             if (latestTranscript) {
@@ -297,83 +455,9 @@ export class VoiceRecognitionEngine implements OnDestroy {
         }
       }, 100);
 
-      // Hard timeout — 15s max
-      hardTimeout = setTimeout(() => {
-        clearInterval(stopPoll);
-        clearTimeout(noResultsTimer);
-        NativeSpeechRecognition.stop().catch(() => {});
-        finalizeWithTranscript();
-      }, 15000);
+      hardTimeout = setTimeout(() => finalizeWithTranscript(), HARD_CEIL_MS);
 
-      // No-results safety restart — if no partialResults arrive within 5s, stop
-      // and restart recognition. Handles two known failure modes on production APK:
-      // (1) Android SpeechRecognizer needs a moment to initialize on first use after
-      //     a fresh install — silent failure, no events, no error thrown.
-      // (2) en-US is tried on restart as it has wider device support than en-IN.
-      const scheduleNoResultsRestart = () => {
-        clearTimeout(noResultsTimer);
-        if (!nativeRestartDone) {
-          noResultsTimer = setTimeout(async () => {
-            if (settled || latestTranscript || nativeRestartDone) return;
-            nativeRestartDone = true;
-            console.warn('[VRE] Native: no partialResults in 5s — restarting with en-US');
-            NativeSpeechRecognition.stop().catch(() => {});
-            await new Promise<void>(r => setTimeout(r, 400));
-            if (settled) return;
-            NativeSpeechRecognition.start({
-              language: 'en-US',
-              maxResults: 3,
-              partialResults: true,
-              popup: false,
-            }).catch(() => { /* hard timeout handles final failure */ });
-          }, 5000);
-        }
-      };
-
-      // Await listener registration so the handle is stored before start() fires
-      this.nativeSpeechListener = await NativeSpeechRecognition.addListener(
-        'partialResults',
-        (data: { matches: string[] }) => {
-          if (settled) return;
-          if (data?.matches?.length > 0) {
-            latestTranscript = data.matches[0];
-            this.interimTranscript$.next(latestTranscript);
-
-            // Cancel no-results restart — speech is coming in
-            clearTimeout(noResultsTimer);
-
-            // Only reset silence timer when transcript actually changes
-            if (latestTranscript !== lastTranscriptSeen) {
-              lastTranscriptSeen = latestTranscript;
-              clearTimeout(silenceTimer);
-              silenceTimer = setTimeout(() => {
-                clearInterval(stopPoll);
-                NativeSpeechRecognition.stop().catch(() => {});
-                finalizeWithTranscript();
-              }, 2500);
-            }
-          }
-        }
-      );
-
-      if (settled) return; // stopSession() called while awaiting addListener
-
-      scheduleNoResultsRestart();
-
-      NativeSpeechRecognition.start({
-        language: 'en-US',
-        maxResults: 3,
-        partialResults: true,
-        popup: false,
-      }).catch((e: any) => {
-        clearInterval(stopPoll);
-        clearTimeout(noResultsTimer);
-        settle(() => {
-          this.state$.next('error');
-          this.vad.stop();
-          reject(new Error(`Speech recognition error: ${e?.message ?? e}`));
-        });
-      });
+      startAttempt();
     });
   }
 
@@ -381,9 +465,8 @@ export class VoiceRecognitionEngine implements OnDestroy {
     const elapsed = Date.now() - this.startTimeMs;
     const confidence = 0.85; // plugin does not return per-word confidence
 
+    // VAD is never started on the native path, so there is nothing to stop here.
     this.state$.next('processing');
-    this.cleanupSilenceTimeout();
-    this.vad.stop();
     this.interimTranscript$.next('');
 
     const spokenNorm   = this.normalizer.normalize(transcript);
@@ -409,7 +492,7 @@ export class VoiceRecognitionEngine implements OnDestroy {
       hesitationWords:  hesitations,
       repeatedWords:    repeated,
       wordResults:      scoreResult.wordResults,
-      pauseCount:       this.vad.getPauseCount(),
+      pauseCount:       0, // VAD not used on native — no pause data
       durationMs:       elapsed,
       retryCount:       0
     };
