@@ -18,10 +18,90 @@ export class TranscriptNormalizer {
     // Step 4: Normalize whitespace
     result = result.replace(/\s+/g, ' ').trim();
 
-    // Step 5: Remove filler words (for scoring purposes — not for display)
+    // Step 5: Canonicalize numbers to digits so word/digit forms always match.
+    // The recognizer often emits digits ("305", "25") while scripts may use words
+    // ("three oh five", "twenty five") or vice versa. Applied to BOTH the spoken and
+    // expected sides, so the comparison no longer depends on which form was used.
+    result = this.numbersToDigits(result);
+
+    // Step 6: Remove filler words (for scoring purposes — not for display)
     result = this.removeFillerWords(result);
 
     return result;
+  }
+
+  // ─── NUMBER NORMALIZATION ─────────────────────────────────────────────────────
+  // Converts spoken number-words into digit strings on a token stream.
+  // Handles two reading styles:
+  //   • Digit sequence — "three oh five" → "305", "double five" → "55" (room/phone numbers)
+  //   • Cardinal value — "twenty five" → "25", "three hundred five" → "305"
+  private readonly numberWord: Record<string, number> = {
+    zero: 0, oh: 0, o: 0, nought: 0,
+    one: 1, two: 2, three: 3, four: 4, five: 5,
+    six: 6, seven: 7, eight: 8, nine: 9,
+    ten: 10, eleven: 11, twelve: 12, thirteen: 13, fourteen: 14,
+    fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19,
+    twenty: 20, thirty: 30, forty: 40, fifty: 50,
+    sixty: 60, seventy: 70, eighty: 80, ninety: 90,
+  };
+  private readonly scaleWord: Record<string, number> = {
+    hundred: 100, thousand: 1000, lakh: 100000, million: 1000000, crore: 10000000, billion: 1000000000,
+  };
+  private readonly repeatWord: Record<string, number> = { double: 2, triple: 3 };
+
+  private numbersToDigits(text: string): string {
+    const tokens = text.split(' ');
+    const out: string[] = [];
+    const isNum = (w: string) => w in this.numberWord || w in this.scaleWord;
+    let i = 0;
+
+    while (i < tokens.length) {
+      const w = tokens[i];
+
+      // "double five" → "55", "triple two" → "222"
+      if (w in this.repeatWord && i + 1 < tokens.length
+          && tokens[i + 1] in this.numberWord && this.numberWord[tokens[i + 1]] < 10) {
+        out.push(String(this.numberWord[tokens[i + 1]]).repeat(this.repeatWord[w]));
+        i += 2;
+        continue;
+      }
+
+      if (!isNum(w)) { out.push(w); i++; continue; }
+
+      // Collect a contiguous run of number words ("and" allowed between them).
+      const run: string[] = [];
+      while (i < tokens.length
+             && (isNum(tokens[i])
+                 || (tokens[i] === 'and' && run.length > 0 && i + 1 < tokens.length && isNum(tokens[i + 1])))) {
+        if (tokens[i] !== 'and') run.push(tokens[i]);
+        i++;
+      }
+      out.push(this.convertNumberRun(run));
+    }
+
+    return out.join(' ');
+  }
+
+  private convertNumberRun(run: string[]): string {
+    // Pure digit-sequence (only units 0–9 / "oh") → concatenate: "three oh five" → "305".
+    const hasTensOrScale = run.some(w => w in this.scaleWord || (w in this.numberWord && this.numberWord[w] >= 10));
+    if (!hasTensOrScale) {
+      return run.map(w => String(this.numberWord[w])).join('');
+    }
+
+    // Cardinal value: "three hundred five" → 305, "twenty five" → 25.
+    let total = 0;
+    let current = 0;
+    for (const w of run) {
+      if (w in this.scaleWord) {
+        const s = this.scaleWord[w];
+        if (s === 100) current = (current || 1) * 100;
+        else { total += (current || 1) * s; current = 0; }
+      } else {
+        current += this.numberWord[w];
+      }
+    }
+    return String(total + current);
   }
 
   // For DISPLAY only — keeps contractions, proper casing

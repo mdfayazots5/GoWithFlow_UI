@@ -104,6 +104,33 @@ export class VoiceRecognitionEngine implements OnDestroy {
     if (!enabled) this.lastAudioBlob = null;
   }
 
+  // Set once we have triggered the native model load for this app run.
+  private _prewarmed = false;
+
+  /**
+   * Pre-load the native speech model so the first real recording starts instantly.
+   * Briefly starts + stops the recognizer (the OS mic indicator may flash for ~150 ms).
+   * No-op off native, when not idle, or after the first call. Best-effort — never throws.
+   */
+  async prewarm(): Promise<void> {
+    if (!this.isCapacitorNative || this._prewarmed) return;
+    if (this.state$.value !== 'idle') return;
+    this._prewarmed = true;
+    try {
+      const { speechRecognition } = await NativeSpeechRecognition.checkPermissions();
+      if (speechRecognition !== 'granted') return; // never prompt during a silent prewarm
+      let cached = '';
+      try { cached = localStorage.getItem(this._langCacheKey) || ''; } catch { /* ignore */ }
+      const lang = this.buildLanguageCandidates(cached)[0]; // best guess for this device
+      await NativeSpeechRecognition.start({ language: lang, partialResults: true, popup: false });
+      // Only needed to trigger the model load — stop right away, but never stop a real
+      // session that may have started in the meantime.
+      setTimeout(() => {
+        if (this.state$.value === 'idle') NativeSpeechRecognition.stop().catch(() => {});
+      }, 150);
+    } catch { /* best-effort warm-up */ }
+  }
+
   constructor(
     private vad: AudioActivityDetector,
     private scorer: PronunciationScorer,
@@ -304,7 +331,7 @@ export class VoiceRecognitionEngine implements OnDestroy {
     console.debug('[VRE] Native session start', { deviceLang: navigator.language, cachedLang, candidates });
 
     return new Promise<VoiceSessionResult>((resolve, reject) => {
-      const SILENCE_MS          = 2500;   // pause after last partial ⇒ user finished
+      const SILENCE_MS          = 1200;   // pause after last partial ⇒ user finished (snappy, Duolingo-like)
       const KEEPALIVE_MS        = 7000;   // no signal this long ⇒ recognizer timed out on silence; relisten
       const HARD_CEIL_MS        = 30000;  // absolute ceiling for the whole turn
       const RESTART_GAP_MS      = 300;    // let the recognizer release before the next start

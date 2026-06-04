@@ -110,10 +110,13 @@ export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDe
       // On Capacitor native (Android APK) the native speech plugin starts silently —
       // no bell — so auto-start is safe regardless of isMobileDevice.
       const isMobileWebOnly = this.voiceEngine.isMobileDevice && !Capacitor.isNativePlatform();
-      if (this.analysisPhase === 'recording'
-          && this.sessionPrefs.prefs.defaultVoiceStarter
-          && !isMobileWebOnly) {
+      const autoStart = this.sessionPrefs.prefs.defaultVoiceStarter && !isMobileWebOnly;
+      if (this.analysisPhase === 'recording' && autoStart) {
         this._pendingAutoStart = true;
+      } else if (this.analysisPhase === 'recording') {
+        // Manual mode: warm the native model now so the first mic tap is instant.
+        // (In auto-start mode the auto-start itself acts as the warm-up.)
+        this.voiceEngine.prewarm();
       }
     }
   }
@@ -122,13 +125,14 @@ export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDe
   ngAfterViewChecked(): void {
     if (this._pendingAutoStart && this.voiceRecorder && this.analysisPhase === 'recording') {
       this._pendingAutoStart = false;
-      // 700 ms lets the UI settle visually before the mic kicks in
+      // 300 ms lets the UI settle visually before the mic kicks in (was 700 ms —
+      // trimmed for snappier startup; the native model loads during this window).
       this._autoStartTimer = setTimeout(() => {
         this._autoStartTimer = null;
         if (this.voiceRecorder && this.analysisPhase === 'recording') {
           this.voiceRecorder.startRecording();
         }
-      }, 700);
+      }, 300);
     }
   }
 
