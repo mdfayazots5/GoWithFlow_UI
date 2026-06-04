@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+﻿import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -48,10 +48,10 @@ import { catchError, of } from 'rxjs';
                   <div>
                     <p class="text-sm font-black text-gw-text">{{ cohort.cohortName }}</p>
                     @if (cohort.description) {
-                      <p class="text-[10px] text-gw-text-muted mt-0.5">{{ cohort.description }}</p>
+                      <p class="text-[11px] text-gw-text-muted mt-0.5">{{ cohort.description }}</p>
                     }
                   </div>
-                  <span class="text-[10px] font-black px-2 py-0.5 rounded-lg flex-shrink-0"
+                  <span class="text-[11px] font-black px-2 py-0.5 rounded-lg flex-shrink-0"
                         [class]="cohort.isActive ? 'bg-gw-success/10 text-gw-success' : 'bg-red-50 text-red-500'">
                     {{ cohort.isActive ? 'Active' : 'Inactive' }}
                   </span>
@@ -61,17 +61,17 @@ import { catchError, of } from 'rxjs';
                     <i-lucide [img]="UsersIcon" size="12" class="text-gw-text-muted"></i-lucide>
                     <span class="text-xs font-bold text-gw-text-muted">{{ cohort.memberCount }} members</span>
                   </div>
-                  <span class="text-[10px] text-gw-text-muted">{{ cohort.dateCreated | date:'MMM d, y' }}</span>
+                  <span class="text-[11px] text-gw-text-muted">{{ cohort.dateCreated | date:'MMM d, y' }}</span>
                 </div>
               </div>
               <div class="flex border-t border-gw-bg">
                 <button (click)="$event.stopPropagation(); goToDetail(cohort.cohortId)"
-                        class="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-gw-text-muted hover:text-gw-primary hover:bg-gw-bg transition-all">
+                        class="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-black uppercase tracking-widest text-gw-text-muted hover:text-gw-primary hover:bg-gw-bg transition-all">
                   <i-lucide [img]="UserIcon" size="12"></i-lucide>
                   Members
                 </button>
                 <button (click)="$event.stopPropagation(); goToDetail(cohort.cohortId)"
-                        class="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[10px] font-black uppercase tracking-widest text-gw-text-muted hover:text-gw-primary hover:bg-gw-bg border-l border-gw-bg transition-all">
+                        class="flex-1 flex items-center justify-center gap-1.5 py-2.5 text-[11px] font-black uppercase tracking-widest text-gw-text-muted hover:text-gw-primary hover:bg-gw-bg border-l border-gw-bg transition-all">
                   <i-lucide [img]="BarChart2Icon" size="12"></i-lucide>
                   Analytics
                 </button>
@@ -96,16 +96,16 @@ import { catchError, of } from 'rxjs';
           </div>
           <form [formGroup]="createForm" (ngSubmit)="submitCreate()" class="space-y-3">
             <div>
-              <label class="block text-[10px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">Cohort Name *</label>
+              <label class="block text-[11px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">Cohort Name *</label>
               <input formControlName="cohortName" type="text" placeholder="e.g. Batch June 2026 — HR English"
-                class="w-full h-10 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text
+                class="w-full h-11 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text
                        placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all"
                 [class.border-red-400]="createForm.get('cohortName')?.invalid && createForm.get('cohortName')?.touched">
             </div>
             <div>
-              <label class="block text-[10px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">Description (optional)</label>
+              <label class="block text-[11px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">Description (optional)</label>
               <input formControlName="description" type="text" placeholder="Training program description"
-                class="w-full h-10 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text
+                class="w-full h-11 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text
                        placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all">
             </div>
             <div class="flex gap-2 pt-2">

@@ -1,4 +1,4 @@
-// File: src/app/modules/session/session-report/session-report.component.ts
+﻿// File: src/app/modules/session/session-report/session-report.component.ts
 import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -72,19 +72,19 @@ interface ScoreboardRow {
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
 
             <div class="bg-white p-5 rounded-[28px] border border-gw-card-border shadow-sm space-y-1">
-              <span class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Script</span>
+              <span class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Script</span>
               <p class="text-sm font-black text-gw-text italic uppercase leading-tight truncate" [title]="summary()!.scriptTitle">
                 {{ summary()!.scriptTitle || '—' }}
               </p>
             </div>
 
             <div class="bg-[#E07B39]/5 border border-[#E07B39]/20 p-5 rounded-[28px] shadow-sm space-y-1 text-center">
-              <span class="text-[8px] font-black uppercase tracking-widest text-[#E07B39] italic">Top Score</span>
+              <span class="text-[11px] font-black uppercase tracking-widest text-[#E07B39] italic">Top Score</span>
               <p class="text-2xl font-black text-[#E07B39] italic">{{ topScore() }}%</p>
             </div>
 
             <div class="bg-white p-5 rounded-[28px] border border-gw-card-border shadow-sm space-y-1 text-center">
-              <span class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Total Mistakes</span>
+              <span class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Total Mistakes</span>
               <p class="text-2xl font-black italic"
                  [class.text-gw-error]="summary()!.totalMistakesAllMembers > 0"
                  [class.text-gw-success]="summary()!.totalMistakesAllMembers === 0">
@@ -93,7 +93,7 @@ interface ScoreboardRow {
             </div>
 
             <div class="bg-white p-5 rounded-[28px] border border-gw-card-border shadow-sm space-y-1 text-center">
-              <span class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Duration</span>
+              <span class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Duration</span>
               <p class="text-2xl font-black text-gw-text italic">{{ sessionDuration() }}</p>
             </div>
 
@@ -106,7 +106,7 @@ interface ScoreboardRow {
                 <i-lucide [img]="TargetIcon" size="15" class="text-gw-primary"></i-lucide>
               </div>
               <div>
-                <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted italic">Grammar Focus</p>
+                <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Grammar Focus</p>
                 <p class="text-sm font-black text-gw-primary italic">{{ summary()!.grammarFocusTag }}</p>
               </div>
             </div>
@@ -127,11 +127,11 @@ interface ScoreboardRow {
                 <table class="w-full">
                   <thead>
                     <tr class="bg-gw-bg/60">
-                      <th class="px-6 py-4 text-left text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">#</th>
-                      <th class="px-6 py-4 text-left text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Member</th>
-                      <th class="px-6 py-4 text-center text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Fluency</th>
-                      <th class="px-6 py-4 text-center text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Rating</th>
-                      <th class="px-6 py-4 text-center text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Mistakes</th>
+                      <th class="px-6 py-4 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">#</th>
+                      <th class="px-6 py-4 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Member</th>
+                      <th class="px-6 py-4 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Fluency</th>
+                      <th class="px-6 py-4 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Rating</th>
+                      <th class="px-6 py-4 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Mistakes</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-gw-bg">
@@ -158,7 +158,7 @@ interface ScoreboardRow {
                           </span>
                         </td>
                         <td class="px-6 py-5 text-center">
-                          <span class="px-2.5 py-1 rounded-lg text-[9px] font-black italic uppercase tracking-wider"
+                          <span class="px-2.5 py-1 rounded-lg text-[11px] font-black italic uppercase tracking-wider"
                                 [ngClass]="row.ratingColor">
                             {{ row.rating }}
                           </span>
@@ -185,7 +185,7 @@ interface ScoreboardRow {
                 <i-lucide [img]="VocabIcon" size="18" class="text-gw-primary"></i-lucide>
               </div>
               <div class="space-y-1.5 min-w-0">
-                <p class="text-[9px] font-black uppercase tracking-widest text-gw-primary italic">Vocabulary Tracker</p>
+                <p class="text-[11px] font-black uppercase tracking-widest text-gw-primary italic">Vocabulary Tracker</p>
                 <p class="text-sm font-bold text-gw-text italic leading-snug">
                   You practiced
                   <span class="font-black text-gw-primary">{{ summary()!.vocabularySummary!.wordsPracticedThisSession }} word{{ summary()!.vocabularySummary!.wordsPracticedThisSession !== 1 ? 's' : '' }}</span>
@@ -198,7 +198,7 @@ interface ScoreboardRow {
                 @if (summary()!.vocabularySummary!.wordsPracticed.length > 0) {
                   <div class="flex flex-wrap gap-1.5 pt-1">
                     @for (word of summary()!.vocabularySummary!.wordsPracticed; track word) {
-                      <span class="px-2.5 py-1 bg-gw-primary/10 border border-gw-primary/20 rounded-full text-[9px] font-black text-gw-primary uppercase tracking-wider">
+                      <span class="px-2.5 py-1 bg-gw-primary/10 border border-gw-primary/20 rounded-full text-[11px] font-black text-gw-primary uppercase tracking-wider">
                         {{ word }}
                       </span>
                     }
@@ -212,10 +212,10 @@ interface ScoreboardRow {
           @if (facilitators().length > 0) {
             <div class="flex items-center gap-3 px-5 py-4 bg-white/5 border border-white/10 rounded-2xl">
               <div>
-                <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted italic mb-1">Facilitator</p>
+                <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic mb-1">Facilitator</p>
                 <div class="flex flex-wrap gap-2">
                   @for (name of facilitators(); track name) {
-                    <span class="px-3 py-1 rounded-lg text-[9px] font-black italic uppercase tracking-wider bg-gw-bg border border-gw-card-border text-gw-text-muted">
+                    <span class="px-3 py-1 rounded-lg text-[11px] font-black italic uppercase tracking-wider bg-gw-bg border border-gw-card-border text-gw-text-muted">
                       {{ name }} — Facilitator
                     </span>
                   }
@@ -248,7 +248,7 @@ interface ScoreboardRow {
                 <i-lucide [img]="ZapIcon" size="22" class="text-gw-accent group-hover:animate-pulse"></i-lucide>
                 <span class="text-lg">{{ isStartingCorrection() ? 'STARTING...' : 'START CORRECTION ROUND' }}</span>
               </div>
-              <span class="text-[8px] opacity-60 tracking-wider">PRACTICE YOUR PERSONAL MISTAKES</span>
+              <span class="text-[11px] opacity-60 tracking-wider">PRACTICE YOUR PERSONAL MISTAKES</span>
             </button>
 
             <div class="grid grid-cols-2 gap-3">

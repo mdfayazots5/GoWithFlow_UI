@@ -1,4 +1,4 @@
-// File: src/app/modules/user/improvement-tracker/improvement-tracker.component.ts
+﻿// File: src/app/modules/user/improvement-tracker/improvement-tracker.component.ts
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { UserService } from '@core/services/user.service';
@@ -14,7 +14,7 @@ import { catchError, of } from 'rxjs';
   imports: [CommonModule, LucideAngularModule, RouterLink],
   template: `
     <div class="min-h-screen bg-gw-bg">
-      <div class="max-w-lg mx-auto px-4 pt-2 pb-28 space-y-4 animate-in fade-in duration-500">
+      <div class="max-w-lg mx-auto px-4 pt-2 gwf-page-bottom space-y-4 animate-in fade-in duration-500">
 
       <!-- Page heading -->
       <div>
@@ -34,7 +34,7 @@ import { catchError, of } from 'rxjs';
                    [style.background]="stat.bg">
                 <i-lucide [img]="stat.icon" size="14" [style.color]="stat.color"></i-lucide>
               </div>
-              <span class="text-[9px] font-bold uppercase tracking-widest text-gw-text-muted">{{ stat.label }}</span>
+              <span class="text-[11px] font-bold uppercase tracking-widest text-gw-text-muted">{{ stat.label }}</span>
             </div>
             <p class="text-2xl font-black text-gw-text tracking-tight leading-none">{{ stat.value }}</p>
           </div>
@@ -45,7 +45,7 @@ import { catchError, of } from 'rxjs';
       <div class="space-y-3">
         <div class="flex items-center justify-between">
           <h3 class="text-sm font-black text-gw-text uppercase tracking-widest border-l-4 border-gw-accent pl-3">Score Trend</h3>
-          <span class="text-[9px] font-bold text-gw-text-muted uppercase bg-gw-bg px-2 py-1 rounded-lg">Last 10 Sessions</span>
+          <span class="text-[11px] font-bold text-gw-text-muted uppercase bg-gw-bg px-2 py-1 rounded-lg">Last 10 Sessions</span>
         </div>
 
         @if ((data()?.recentSessions?.length ?? 0) === 0) {
@@ -67,15 +67,15 @@ import { catchError, of } from 'rxjs';
 
                 <!-- Date -->
                 <div class="w-14 shrink-0 text-center">
-                  <p class="text-[10px] font-black text-gw-text leading-none">{{ point.sessionDate | date:'MMM d' }}</p>
-                  <p class="text-[9px] text-gw-text-muted mt-0.5">{{ point.sessionDate | date:'h:mm a' }}</p>
+                  <p class="text-[11px] font-black text-gw-text leading-none">{{ point.sessionDate | date:'MMM d' }}</p>
+                  <p class="text-[11px] text-gw-text-muted mt-0.5">{{ point.sessionDate | date:'h:mm a' }}</p>
                 </div>
 
                 <!-- Session name -->
                 <div class="flex-1 min-w-0">
                   <p class="text-sm font-bold text-gw-text truncate">{{ point.sessionName }}</p>
                   @if (point.mistakeCount > 0) {
-                    <p class="text-[9px] text-gw-text-muted mt-0.5">{{ point.mistakeCount }} mistake{{ point.mistakeCount !== 1 ? 's' : '' }}</p>
+                    <p class="text-[11px] text-gw-text-muted mt-0.5">{{ point.mistakeCount }} mistake{{ point.mistakeCount !== 1 ? 's' : '' }}</p>
                   }
                 </div>
 
@@ -83,30 +83,30 @@ import { catchError, of } from 'rxjs';
                 <div class="flex items-center gap-2 shrink-0">
                   @if (point.fluencyScore > 0) {
                     <div class="text-center">
-                      <span class="inline-block px-2 py-1 rounded-lg text-[10px] font-black"
+                      <span class="inline-block px-2 py-1 rounded-lg text-[11px] font-black"
                             [style.background]="scoreBg(point.fluencyScore)"
                             [style.color]="scoreColor(point.fluencyScore)">
                         {{ point.fluencyScore | number:'1.0-0' }}%
                       </span>
-                      <p class="text-[8px] text-gw-text-muted mt-0.5 text-center">Fluency</p>
+                      <p class="text-[11px] text-gw-text-muted mt-0.5 text-center">Fluency</p>
                     </div>
                   } @else {
                     <div class="text-center">
-                      <span class="inline-block px-2 py-1 rounded-lg text-[10px] font-bold bg-gw-bg text-gw-text-muted">—</span>
-                      <p class="text-[8px] text-gw-text-muted mt-0.5 text-center">Fluency</p>
+                      <span class="inline-block px-2 py-1 rounded-lg text-[11px] font-bold bg-gw-bg text-gw-text-muted">—</span>
+                      <p class="text-[11px] text-gw-text-muted mt-0.5 text-center">Fluency</p>
                     </div>
                   }
                   @if (point.confidenceScore > 0) {
                     <div class="text-center">
-                      <span class="inline-block px-2 py-1 rounded-lg text-[10px] font-black bg-blue-50 text-blue-600">
+                      <span class="inline-block px-2 py-1 rounded-lg text-[11px] font-black bg-blue-50 text-blue-600">
                         {{ point.confidenceScore | number:'1.0-0' }}%
                       </span>
-                      <p class="text-[8px] text-gw-text-muted mt-0.5 text-center">Confidence</p>
+                      <p class="text-[11px] text-gw-text-muted mt-0.5 text-center">Confidence</p>
                     </div>
                   } @else {
                     <div class="text-center">
-                      <span class="inline-block px-2 py-1 rounded-lg text-[10px] font-bold bg-gw-bg text-gw-text-muted">—</span>
-                      <p class="text-[8px] text-gw-text-muted mt-0.5 text-center">Confidence</p>
+                      <span class="inline-block px-2 py-1 rounded-lg text-[11px] font-bold bg-gw-bg text-gw-text-muted">—</span>
+                      <p class="text-[11px] text-gw-text-muted mt-0.5 text-center">Confidence</p>
                     </div>
                   }
                 </div>
@@ -141,7 +141,7 @@ import { catchError, of } from 'rxjs';
                   </div>
                   <div class="flex items-center gap-1.5 flex-shrink-0">
                     @if (grammar.trendLabel) {
-                      <span class="flex items-center gap-0.5 text-[7px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md italic"
+                      <span class="flex items-center gap-0.5 text-[11px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md italic"
                         [ngClass]="{
                           'bg-gw-success/10': grammar.trendLabel === 'Improving',
                           'text-gw-success': grammar.trendLabel === 'Improving',
@@ -153,7 +153,7 @@ import { catchError, of } from 'rxjs';
                         {{ grammar.trendLabel }}
                       </span>
                     }
-                    <span class="text-[9px] font-semibold text-gw-text-muted bg-gw-bg px-2 py-1 rounded-lg">
+                    <span class="text-[11px] font-semibold text-gw-text-muted bg-gw-bg px-2 py-1 rounded-lg">
                       {{ grammar.resolvedMistakes }}/{{ grammar.totalMistakes }}
                     </span>
                   </div>
@@ -164,9 +164,9 @@ import { catchError, of } from 'rxjs';
                          [style.width.%]="grammar.progressBarValue"></div>
                   </div>
                   <div class="flex items-center justify-between">
-                    <p class="text-[9px] text-gw-text-muted">{{ grammar.improvementPercent }}% resolved</p>
+                    <p class="text-[11px] text-gw-text-muted">{{ grammar.improvementPercent }}% resolved</p>
                     @if (grammar.trendLabel && grammar.currentPeriodAvg > 0) {
-                      <p class="text-[8px] italic"
+                      <p class="text-[11px] italic"
                         [class.text-gw-success]="grammar.trendLabel === 'Improving'"
                         [class.text-amber-500]="grammar.trendLabel === 'Stable'"
                         [class.text-gw-error]="grammar.trendLabel === 'Regressing'">
@@ -205,13 +205,13 @@ import { catchError, of } from 'rxjs';
                   <i-lucide [img]="StarIcon" size="24" class="text-gw-warning"></i-lucide>
                 </div>
                 <div class="space-y-1">
-                  <p class="text-[10px] font-black uppercase tracking-wide text-gw-text">{{ badge.name }}</p>
-                  <p class="text-[9px] text-gw-text-muted leading-snug">{{ badge.description }}</p>
+                  <p class="text-[11px] font-black uppercase tracking-wide text-gw-text">{{ badge.name }}</p>
+                  <p class="text-[11px] text-gw-text-muted leading-snug">{{ badge.description }}</p>
                 </div>
                 @if (badge.isEarned) {
-                  <span class="text-[8px] font-bold text-gw-warning uppercase">Earned {{ badge.earnedDate | date:'MMM yyyy' }}</span>
+                  <span class="text-[11px] font-bold text-gw-warning uppercase">Earned {{ badge.earnedDate | date:'MMM yyyy' }}</span>
                 } @else {
-                  <span class="text-[8px] font-semibold text-gw-text-muted uppercase">Locked</span>
+                  <span class="text-[11px] font-semibold text-gw-text-muted uppercase">Locked</span>
                 }
               </div>
             }
@@ -226,24 +226,24 @@ import { catchError, of } from 'rxjs';
           <div class="w-8 h-8 rounded-xl bg-gw-primary/10 flex items-center justify-center">
             <i-lucide [img]="TargetIcon" size="16" class="text-gw-primary"></i-lucide>
           </div>
-          <p class="text-[10px] font-black uppercase tracking-wider text-gw-text italic group-hover:text-gw-primary transition-colors">Interview Performance</p>
-          <p class="text-[8px] text-gw-text-muted italic">Readiness score & trends</p>
+          <p class="text-[11px] font-black uppercase tracking-wider text-gw-text italic group-hover:text-gw-primary transition-colors">Interview Performance</p>
+          <p class="text-[11px] text-gw-text-muted italic">Readiness score & trends</p>
         </a>
         <a routerLink="/user/vocabulary"
            class="bg-white rounded-2xl border border-gw-card-border shadow-sm p-4 flex flex-col gap-2 hover:border-gw-primary transition-all group">
           <div class="w-8 h-8 rounded-xl bg-gw-primary/10 flex items-center justify-center">
             <i-lucide [img]="BookIcon" size="16" class="text-gw-primary"></i-lucide>
           </div>
-          <p class="text-[10px] font-black uppercase tracking-wider text-gw-text italic group-hover:text-gw-primary transition-colors">Vocabulary Bank</p>
-          <p class="text-[8px] text-gw-text-muted italic">Words you've practiced</p>
+          <p class="text-[11px] font-black uppercase tracking-wider text-gw-text italic group-hover:text-gw-primary transition-colors">Vocabulary Bank</p>
+          <p class="text-[11px] text-gw-text-muted italic">Words you've practiced</p>
         </a>
         <a routerLink="/user/pronunciation-timeline"
            class="bg-white rounded-2xl border border-gw-card-border shadow-sm p-4 flex flex-col gap-2 hover:border-gw-primary transition-all group col-span-2">
           <div class="w-8 h-8 rounded-xl bg-gw-primary/10 flex items-center justify-center">
             <i-lucide [img]="TrendingIcon" size="16" class="text-gw-primary"></i-lucide>
           </div>
-          <p class="text-[10px] font-black uppercase tracking-wider text-gw-text italic group-hover:text-gw-primary transition-colors">Pronunciation Timeline</p>
-          <p class="text-[8px] text-gw-text-muted italic">Problem words & session-by-session history</p>
+          <p class="text-[11px] font-black uppercase tracking-wider text-gw-text italic group-hover:text-gw-primary transition-colors">Pronunciation Timeline</p>
+          <p class="text-[11px] text-gw-text-muted italic">Problem words & session-by-session history</p>
         </a>
       </div>
 
@@ -261,20 +261,30 @@ import { catchError, of } from 'rxjs';
           </div>
         } @else {
           <div class="grid gap-3">
-            @for (item of data()?.repracticeHistory; track item.date) {
+            @for (item of data()?.repracticeHistory; track item.repracticeSessionId) {
               <div class="bg-white p-5 rounded-2xl border border-gw-card-border flex items-center justify-between group hover:border-gw-primary transition-all">
                 <div class="flex items-center gap-3">
                   <div class="w-10 h-10 bg-gw-bg rounded-xl flex items-center justify-center group-hover:bg-gw-primary/10 transition-colors">
                     <i-lucide [img]="ZapIcon" size="16" class="text-gw-text-muted group-hover:text-gw-primary transition-colors"></i-lucide>
                   </div>
                   <div>
-                    <p class="text-sm font-bold text-gw-text uppercase tracking-tight">{{ item.sourceSession }}</p>
-                    <p class="text-[9px] text-gw-text-muted mt-0.5">{{ item.date | date:'MMM d, yyyy' }} · {{ item.mistakesPracticed }} mistakes</p>
+                    <p class="text-sm font-bold text-gw-text uppercase tracking-tight">Session #{{ item.sourceSessionId }}</p>
+                    <p class="text-[11px] text-gw-text-muted mt-0.5">
+                      {{ item.generatedDate | date:'MMM d, yyyy' }} · {{ item.completedRounds }}/{{ item.totalMistakes }} rounds
+                    </p>
                   </div>
                 </div>
                 <div class="text-right">
-                  <p class="text-lg font-black text-gw-success">+{{ item.improvementPercent }}%</p>
-                  <p class="text-[8px] font-semibold text-gw-text-muted uppercase">Improved</p>
+                  <p class="text-lg font-black"
+                     [class.text-gw-success]="item.improvementPercent > 0"
+                     [class.text-gw-text-muted]="item.improvementPercent === 0">
+                    {{ item.improvementPercent > 0 ? '+' : '' }}{{ item.improvementPercent }}%
+                  </p>
+                  <p class="text-[11px] font-semibold uppercase"
+                     [class.text-gw-success]="item.improvementPercent > 0"
+                     [class.text-gw-text-muted]="item.improvementPercent === 0">
+                    {{ item.status }}
+                  </p>
                 </div>
               </div>
             }

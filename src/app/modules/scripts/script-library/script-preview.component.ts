@@ -1,4 +1,4 @@
-// File: src/app/modules/scripts/script-library/script-preview.component.ts
+﻿// File: src/app/modules/scripts/script-library/script-preview.component.ts
 import { Component, Inject, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MAT_BOTTOM_SHEET_DATA, MatBottomSheetRef } from '@angular/material/bottom-sheet';
@@ -16,8 +16,8 @@ import { LucideAngularModule, X, Eye, EyeOff, BookOpen, Clock, Layers } from 'lu
       <div class="flex items-start justify-between">
         <div class="space-y-1">
           <div class="flex items-center gap-2">
-            <span class="px-3 py-1 bg-gw-primary/10 text-gw-primary rounded-lg text-[10px] font-black uppercase tracking-widest italic">{{ data.category }}</span>
-            <span class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted italic">• V{{ data.version }}</span>
+            <span class="px-3 py-1 bg-gw-primary/10 text-gw-primary rounded-lg text-[11px] font-black uppercase tracking-widest italic">{{ data.category }}</span>
+            <span class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">• V{{ data.version }}</span>
           </div>
           <h2 class="text-3xl font-black text-gw-text italic uppercase tracking-tight">{{ data.scriptTitle }}</h2>
           <p class="text-xs font-medium text-gw-text-muted">Grammar: {{ data.grammarFocusTag }} | Context: {{ data.contextTag }}</p>
@@ -34,7 +34,7 @@ import { LucideAngularModule, X, Eye, EyeOff, BookOpen, Clock, Layers } from 'lu
             <i-lucide [img]="LinesIcon" size="20"></i-lucide>
           </div>
           <div>
-            <p class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted">Lines</p>
+            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Lines</p>
             <p class="text-lg font-black text-gw-text italic tabular-nums">{{ data.utteranceCount }}</p>
           </div>
         </div>
@@ -43,7 +43,7 @@ import { LucideAngularModule, X, Eye, EyeOff, BookOpen, Clock, Layers } from 'lu
             <i-lucide [img]="ClockIcon" size="20"></i-lucide>
           </div>
           <div>
-            <p class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted">Complexity</p>
+            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Complexity</p>
             <div class="flex gap-0.5 mt-0.5">
                @for (i of [1, 2, 3, 4, 5]; track i) {
                  <div class="w-1.5 h-1.5 rounded-full" [class.bg-gw-accent]="i <= data.complexityLevel" [class.bg-white]="i > data.complexityLevel"></div>
@@ -56,8 +56,8 @@ import { LucideAngularModule, X, Eye, EyeOff, BookOpen, Clock, Layers } from 'lu
             <i-lucide [img]="StudyIcon" size="20"></i-lucide>
           </div>
           <div>
-            <p class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted">Age Group</p>
-            <p class="text-[10px] font-black text-gw-text uppercase italic tracking-tight">{{ data.targetAgeGroup }}</p>
+            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Age Group</p>
+            <p class="text-[11px] font-black text-gw-text uppercase italic tracking-tight">{{ data.targetAgeGroup }}</p>
           </div>
         </div>
       </div>
@@ -67,7 +67,7 @@ import { LucideAngularModule, X, Eye, EyeOff, BookOpen, Clock, Layers } from 'lu
         <h3 class="text-xl font-black text-gw-text italic uppercase tracking-tight">Script Content</h3>
         <button 
           (click)="showHints.set(!showHints())"
-          class="flex items-center gap-2 px-4 py-2 bg-gw-bg rounded-xl text-[10px] font-black uppercase tracking-widest italic transition-all"
+          class="flex items-center gap-2 px-4 py-2 bg-gw-bg rounded-xl text-[11px] font-black uppercase tracking-widest italic transition-all"
           [class.text-gw-primary]="showHints()"
           [class.text-gw-text-muted]="!showHints()"
         >
@@ -86,9 +86,9 @@ import { LucideAngularModule, X, Eye, EyeOff, BookOpen, Clock, Layers } from 'lu
               </div>
               <div class="flex-1 space-y-2">
                 <div class="flex justify-between items-center">
-                  <span class="text-[10px] font-black uppercase tracking-widest text-gw-primary italic">{{ u.speakerLabel }}</span>
+                  <span class="text-[11px] font-black uppercase tracking-widest text-gw-primary italic">{{ u.speakerLabel }}</span>
                   @if (u.grammarTag) {
-                    <span class="px-2 py-0.5 bg-gw-accent/5 text-gw-accent rounded text-[8px] font-black uppercase tracking-widest">{{ u.grammarTag }}</span>
+                    <span class="px-2 py-0.5 bg-gw-accent/5 text-gw-accent rounded text-[11px] font-black uppercase tracking-widest">{{ u.grammarTag }}</span>
                   }
                 </div>
                 <p class="text-lg font-bold text-gw-text leading-tight uppercase italic tracking-tight">"{{ u.englishText }}"</p>

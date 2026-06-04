@@ -4,6 +4,7 @@ import { Observable, tap, map } from 'rxjs';
 import { environment } from '@env/environment';
 import { Router } from '@angular/router';
 import { UserStateService } from './user-state.service';
+import { TabReuseStrategy } from '@core/strategies/tab-reuse.strategy';
 
 export interface User {
   id: string;
@@ -19,7 +20,8 @@ export interface User {
   providedIn: 'root'
 })
 export class AuthService {
-  private userState = inject(UserStateService);
+  private userState     = inject(UserStateService);
+  private reuseStrategy = inject(TabReuseStrategy);
   constructor(private http: HttpClient, private router: Router) {}
 
   getCurrentUser(): User | null {
@@ -80,7 +82,8 @@ export class AuthService {
   }
 
   logout() {
-    this.userState.reset();   // wipe in-memory cache before clearing storage
+    this.userState.reset();        // wipe in-memory cache before clearing storage
+    this.reuseStrategy.clearCache(); // drop cached tab components so they're never reattached after logout
     localStorage.clear();
     this.router.navigate(['/auth/login']);
   }

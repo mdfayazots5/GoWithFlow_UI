@@ -1,5 +1,5 @@
 // File: src/app/app.component.ts
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, Router, NavigationEnd, RouterModule } from '@angular/router';
 import { HeaderComponent } from '@shared/components/header/header.component';
@@ -10,6 +10,7 @@ import { filter } from 'rxjs';
 import { AuthService } from '@core/services/auth.service';
 import { UserStateService } from '@core/services/user-state.service';
 import { BackButtonService } from '@core/services/back-button.service';
+import { TabReuseStrategy } from '@core/strategies/tab-reuse.strategy';
 
 @Component({
   selector: 'app-root',
@@ -37,7 +38,7 @@ import { BackButtonService } from '@core/services/back-button.service';
           <app-header></app-header>
         }
 
-        <div class="user-content-area" [class.no-bottom-pad]="!showBottomNav()">
+        <div #contentArea class="user-content-area" [class.no-bottom-pad]="!showBottomNav()">
           <router-outlet></router-outlet>
         </div>
 
@@ -77,10 +78,13 @@ import { BackButtonService } from '@core/services/back-button.service';
   `]
 })
 export class AppComponent {
-  private router      = inject(Router);
-  private auth        = inject(AuthService);
-  private userState   = inject(UserStateService);
-  private backButton  = inject(BackButtonService);
+  private router       = inject(Router);
+  private auth         = inject(AuthService);
+  private userState    = inject(UserStateService);
+  private backButton   = inject(BackButtonService);
+  private reuseStrategy = inject(TabReuseStrategy);
+
+  @ViewChild('contentArea') private contentArea?: ElementRef<HTMLDivElement>;
 
   currentUrl = signal(this.router.url);
 
@@ -91,11 +95,11 @@ export class AppComponent {
     ).subscribe((event: any) => {
       this.currentUrl.set(event.url);
 
-      // Bootstrap common user data once per session.
-      // bootstrap() is idempotent — subsequent calls are a no-op.
-      // Placing it here covers both cases:
-      //   1. Page refresh   → first NavigationEnd fires, user already in localStorage
-      //   2. Fresh login    → OTP verified, router navigates, NavigationEnd fires here
+      // Scroll the content area to top on every navigation.
+      // Uses 'instant' so there's no scroll animation — feels like a native page change.
+      this.contentArea?.nativeElement?.scrollTo({ top: 0, behavior: 'instant' });
+
+      // Bootstrap common user data once per session (idempotent).
       if (this.auth.isLoggedIn) {
         this.userState.bootstrap();
       }

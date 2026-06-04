@@ -28,6 +28,7 @@ $shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
 
 $transition-base: all 0.2s ease-in-out;
 
+$breakpoint-xxs:      360px;
 $breakpoint-mobile:   480px;
 $breakpoint-phablet:  640px;
 $breakpoint-tablet:   768px;
@@ -35,6 +36,6 @@ $breakpoint-tabletL:  1024px;
 $breakpoint-desktop:  1025px;
 $breakpoint-wide:     1440px;
 
-$sidebar-width: 260px;
-$topbar-height: 64px;
-$bottomnav-height: 64px;
+$sidebar-width:    260px;
+$topbar-height:     64px;
+$bottomnav-height:  68px;

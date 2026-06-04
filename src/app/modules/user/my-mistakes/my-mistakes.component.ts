@@ -1,4 +1,4 @@
-// File: src/app/modules/user/my-mistakes/my-mistakes.component.ts
+﻿// File: src/app/modules/user/my-mistakes/my-mistakes.component.ts
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MistakeService } from '../mistake.service';
@@ -14,7 +14,7 @@ import { ToastService } from '@core/services/toast.service';
   imports: [CommonModule, LucideAngularModule, RouterLink],
   template: `
     <div class="min-h-screen bg-gw-bg">
-      <div class="max-w-lg mx-auto px-4 pt-2 pb-28 space-y-4 animate-in fade-in duration-500">
+      <div class="max-w-lg mx-auto px-4 pt-2 gwf-page-bottom space-y-4 animate-in fade-in duration-500">
 
         <!-- Page heading -->
         <div>
@@ -31,7 +31,7 @@ import { ToastService } from '@core/services/toast.service';
               </div>
               <div class="flex items-center gap-2">
                 <i-lucide [img]="item.icon" size="13" class="text-gw-primary flex-shrink-0"></i-lucide>
-                <span class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">{{ item.label }}</span>
+                <span class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">{{ item.label }}</span>
               </div>
               <p class="text-2xl font-black text-gw-text tracking-tight leading-none">
                 {{ item.value }}{{ item.suffix || '' }}
@@ -47,7 +47,7 @@ import { ToastService } from '@core/services/toast.service';
             @for (tab of tabs; track tab) {
               <button
                 (click)="activeTab.set(tab); loadMistakes()"
-                class="whitespace-nowrap px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shrink-0"
+                class="whitespace-nowrap px-4 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all shrink-0"
                 [class.bg-gw-primary]="activeTab() === tab"
                 [class.text-white]="activeTab() === tab"
                 [class.bg-gw-bg]="activeTab() !== tab"
@@ -86,16 +86,16 @@ import { ToastService } from '@core/services/toast.service';
                     <!-- Type + Date + Resolved -->
                     <div class="flex items-center justify-between gap-2">
                       <div class="flex items-center gap-2 flex-wrap">
-                        <span class="px-2.5 py-1 bg-gw-bg text-gw-text-muted rounded-lg text-[9px] font-black uppercase tracking-wider">
+                        <span class="px-2.5 py-1 bg-gw-bg text-gw-text-muted rounded-lg text-[11px] font-black uppercase tracking-wider">
                           {{ mistake.type }}
                         </span>
-                        <span class="text-[10px] font-semibold text-gw-text-muted flex items-center gap-1">
+                        <span class="text-[11px] font-semibold text-gw-text-muted flex items-center gap-1">
                           <i-lucide [img]="ClockIcon" size="10"></i-lucide>
                           {{ mistake.createdDate | date:'shortDate' }}
                         </span>
                       </div>
                       @if (mistake.isResolved) {
-                        <span class="flex items-center gap-1 text-gw-success text-[9px] font-black uppercase tracking-wider shrink-0">
+                        <span class="flex items-center gap-1 text-gw-success text-[11px] font-black uppercase tracking-wider shrink-0">
                           <i-lucide [img]="CheckIcon" size="11"></i-lucide>
                           Resolved
                         </span>
@@ -105,13 +105,13 @@ import { ToastService } from '@core/services/toast.service';
                     <!-- Said vs Expected -->
                     <div class="space-y-1.5">
                       <div class="flex items-baseline gap-3">
-                        <span class="w-8 text-[9px] font-black text-gw-error uppercase shrink-0">Said</span>
+                        <span class="w-8 text-[11px] font-black text-gw-error uppercase shrink-0">Said</span>
                         <p class="text-sm font-semibold text-gw-text-muted line-through decoration-gw-error/40 truncate">
                           {{ mistake.spokenText }}
                         </p>
                       </div>
                       <div class="flex items-baseline gap-3">
-                        <span class="w-8 text-[9px] font-black text-gw-success uppercase shrink-0">Next</span>
+                        <span class="w-8 text-[11px] font-black text-gw-success uppercase shrink-0">Next</span>
                         <p class="text-sm font-black text-gw-text truncate">{{ mistake.expectedText }}</p>
                       </div>
                     </div>
@@ -120,7 +120,7 @@ import { ToastService } from '@core/services/toast.service';
                     @if (mistake.correctionNote) {
                       <div class="flex items-start gap-2 bg-gw-bg rounded-xl px-3 py-2.5">
                         <i-lucide [img]="InfoIcon" size="12" class="text-gw-primary mt-0.5 shrink-0"></i-lucide>
-                        <p class="text-[10px] font-semibold text-gw-text-muted leading-relaxed">{{ mistake.correctionNote }}</p>
+                        <p class="text-[11px] font-semibold text-gw-text-muted leading-relaxed">{{ mistake.correctionNote }}</p>
                       </div>
                     }
                   </div>
@@ -128,7 +128,7 @@ import { ToastService } from '@core/services/toast.service';
                   <!-- Right: Frequency + Action -->
                   <div class="flex flex-col items-center gap-2 shrink-0 w-16">
                     <div class="text-center">
-                      <p class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted">Freq</p>
+                      <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Freq</p>
                       <p class="text-lg font-black text-gw-text">{{ mistake.occurredCount }}x</p>
                     </div>
                     <button
@@ -158,7 +158,7 @@ import { ToastService } from '@core/services/toast.service';
           <i-lucide [img]="MicIcon" size="18"></i-lucide>
           {{ isPracticing() ? 'Preparing...' : 'Practice All Mistakes' }}
           @if (!isPracticing() && (summary()?.pendingMistakes ?? 0) > 0) {
-            <span class="bg-white/20 text-white px-2 py-0.5 rounded-lg text-[10px]">
+            <span class="bg-white/20 text-white px-2 py-0.5 rounded-lg text-[11px]">
               {{ summary()?.pendingMistakes }}
             </span>
           }

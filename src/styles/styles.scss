@@ -20,6 +20,13 @@
   --gwf-error:          #D32F2F;
   --gwf-focus-bg:       #1A1A2E;
   --gwf-focus-text:     #EAEAEA;
+  /* Secondary blue — used in live session, speaker screen, session room */
+  --gwf-secondary:      #3D5A99;
+  --gwf-secondary-dark: #2D4580;
+  /* Navigation bar background */
+  --gwf-nav-bg:         #0D1526;
+  /* Deep focus mode background */
+  --gwf-focus-bg-deep:  #121221;
 }
 
 * {
@@ -335,4 +342,35 @@ body {
   .mat-mdc-cell {
     font-size: 12px !important;
   }
+}
+
+/* 15. Safe-area bottom padding — replaces hardcoded pb-28 on all user pages */
+.gwf-page-bottom {
+  padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px) + 16px) !important;
+}
+
+/* 16. Standard user page content wrapper */
+.gwf-page-content {
+  max-width: 512px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 16px;
+  padding-right: 16px;
+  padding-top: 8px;
+  padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px) + 16px);
+}
+
+/* 17. Standard 44px icon button tap target */
+.gwf-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 10px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.15s ease;
+
+  &:active { transform: scale(0.9); }
 }

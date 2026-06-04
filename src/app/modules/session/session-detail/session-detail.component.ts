@@ -1,4 +1,4 @@
-// File: src/app/modules/session/session-detail/session-detail.component.ts
+﻿// File: src/app/modules/session/session-detail/session-detail.component.ts
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -15,7 +15,7 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
   imports: [CommonModule, LucideAngularModule, RouterLink, UserAvatarComponent],
   template: `
     <div class="min-h-screen bg-gw-bg">
-      <div class="max-w-lg mx-auto px-4 pt-2 pb-28 space-y-4 animate-in fade-in duration-500">
+      <div class="max-w-lg mx-auto px-4 pt-2 gwf-page-bottom space-y-4 animate-in fade-in duration-500">
 
       <!-- Page heading -->
       <div>
@@ -44,22 +44,22 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
                   ></circle>
                </svg>
                <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-                  <span class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted italic">Fluency Score</span>
+                  <span class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Fluency Score</span>
                   <p class="text-4xl font-black italic">{{ detail()?.myPerformance?.fluency | number:'1.0-1' }}%</p>
                </div>
             </div>
 
             <div class="grid grid-cols-3 w-full gap-4 border-t border-gw-bg pt-4">
                <div class="text-center space-y-1">
-                  <span class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Confidence</span>
+                  <span class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Confidence</span>
                   <p class="text-lg font-black italic">{{ detail()?.myPerformance?.confidence | number:'1.0-1' }}%</p>
                </div>
                <div class="text-center space-y-1 border-x border-gw-bg">
-                  <span class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Speed</span>
-                  <p class="text-lg font-black italic">{{ detail()?.myPerformance?.speedWpm }}<span class="text-[10px] ml-0.5">wpm</span></p>
+                  <span class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Speed</span>
+                  <p class="text-lg font-black italic">{{ detail()?.myPerformance?.speedWpm }}<span class="text-[11px] ml-0.5">wpm</span></p>
                </div>
                <div class="text-center space-y-1">
-                  <span class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Pauses</span>
+                  <span class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Pauses</span>
                   <p class="text-lg font-black italic">{{ detail()?.myPerformance?.pauses }}</p>
                </div>
             </div>
@@ -75,8 +75,8 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
                <div class="grid grid-cols-2 gap-4">
                   @for (fb of detail()?.listenerFeedbackReceived; track fb.tag) {
                     <div class="p-4 bg-gw-bg rounded-2xl border border-gw-bg flex items-center justify-between">
-                       <span class="text-[10px] font-bold text-gw-text italic">{{ fb.tag }}</span>
-                       <span class="px-2 py-0.5 bg-white rounded-lg text-[10px] font-black text-gw-primary">{{ fb.count }}</span>
+                       <span class="text-[11px] font-bold text-gw-text italic">{{ fb.tag }}</span>
+                       <span class="px-2 py-0.5 bg-white rounded-lg text-[11px] font-black text-gw-primary">{{ fb.count }}</span>
                     </div>
                   }
                </div>
@@ -88,15 +88,15 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
                   SESSION CONTEXT
                </h3>
                <div class="space-y-4">
-                  <div class="flex justify-between items-center text-[10px]">
+                  <div class="flex justify-between items-center text-[11px]">
                      <span class="font-bold text-white/40 uppercase tracking-widest italic">Script</span>
                      <span class="font-black italic text-gw-accent">{{ detail()?.scriptTitle }}</span>
                   </div>
-                  <div class="flex justify-between items-center text-[10px]">
+                  <div class="flex justify-between items-center text-[11px]">
                      <span class="font-bold text-white/40 uppercase tracking-widest italic">Mode</span>
                      <span class="font-black italic">{{ detail()?.sessionMode }}</span>
                   </div>
-                  <div class="flex justify-between items-center text-[10px]">
+                  <div class="flex justify-between items-center text-[11px]">
                      <span class="font-bold text-white/40 uppercase tracking-widest italic">Duration</span>
                      <span class="font-black italic">{{ detail()?.sessionDuration }} min</span>
                   </div>
@@ -109,25 +109,25 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
       <div class="space-y-3">
          <div class="flex items-center justify-between">
             <h3 class="text-sm font-black text-gw-text uppercase tracking-widest border-l-4 border-gw-error pl-3">Mistakes to Fix</h3>
-            <span class="text-[10px] font-black bg-gw-error/10 text-gw-error px-3 py-1 rounded-full italic">{{ detail()?.myMistakes?.length }} DETECTED</span>
+            <span class="text-[11px] font-black bg-gw-error/10 text-gw-error px-3 py-1 rounded-full italic">{{ detail()?.myMistakes?.length }} DETECTED</span>
          </div>
 
          <div class="grid gap-4">
             @for (mistake of detail()?.myMistakes; track mistake.said) {
                <div class="bg-white p-5 rounded-2xl border border-gw-card-border shadow-sm space-y-3 group">
                   <div class="flex justify-between items-center">
-                     <span class="px-3 py-1 bg-gw-bg text-gw-text-muted rounded-lg text-[8px] font-black uppercase tracking-widest italic">{{ mistake.type }} — {{ mistake.tag }}</span>
+                     <span class="px-3 py-1 bg-gw-bg text-gw-text-muted rounded-lg text-[11px] font-black uppercase tracking-widest italic">{{ mistake.type }} — {{ mistake.tag }}</span>
                      <button (click)="practiceMistake()" class="text-gw-primary hover:scale-110 transition-transform">
                         <i-lucide [img]="NextIcon" size="20"></i-lucide>
                      </button>
                   </div>
                   <div class="grid md:grid-cols-2 gap-4">
                      <div class="space-y-1">
-                        <p class="text-[8px] font-black text-gw-error/60 uppercase italic">You Said</p>
+                        <p class="text-[11px] font-black text-gw-error/60 uppercase italic">You Said</p>
                         <p class="text-sm font-bold italic line-through decoration-gw-error/20 text-gw-text-muted">"{{ mistake.said }}"</p>
                      </div>
                      <div class="space-y-1">
-                        <p class="text-[8px] font-black text-gw-success uppercase italic">Should Be</p>
+                        <p class="text-[11px] font-black text-gw-success uppercase italic">Should Be</p>
                         <p class="text-base font-black italic text-gw-text">"{{ mistake.shouldBe }}"</p>
                      </div>
                   </div>
@@ -143,9 +143,9 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
             <table class="w-full text-left border-collapse">
                <thead>
                   <tr class="bg-gw-bg/50">
-                     <th class="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-gw-text-muted italic">Member</th>
-                     <th class="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-gw-text-muted italic">Fluency</th>
-                     <th class="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-gw-text-muted italic">Mistakes</th>
+                     <th class="px-8 py-4 text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Member</th>
+                     <th class="px-8 py-4 text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Fluency</th>
+                     <th class="px-8 py-4 text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Mistakes</th>
                   </tr>
                </thead>
                <tbody class="divide-y divide-gw-bg">

@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, computed } from '@angular/core';
+﻿import { Component, inject, signal, OnInit, computed } from '@angular/core';
 import { CommonModule, DecimalPipe, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -32,7 +32,7 @@ interface ScriptAnalyticsItem {
       <div class="flex items-center justify-between">
         <div>
           <h1 class="text-2xl font-black text-gw-text italic uppercase tracking-tight">Script Analytics</h1>
-          <p class="text-[10px] font-bold text-gw-text-muted uppercase tracking-widest italic mt-0.5">Performance metrics for all scripts</p>
+          <p class="text-[11px] font-bold text-gw-text-muted uppercase tracking-widest italic mt-0.5">Performance metrics for all scripts</p>
         </div>
         <a routerLink="/admin/scripts"
           class="px-4 py-2 bg-gw-bg text-gw-text-muted text-xs font-bold rounded-xl hover:bg-gw-primary/10 hover:text-gw-primary transition-all">
@@ -45,7 +45,7 @@ interface ScriptAnalyticsItem {
         <div class="flex items-center gap-2 bg-white border border-gw-card-border rounded-xl px-3 py-2">
           <i-lucide [img]="FilterIcon" size="13" class="text-gw-text-muted"></i-lucide>
           <select [(ngModel)]="selectedCategory" (ngModelChange)="loadData()"
-            class="text-[10px] font-bold uppercase tracking-wider text-gw-text bg-transparent outline-none cursor-pointer">
+            class="text-[11px] font-bold uppercase tracking-wider text-gw-text bg-transparent outline-none cursor-pointer">
             <option value="">All Categories</option>
             @for (cat of categories; track cat) {
               <option [value]="cat">{{ cat }}</option>
@@ -53,9 +53,9 @@ interface ScriptAnalyticsItem {
           </select>
         </div>
         <div class="flex items-center gap-2 bg-white border border-gw-card-border rounded-xl px-3 py-2">
-          <span class="text-[9px] font-bold text-gw-text-muted uppercase tracking-wider">Sort by</span>
+          <span class="text-[11px] font-bold text-gw-text-muted uppercase tracking-wider">Sort by</span>
           <select [(ngModel)]="sortField" (ngModelChange)="sortData()"
-            class="text-[10px] font-bold uppercase tracking-wider text-gw-text bg-transparent outline-none cursor-pointer">
+            class="text-[11px] font-bold uppercase tracking-wider text-gw-text bg-transparent outline-none cursor-pointer">
             <option value="sessions">Sessions</option>
             <option value="completion">Completion Rate</option>
             <option value="fluency">Avg Fluency</option>
@@ -63,7 +63,7 @@ interface ScriptAnalyticsItem {
             <option value="lastUsed">Last Used</option>
           </select>
         </div>
-        <p class="text-[9px] font-bold text-gw-text-muted italic">{{ filtered().length }} scripts</p>
+        <p class="text-[11px] font-bold text-gw-text-muted italic">{{ filtered().length }} scripts</p>
       </div>
 
       @if (isLoading()) {
@@ -79,15 +79,15 @@ interface ScriptAnalyticsItem {
             <table class="w-full text-left">
               <thead class="bg-gw-bg border-b border-gw-card-border">
                 <tr>
-                  <th class="px-4 py-3 text-[8px] font-black uppercase tracking-widest text-gw-text-muted">Script</th>
-                  <th class="px-3 py-3 text-[8px] font-black uppercase tracking-widest text-gw-text-muted text-right">Sessions</th>
-                  <th class="px-3 py-3 text-[8px] font-black uppercase tracking-widest text-gw-text-muted text-right">Completion</th>
-                  <th class="px-3 py-3 text-[8px] font-black uppercase tracking-widest text-gw-text-muted text-right">Avg Fluency</th>
-                  <th class="px-3 py-3 text-[8px] font-black uppercase tracking-widest text-gw-text-muted text-right">Mistakes</th>
-                  <th class="px-3 py-3 text-[8px] font-black uppercase tracking-widest text-gw-text-muted text-right">Duration</th>
-                  <th class="px-3 py-3 text-[8px] font-black uppercase tracking-widest text-gw-text-muted text-right">Re-reads</th>
-                  <th class="px-3 py-3 text-[8px] font-black uppercase tracking-widest text-gw-text-muted text-right">Repractice</th>
-                  <th class="px-3 py-3 text-[8px] font-black uppercase tracking-widest text-gw-text-muted text-right">Last Used</th>
+                  <th class="px-4 py-3 text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Script</th>
+                  <th class="px-3 py-3 text-[11px] font-black uppercase tracking-widest text-gw-text-muted text-right">Sessions</th>
+                  <th class="px-3 py-3 text-[11px] font-black uppercase tracking-widest text-gw-text-muted text-right">Completion</th>
+                  <th class="px-3 py-3 text-[11px] font-black uppercase tracking-widest text-gw-text-muted text-right">Avg Fluency</th>
+                  <th class="px-3 py-3 text-[11px] font-black uppercase tracking-widest text-gw-text-muted text-right">Mistakes</th>
+                  <th class="px-3 py-3 text-[11px] font-black uppercase tracking-widest text-gw-text-muted text-right">Duration</th>
+                  <th class="px-3 py-3 text-[11px] font-black uppercase tracking-widest text-gw-text-muted text-right">Re-reads</th>
+                  <th class="px-3 py-3 text-[11px] font-black uppercase tracking-widest text-gw-text-muted text-right">Repractice</th>
+                  <th class="px-3 py-3 text-[11px] font-black uppercase tracking-widest text-gw-text-muted text-right">Last Used</th>
                   <th class="px-3 py-3"></th>
                 </tr>
               </thead>
@@ -103,9 +103,9 @@ interface ScriptAnalyticsItem {
                         <div class="min-w-0">
                           <p class="text-xs font-black text-gw-text italic truncate max-w-[180px]">{{ item.scriptTitle }}</p>
                           <div class="flex items-center gap-1.5 mt-0.5">
-                            <span class="text-[7px] font-black uppercase tracking-wider text-gw-primary bg-gw-primary/10 px-1.5 py-0.5 rounded">{{ item.category }}</span>
+                            <span class="text-[11px] font-black uppercase tracking-wider text-gw-primary bg-gw-primary/10 px-1.5 py-0.5 rounded">{{ item.category }}</span>
                             @if (item.isInactive) {
-                              <span class="text-[7px] font-black uppercase tracking-wider text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded">Inactive</span>
+                              <span class="text-[11px] font-black uppercase tracking-wider text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded">Inactive</span>
                             }
                           </div>
                         </div>
@@ -152,7 +152,7 @@ interface ScriptAnalyticsItem {
                       </span>
                     </td>
                     <td class="px-3 py-3.5 text-right">
-                      <span class="text-[9px] font-semibold text-gw-text-muted">
+                      <span class="text-[11px] font-semibold text-gw-text-muted">
                         {{ item.lastUsedDate ? (item.lastUsedDate | date:'MMM d') : 'Never' }}
                       </span>
                     </td>
@@ -179,19 +179,19 @@ interface ScriptAnalyticsItem {
         <!-- Summary cards -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div class="bg-white rounded-xl border border-gw-card-border p-4">
-            <p class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Total Scripts</p>
+            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Total Scripts</p>
             <p class="text-2xl font-black text-gw-primary italic mt-1">{{ data().length }}</p>
           </div>
           <div class="bg-white rounded-xl border border-gw-card-border p-4">
-            <p class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Avg Completion</p>
+            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Avg Completion</p>
             <p class="text-2xl font-black text-gw-success italic mt-1">{{ avgCompletion() | number:'1.0-0' }}%</p>
           </div>
           <div class="bg-white rounded-xl border border-gw-card-border p-4">
-            <p class="text-[8px] font-black uppercase tracking-widest text-amber-600 italic">Inactive Scripts</p>
+            <p class="text-[11px] font-black uppercase tracking-widest text-amber-600 italic">Inactive Scripts</p>
             <p class="text-2xl font-black text-amber-500 italic mt-1">{{ inactiveCount() }}</p>
           </div>
           <div class="bg-white rounded-xl border border-gw-card-border p-4">
-            <p class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Avg Fluency</p>
+            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Avg Fluency</p>
             <p class="text-2xl font-black text-gw-primary italic mt-1">{{ avgFluency() | number:'1.0-0' }}</p>
           </div>
         </div>

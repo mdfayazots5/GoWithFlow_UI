@@ -33,7 +33,11 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
   standalone: true,
   imports: [CommonModule, LucideAngularModule, UserAvatarComponent],
   templateUrl: './lobby.component.html',
-  styles: [`:host { display: block; }`]
+  styles: [`
+    :host { display: block; }
+    .lobby-session-name { font-size: clamp(18px, 5vw, 28px); }
+    .lobby-join-code    { font-size: clamp(20px, 5.5vw, 28px); }
+  `]
 })
 export class LobbyComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+﻿import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
 import { LucideAngularModule, FileText, BookOpen, List, Search, Plus, Eye, Download, CircleCheck, CircleX } from 'lucide-angular';
@@ -52,7 +52,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
           </div>
           <div class="min-w-0">
             <p class="text-xl font-black text-gw-text leading-none">{{ totalCount() }}</p>
-            <p class="text-[10px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Total Scripts</p>
+            <p class="text-[11px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Total Scripts</p>
           </div>
         </div>
         <div class="bg-white border border-gw-card-border rounded-2xl p-4 flex items-center gap-3 shadow-sm">
@@ -61,7 +61,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
           </div>
           <div class="min-w-0">
             <p class="text-xl font-black text-gw-text leading-none">{{ activeCount() }}</p>
-            <p class="text-[10px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Active Scripts</p>
+            <p class="text-[11px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Active Scripts</p>
           </div>
         </div>
         <div class="bg-white border border-gw-card-border rounded-2xl p-4 flex items-center gap-3 shadow-sm">
@@ -70,7 +70,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
           </div>
           <div class="min-w-0">
             <p class="text-xl font-black text-gw-text leading-none">{{ totalUtterances() }}</p>
-            <p class="text-[10px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Total Lines</p>
+            <p class="text-[11px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Total Lines</p>
           </div>
         </div>
       </div>
@@ -80,7 +80,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
         <div class="relative">
           <i-lucide [img]="SearchIcon" size="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-gw-text-muted pointer-events-none"></i-lucide>
           <input [formControl]="searchControl" type="text" placeholder="Search by title or tag..."
-            class="w-full h-10 bg-gw-bg border border-transparent rounded-xl pl-9 pr-4 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all">
+            class="w-full h-11 bg-gw-bg border border-transparent rounded-xl pl-9 pr-4 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all">
         </div>
       </div>
 
@@ -111,12 +111,12 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
             <table class="w-full">
               <thead>
                 <tr class="border-b border-gw-card-border">
-                  <th class="px-5 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Title</th>
-                  <th class="px-4 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-gw-text-muted hidden md:table-cell">Category</th>
-                  <th class="px-4 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-gw-text-muted hidden lg:table-cell">Grammar Tag</th>
-                  <th class="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-gw-text-muted hidden sm:table-cell">Lines</th>
-                  <th class="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Status</th>
-                  <th class="px-4 py-3.5 text-right text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Actions</th>
+                  <th class="px-5 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Title</th>
+                  <th class="px-4 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden md:table-cell">Category</th>
+                  <th class="px-4 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden lg:table-cell">Grammar Tag</th>
+                  <th class="px-4 py-3.5 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden sm:table-cell">Lines</th>
+                  <th class="px-4 py-3.5 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Status</th>
+                  <th class="px-4 py-3.5 text-right text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -138,7 +138,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
 
                     <!-- Category -->
                     <td class="px-4 py-4 hidden md:table-cell">
-                      <span class="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider"
+                      <span class="px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider"
                         [class]="categoryClass(row.category)">
                         {{ row.category }}
                       </span>
@@ -156,7 +156,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
 
                     <!-- Status -->
                     <td class="px-4 py-4 text-center">
-                      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide"
+                      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wide"
                         [class]="row.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'">
                         <span class="w-1.5 h-1.5 rounded-full flex-shrink-0"
                           [class]="row.active ? 'bg-green-500' : 'bg-red-400'"></span>
@@ -170,13 +170,13 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
                         <button
                           (click)="viewDetails(row)"
                           title="View Details"
-                          class="w-8 h-8 flex items-center justify-center rounded-lg text-gw-primary hover:bg-gw-primary/10 transition-colors">
+                          class="w-10 h-10 flex items-center justify-center rounded-lg text-gw-primary hover:bg-gw-primary/10 transition-colors">
                           <i-lucide [img]="ViewIcon" size="15"></i-lucide>
                         </button>
                         <button
                           (click)="toggleScript(row)"
                           [title]="row.active ? 'Deactivate' : 'Activate'"
-                          class="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+                          class="w-10 h-10 flex items-center justify-center rounded-lg transition-colors"
                           [class]="row.active
                             ? 'text-gw-text-muted hover:text-red-500 hover:bg-red-50'
                             : 'text-gw-text-muted hover:text-green-600 hover:bg-green-50'">
@@ -185,7 +185,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
                         <button
                           (click)="downloadScript(row)"
                           title="Download Script"
-                          class="w-8 h-8 flex items-center justify-center rounded-lg text-gw-text-muted hover:text-gw-success hover:bg-green-50 transition-colors">
+                          class="w-10 h-10 flex items-center justify-center rounded-lg text-gw-text-muted hover:text-gw-success hover:bg-green-50 transition-colors">
                           <i-lucide [img]="DownloadIcon" size="15"></i-lucide>
                         </button>
                       </div>

@@ -1,4 +1,4 @@
-// File: src/app/modules/repractice/correction-round/correction-round.component.ts
+﻿// File: src/app/modules/repractice/correction-round/correction-round.component.ts
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -26,7 +26,7 @@ import { RepracticeSpeakerComponent, PracticeAdvancedEvent } from '../repractice
           </div>
           @if (!isComplete()) {
             <a routerLink="/user/dashboard"
-               class="w-8 h-8 flex items-center justify-center text-white/30 hover:text-white/70 transition-colors rounded-lg hover:bg-white/5">
+               class="w-11 h-11 flex items-center justify-center text-white/30 hover:text-white/70 transition-colors rounded-lg hover:bg-white/5">
               <i-lucide [img]="CloseIcon" size="20"></i-lucide>
             </a>
           }
@@ -38,7 +38,7 @@ import { RepracticeSpeakerComponent, PracticeAdvancedEvent } from '../repractice
           <!-- Progress Bar -->
           @if (session()) {
             <div class="flex-shrink-0 space-y-2 mb-6">
-              <div class="flex justify-between items-center text-[9px] font-black uppercase tracking-widest italic text-white/40">
+              <div class="flex justify-between items-center text-[11px] font-black uppercase tracking-widest italic text-white/40">
                 <span>MISTAKE {{ currentIndex() + 1 }} OF {{ session()!.utterances.length }}</span>
                 <span>{{ resolvedCount() }} RESOLVED</span>
               </div>
@@ -87,11 +87,11 @@ import { RepracticeSpeakerComponent, PracticeAdvancedEvent } from '../repractice
             <div class="bg-white/5 p-8 rounded-[40px] border border-white/5 space-y-6">
               <div class="grid grid-cols-2 gap-6">
                 <div class="space-y-1">
-                  <p class="text-[9px] font-black uppercase tracking-widest text-white/40 italic">Resolved</p>
+                  <p class="text-[11px] font-black uppercase tracking-widest text-white/40 italic">Resolved</p>
                   <p class="text-4xl font-black text-gw-success italic">{{ resolvedCount() }}</p>
                 </div>
                 <div class="space-y-1">
-                  <p class="text-[9px] font-black uppercase tracking-widest text-white/40 italic">Improvement</p>
+                  <p class="text-[11px] font-black uppercase tracking-widest text-white/40 italic">Improvement</p>
                   <div class="flex items-center justify-center gap-2 text-gw-accent">
                     <i-lucide [img]="TrendingIcon" size="18"></i-lucide>
                     <p class="text-4xl font-black italic">{{ improvement() }}%</p>
@@ -99,7 +99,7 @@ import { RepracticeSpeakerComponent, PracticeAdvancedEvent } from '../repractice
                 </div>
               </div>
               <div class="h-px bg-white/5"></div>
-              <p class="text-[10px] font-bold text-white/50 italic leading-relaxed">
+              <p class="text-[11px] font-bold text-white/50 italic leading-relaxed">
                 "Consistency is the key to fluency. Keep practicing your corrections."
               </p>
             </div>

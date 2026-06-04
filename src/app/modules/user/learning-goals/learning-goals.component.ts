@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+﻿import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule, DecimalPipe, DatePipe } from '@angular/common';
 import { Router, RouterLink } from '@angular/router';
 import { UserService } from '@core/services/user.service';
@@ -35,7 +35,7 @@ interface GoalProgress {
   imports: [CommonModule, DecimalPipe, DatePipe, LucideAngularModule, RouterLink],
   template: `
     <div class="min-h-screen bg-gw-bg">
-      <div class="max-w-lg mx-auto px-4 pt-2 pb-28 space-y-4 animate-in fade-in duration-500">
+      <div class="max-w-lg mx-auto px-4 pt-2 gwf-page-bottom space-y-4 animate-in fade-in duration-500">
 
       <!-- Page heading -->
       <div>
@@ -78,13 +78,13 @@ interface GoalProgress {
             <!-- Card header -->
             <div class="px-5 py-4 border-b border-gw-bg flex items-start justify-between gap-3">
               <div class="min-w-0">
-                <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted italic">
+                <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">
                   Active Goal
                 </p>
                 <p class="text-lg font-black text-gw-text italic mt-0.5 leading-snug">
                   {{ goal()!.goalLabel }}
                 </p>
-                <p class="text-[9px] font-semibold text-gw-text-muted mt-1 italic">
+                <p class="text-[11px] font-semibold text-gw-text-muted mt-1 italic">
                   {{ goal()!.detectedLevel }} · {{ goal()!.timelineWeeks }}-week plan
                 </p>
               </div>
@@ -101,7 +101,7 @@ interface GoalProgress {
                   [class.text-amber-500]=" goal()!.trendLabel === 'Stable'"
                   [class.text-gw-error]="  goal()!.trendLabel === 'Declining'">
                 </i-lucide>
-                <span class="text-[8px] font-black uppercase tracking-widest italic"
+                <span class="text-[11px] font-black uppercase tracking-widest italic"
                   [class.text-gw-success]="goal()!.trendLabel === 'Improving'"
                   [class.text-amber-500]=" goal()!.trendLabel === 'Stable'"
                   [class.text-gw-error]="  goal()!.trendLabel === 'Declining'">
@@ -115,14 +115,14 @@ interface GoalProgress {
               <!-- Session progress -->
               <div>
                 <div class="flex items-center justify-between mb-2">
-                  <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted italic">
+                  <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">
                     Session Progress
                   </p>
                   <div class="flex items-baseline gap-1">
                     <span class="text-sm font-black text-gw-primary italic">
                       {{ goal()!.sessionsCompleted }}
                     </span>
-                    <span class="text-[9px] font-bold text-gw-text-muted italic">
+                    <span class="text-[11px] font-bold text-gw-text-muted italic">
                       / {{ goal()!.sessionsTarget }}
                     </span>
                   </div>
@@ -136,10 +136,10 @@ interface GoalProgress {
                   </div>
                 </div>
                 <div class="flex items-center justify-between mt-1.5">
-                  <span class="text-[8px] font-bold text-gw-text-muted italic">
+                  <span class="text-[11px] font-bold text-gw-text-muted italic">
                     {{ goal()!.progressPercent | number:'1.0-0' }}% complete
                   </span>
-                  <span class="text-[8px] font-bold text-gw-text-muted italic">
+                  <span class="text-[11px] font-bold text-gw-text-muted italic">
                     ~{{ goal()!.estimatedWeeksRemaining }} weeks remaining
                   </span>
                 </div>
@@ -147,14 +147,14 @@ interface GoalProgress {
 
               <!-- Score movement -->
               <div>
-                <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted italic mb-3">
+                <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic mb-3">
                   {{ goal()!.primaryMetricLabel }}
                 </p>
                 <div class="grid grid-cols-3 gap-2">
 
                   <!-- Start -->
                   <div class="bg-gw-bg rounded-xl p-3 text-center">
-                    <p class="text-[8px] font-black uppercase tracking-wider text-gw-text-muted italic">
+                    <p class="text-[11px] font-black uppercase tracking-wider text-gw-text-muted italic">
                       Start
                     </p>
                     <p class="text-2xl font-black text-gw-text-muted italic mt-0.5">
@@ -164,19 +164,19 @@ interface GoalProgress {
 
                   <!-- Current — with delta badge -->
                   <div class="bg-gw-primary/10 rounded-xl p-3 text-center relative">
-                    <p class="text-[8px] font-black uppercase tracking-wider text-gw-primary italic">
+                    <p class="text-[11px] font-black uppercase tracking-wider text-gw-primary italic">
                       Now
                     </p>
                     <p class="text-2xl font-black text-gw-primary italic mt-0.5">
                       {{ goal()!.currentScore | number:'1.0-0' }}
                     </p>
                     @if (scoreDelta() > 0) {
-                      <span class="absolute -top-2 -right-2 text-[7px] font-black
+                      <span class="absolute -top-2 -right-2 text-[11px] font-black
                                    bg-gw-success text-white px-1.5 py-0.5 rounded-full leading-none">
                         +{{ scoreDelta() }}
                       </span>
                     } @else if (scoreDelta() < 0) {
-                      <span class="absolute -top-2 -right-2 text-[7px] font-black
+                      <span class="absolute -top-2 -right-2 text-[11px] font-black
                                    bg-gw-error/15 text-gw-error px-1.5 py-0.5 rounded-full leading-none">
                         {{ scoreDelta() }}
                       </span>
@@ -185,7 +185,7 @@ interface GoalProgress {
 
                   <!-- Target -->
                   <div class="bg-gw-success/10 rounded-xl p-3 text-center">
-                    <p class="text-[8px] font-black uppercase tracking-wider text-gw-success italic">
+                    <p class="text-[11px] font-black uppercase tracking-wider text-gw-success italic">
                       Target
                     </p>
                     <p class="text-2xl font-black text-gw-success italic mt-0.5">
@@ -198,12 +198,12 @@ interface GoalProgress {
 
               <!-- Timeline strip -->
               <div class="flex items-center gap-3 py-2.5 px-4 bg-gw-bg rounded-xl">
-                <div class="flex items-center gap-1.5 text-[9px] font-bold text-gw-text-muted italic shrink-0">
+                <div class="flex items-center gap-1.5 text-[11px] font-bold text-gw-text-muted italic shrink-0">
                   <i-lucide [img]="CalIcon" size="11"></i-lucide>
                   <span>{{ goal()!.startDate | date:'MMM d' }}</span>
                 </div>
                 <div class="flex-1 border-t-2 border-dashed border-gw-card-border"></div>
-                <div class="flex items-center gap-1.5 text-[9px] font-bold text-gw-text-muted italic shrink-0">
+                <div class="flex items-center gap-1.5 text-[11px] font-bold text-gw-text-muted italic shrink-0">
                   <i-lucide [img]="CalIcon" size="11"></i-lucide>
                   <span>{{ goal()!.targetDate | date:'MMM d, yyyy' }}</span>
                 </div>
@@ -213,7 +213,7 @@ interface GoalProgress {
               <div class="bg-gw-primary/5 border border-gw-primary/15 rounded-xl p-4">
                 <div class="flex items-center gap-2 mb-2">
                   <i-lucide [img]="ZapIcon" size="12" class="text-gw-primary shrink-0"></i-lucide>
-                  <p class="text-[9px] font-black uppercase tracking-widest text-gw-primary italic">
+                  <p class="text-[11px] font-black uppercase tracking-widest text-gw-primary italic">
                     Recommended Plan
                   </p>
                 </div>
@@ -228,7 +228,7 @@ interface GoalProgress {
             <div class="px-5 pb-5">
               <button (click)="showForm.set(true)"
                 class="w-full py-2.5 border border-gw-card-border rounded-xl
-                       text-[9px] font-black uppercase tracking-widest text-gw-text-muted italic
+                       text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic
                        hover:border-gw-primary hover:text-gw-primary transition-all">
                 Change Goal
               </button>
@@ -242,7 +242,7 @@ interface GoalProgress {
 
             <!-- Card header -->
             <div class="px-5 py-4 border-b border-gw-bg">
-              <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted italic">
+              <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">
                 {{ goal()?.hasActiveGoal ? 'Change Goal' : 'Set Your Practice Goal' }}
               </p>
               <h3 class="text-lg font-black text-gw-text italic mt-0.5">
@@ -274,12 +274,12 @@ interface GoalProgress {
                       </i-lucide>
                     </div>
 
-                    <p class="text-[10px] font-black uppercase tracking-wider italic leading-none"
+                    <p class="text-[11px] font-black uppercase tracking-wider italic leading-none"
                       [class.text-gw-primary]="selectedGoalType() === opt.value"
                       [class.text-gw-text]="   selectedGoalType() !== opt.value">
                       {{ opt.label }}
                     </p>
-                    <p class="text-[8px] text-gw-text-muted italic mt-1.5 leading-relaxed">
+                    <p class="text-[11px] text-gw-text-muted italic mt-1.5 leading-relaxed">
                       {{ opt.desc }}
                     </p>
                   </button>
@@ -288,7 +288,7 @@ interface GoalProgress {
 
               <!-- Timeline selector -->
               <div>
-                <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted italic mb-2">
+                <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic mb-2">
                   Timeline
                 </p>
                 <div class="grid grid-cols-3 gap-2">
@@ -305,7 +305,7 @@ interface GoalProgress {
                         [class.text-gw-text]=" selectedWeeks() !== opt.value">
                         {{ opt.value }}w
                       </p>
-                      <p class="text-[8px] font-semibold italic mt-1 leading-none"
+                      <p class="text-[11px] font-semibold italic mt-1 leading-none"
                         [ngClass]="{'text-white/70':     selectedWeeks() === opt.value,
                                     'text-gw-text-muted': selectedWeeks() !== opt.value}">
                         {{ opt.sublabel }}
@@ -317,7 +317,7 @@ interface GoalProgress {
 
               <!-- Submit CTA -->
               <button (click)="setGoal()" [disabled]="!selectedGoalType() || isSaving()"
-                class="w-full py-4 bg-gw-primary text-white font-black text-[10px]
+                class="w-full py-4 bg-gw-primary text-white font-black text-[11px]
                        uppercase tracking-widest italic rounded-xl hover:opacity-90
                        transition-all disabled:opacity-40 flex items-center justify-center gap-2">
                 @if (isSaving()) {
@@ -332,7 +332,7 @@ interface GoalProgress {
               <!-- Cancel — only when changing an existing goal -->
               @if (goal()?.hasActiveGoal) {
                 <button (click)="showForm.set(false)"
-                  class="w-full py-2 text-[9px] font-bold text-gw-text-muted italic
+                  class="w-full py-2 text-[11px] font-bold text-gw-text-muted italic
                          hover:text-gw-text transition-colors">
                   Cancel
                 </button>
@@ -351,11 +351,11 @@ interface GoalProgress {
               <i-lucide [img]="ZapIcon" size="16" class="text-gw-primary"></i-lucide>
             </div>
             <div>
-              <p class="text-[10px] font-black uppercase tracking-wider text-gw-text italic
+              <p class="text-[11px] font-black uppercase tracking-wider text-gw-text italic
                          group-hover:text-gw-primary transition-colors">
                 View Guided Learning Path
               </p>
-              <p class="text-[8px] text-gw-text-muted italic mt-0.5">
+              <p class="text-[11px] text-gw-text-muted italic mt-0.5">
                 Recommended sessions based on your goal
               </p>
             </div>

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+﻿import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AdminService } from '@core/services/admin.service';
@@ -29,15 +29,15 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
             <div>
               <h2 class="text-xl font-black text-gw-text">{{ header()!.fullName }}</h2>
               <div class="flex items-center gap-4 mt-0.5">
-                <span class="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-gw-text-muted">
+                <span class="flex items-center gap-1 text-[11px] font-black uppercase tracking-widest text-gw-text-muted">
                   <i-lucide [img]="FlameIcon" size="12" class="text-orange-400"></i-lucide>
                   {{ header()!.dailyStreakCount }} Day Streak
                 </span>
-                <span class="flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-gw-text-muted">
+                <span class="flex items-center gap-1 text-[11px] font-black uppercase tracking-widest text-gw-text-muted">
                   <i-lucide [img]="SessionIcon" size="12" class="text-gw-accent"></i-lucide>
                   {{ header()!.totalSessions }} Sessions
                 </span>
-                <span class="text-[10px] font-black uppercase tracking-widest text-gw-success">
+                <span class="text-[11px] font-black uppercase tracking-widest text-gw-success">
                   {{ header()!.avgScore | number:'1.0-1' }}% Avg Score
                 </span>
               </div>
@@ -74,11 +74,11 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
                   <table class="w-full">
                     <thead>
                       <tr class="border-b border-gw-card-border">
-                        <th class="px-5 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Date</th>
-                        <th class="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Script</th>
-                        <th class="px-4 py-3 text-center text-[10px] font-black uppercase tracking-widest text-gw-text-muted hidden sm:table-cell">Duration</th>
-                        <th class="px-4 py-3 text-center text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Fluency</th>
-                        <th class="px-4 py-3 text-center text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Mistakes</th>
+                        <th class="px-5 py-3 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Date</th>
+                        <th class="px-4 py-3 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Script</th>
+                        <th class="px-4 py-3 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden sm:table-cell">Duration</th>
+                        <th class="px-4 py-3 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Fluency</th>
+                        <th class="px-4 py-3 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Mistakes</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -109,9 +109,9 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
                   <table class="w-full">
                     <thead>
                       <tr class="border-b border-gw-card-border">
-                        <th class="px-5 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Week</th>
-                        <th class="px-4 py-3 text-right text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Avg Fluency</th>
-                        <th class="px-4 py-3 text-right text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Change</th>
+                        <th class="px-5 py-3 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Week</th>
+                        <th class="px-4 py-3 text-right text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Avg Fluency</th>
+                        <th class="px-4 py-3 text-right text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Change</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -156,7 +156,7 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
                     <div class="space-y-1.5">
                       <div class="flex justify-between items-center">
                         <span class="text-sm font-bold text-gw-text">{{ item.grammarTag }}</span>
-                        <span class="text-[10px] font-black text-gw-text-muted uppercase tracking-wider">{{ item.mistakeCount }} errors</span>
+                        <span class="text-[11px] font-black text-gw-text-muted uppercase tracking-wider">{{ item.mistakeCount }} errors</span>
                       </div>
                       <div class="h-2 bg-gw-bg rounded-full overflow-hidden">
                         <div class="h-full bg-red-400 rounded-full transition-all duration-700"
@@ -179,8 +179,8 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
                     @for (note of adminNotes(); track note.adminNoteId) {
                       <div class="bg-gw-bg rounded-xl p-3 space-y-1">
                         <div class="flex justify-between items-center">
-                          <span class="text-[10px] font-black text-gw-primary uppercase tracking-wider">{{ note.adminName }}</span>
-                          <span class="text-[10px] text-gw-text-muted">{{ note.noteDate | date:'dd MMM yyyy, h:mm a' }}</span>
+                          <span class="text-[11px] font-black text-gw-primary uppercase tracking-wider">{{ note.adminName }}</span>
+                          <span class="text-[11px] text-gw-text-muted">{{ note.noteDate | date:'dd MMM yyyy, h:mm a' }}</span>
                         </div>
                         <p class="text-sm text-gw-text font-medium">{{ note.noteText }}</p>
                       </div>

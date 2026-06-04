@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+﻿import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AdminService } from '@core/services/admin.service';
@@ -36,8 +36,8 @@ import {
             <div>
               <h2 class="text-xl font-black text-gw-text">{{ user()!.name }}</h2>
               <div class="flex items-center gap-3 mt-0.5">
-                <span class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted">{{ user()!.ageGroup }}</span>
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider"
+                <span class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">{{ user()!.ageGroup }}</span>
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider"
                   [class]="user()!.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'">
                   <span class="w-1.5 h-1.5 rounded-full flex-shrink-0"
                     [class]="user()!.status === 'ACTIVE' ? 'bg-green-500' : 'bg-red-400'"></span>
@@ -72,21 +72,21 @@ import {
                   <i-lucide [img]="SessionsIcon" size="18" class="text-gw-accent"></i-lucide>
                 </div>
                 <p class="text-2xl font-black text-gw-text">{{ user()!.sessions }}</p>
-                <p class="text-[10px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Sessions</p>
+                <p class="text-[11px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Sessions</p>
               </div>
               <div class="bg-white border border-gw-card-border rounded-2xl p-4 shadow-sm text-center">
                 <div class="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center mx-auto mb-2">
                   <i-lucide [img]="FlameIcon" size="18" class="text-orange-500"></i-lucide>
                 </div>
                 <p class="text-2xl font-black text-gw-text">{{ user()!.streak }}</p>
-                <p class="text-[10px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Streak</p>
+                <p class="text-[11px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Streak</p>
               </div>
               <div class="bg-white border border-gw-card-border rounded-2xl p-4 shadow-sm text-center">
                 <div class="w-10 h-10 rounded-xl bg-gw-success/10 flex items-center justify-center mx-auto mb-2">
                   <i-lucide [img]="SessionsIcon" size="18" class="text-gw-success"></i-lucide>
                 </div>
                 <p class="text-2xl font-black text-gw-success">{{ user()!.avgFluencyScore | number:'1.0-1' }}%</p>
-                <p class="text-[10px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Avg Score</p>
+                <p class="text-[11px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Avg Score</p>
               </div>
             </div>
 
@@ -104,11 +104,11 @@ import {
                   <table class="w-full">
                     <thead>
                       <tr class="border-b border-gw-card-border bg-gw-bg/50">
-                        <th class="px-5 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Session</th>
-                        <th class="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gw-text-muted hidden sm:table-cell">Date</th>
-                        <th class="px-4 py-3 text-center text-[10px] font-black uppercase tracking-widest text-gw-text-muted hidden md:table-cell">Duration</th>
-                        <th class="px-4 py-3 text-center text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Score</th>
-                        <th class="px-4 py-3 text-center text-[10px] font-black uppercase tracking-widest text-gw-text-muted hidden sm:table-cell">Mistakes</th>
+                        <th class="px-5 py-3 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Session</th>
+                        <th class="px-4 py-3 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden sm:table-cell">Date</th>
+                        <th class="px-4 py-3 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden md:table-cell">Duration</th>
+                        <th class="px-4 py-3 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Score</th>
+                        <th class="px-4 py-3 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden sm:table-cell">Mistakes</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -156,7 +156,7 @@ import {
                 <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
                   <i-lucide [img]="PhoneIcon" size="16" class="text-gw-text-muted flex-shrink-0"></i-lucide>
                   <div>
-                    <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Mobile</p>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Mobile</p>
                     <p class="text-sm font-bold text-gw-text mt-0.5">{{ user()!.mobileNumber }}</p>
                   </div>
                 </div>
@@ -164,7 +164,7 @@ import {
                   <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
                     <i-lucide [img]="MailIcon" size="16" class="text-gw-text-muted flex-shrink-0"></i-lucide>
                     <div>
-                      <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Email</p>
+                      <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Email</p>
                       <p class="text-sm font-bold text-gw-text mt-0.5 break-all">{{ user()!.email }}</p>
                     </div>
                   </div>
@@ -173,7 +173,7 @@ import {
                   <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
                     <i-lucide [img]="FlameIcon" size="16" class="text-gw-text-muted flex-shrink-0"></i-lucide>
                     <div>
-                      <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Last Active</p>
+                      <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Last Active</p>
                       <p class="text-sm font-bold text-gw-text mt-0.5">{{ user()!.lastActive | date:'d MMM y' }}</p>
                     </div>
                   </div>

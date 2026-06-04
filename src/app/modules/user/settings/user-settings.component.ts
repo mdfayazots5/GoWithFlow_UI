@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { LucideAngularModule, User, Mail, Phone, Camera, Save, CheckCircle, Mic } from 'lucide-angular';
@@ -14,7 +14,7 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
   imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, UserAvatarComponent],
   template: `
     <div class="min-h-screen bg-gw-bg">
-      <div class="max-w-lg mx-auto px-4 pt-2 pb-28 space-y-4 animate-in fade-in duration-500">
+      <div class="max-w-lg mx-auto px-4 pt-2 gwf-page-bottom space-y-4 animate-in fade-in duration-500">
 
         <!-- Page heading -->
         <div>
@@ -35,13 +35,13 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
               <input type="file" (change)="onFileSelected($event)" class="hidden" accept="image/*">
             </label>
           </div>
-          <p class="text-[10px] font-bold uppercase tracking-widest text-gw-text-muted">Tap camera to change photo</p>
+          <p class="text-[11px] font-bold uppercase tracking-widest text-gw-text-muted">Tap camera to change photo</p>
         </div>
 
         <!-- Personal Details -->
         <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
           <div class="px-5 py-3.5 border-b border-gw-bg">
-            <p class="text-[10px] font-black text-gw-text-muted uppercase tracking-widest">Personal Details</p>
+            <p class="text-[11px] font-black text-gw-text-muted uppercase tracking-widest">Personal Details</p>
           </div>
           <form [formGroup]="settingsForm" (ngSubmit)="onSubmit()" class="divide-y divide-gw-bg">
 
@@ -101,7 +101,7 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
         <!-- Live Session Preferences -->
         <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
           <div class="px-5 py-3.5 border-b border-gw-bg">
-            <p class="text-[10px] font-black text-gw-text-muted uppercase tracking-widest">Session Preferences</p>
+            <p class="text-[11px] font-black text-gw-text-muted uppercase tracking-widest">Session Preferences</p>
           </div>
 
           <div class="flex items-center justify-between px-5 py-4 gap-4">
@@ -112,7 +112,7 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
               </div>
               <div class="min-w-0">
                 <p class="text-sm font-bold text-gw-text leading-tight">Default Voice Starter</p>
-                <p class="text-[10px] text-gw-text-muted mt-0.5 leading-snug">
+                <p class="text-[11px] text-gw-text-muted mt-0.5 leading-snug">
                   Auto-start recording when it's your turn
                 </p>
               </div>

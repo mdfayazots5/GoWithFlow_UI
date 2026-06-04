@@ -1,4 +1,4 @@
-// File: src/app/modules/session/create/create-session.component.ts
+﻿// File: src/app/modules/session/create/create-session.component.ts
 import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormControl } from '@angular/forms';
@@ -23,7 +23,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
   imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, RouterLink],
   template: `
     <div class="min-h-screen bg-gw-bg">
-      <div class="max-w-lg mx-auto px-4 pt-2 pb-28 space-y-4 animate-in fade-in duration-500">
+      <div class="max-w-lg mx-auto px-4 pt-2 gwf-page-bottom space-y-4 animate-in fade-in duration-500">
 
         <!-- Page Heading -->
         <div>
@@ -35,7 +35,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
 
           <!-- Session Name -->
           <div class="bg-white rounded-2xl border border-gw-card-border p-5">
-            <label class="block text-[10px] font-bold uppercase tracking-[0.22em] text-gw-text-muted mb-3">Session Name</label>
+            <label class="block text-[11px] font-bold uppercase tracking-[0.22em] text-gw-text-muted mb-3">Session Name</label>
             <input
               formControlName="sessionName"
               type="text"
@@ -48,20 +48,20 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
           @if (selectedScript()) {
             <div class="grid grid-cols-2 gap-4">
               <div class="bg-white rounded-2xl border border-gw-card-border p-4 flex flex-col gap-1">
-                <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-gw-text-muted">Session Type</p>
+                <p class="text-[11px] font-bold uppercase tracking-[0.22em] text-gw-text-muted">Session Type</p>
                 <div class="flex items-center gap-2 mt-1">
                   <i-lucide [img]="LayersIcon" size="15" class="text-gw-primary shrink-0"></i-lucide>
                   <p class="text-[13px] font-bold text-gw-text">{{ derivedMode() }}</p>
                 </div>
-                <p class="text-[10px] text-gw-text-muted italic">From script</p>
+                <p class="text-[11px] text-gw-text-muted italic">From script</p>
               </div>
               <div class="bg-white rounded-2xl border border-gw-card-border p-4 flex flex-col gap-1">
-                <p class="text-[10px] font-bold uppercase tracking-[0.22em] text-gw-text-muted">Members</p>
+                <p class="text-[11px] font-bold uppercase tracking-[0.22em] text-gw-text-muted">Members</p>
                 <div class="flex items-center gap-2 mt-1">
                   <i-lucide [img]="UsersIcon" size="15" class="text-gw-primary shrink-0"></i-lucide>
                   <p class="text-[13px] font-bold text-gw-text">{{ derivedMaxMembers() }}</p>
                 </div>
-                <p class="text-[10px] text-gw-text-muted italic">From script</p>
+                <p class="text-[11px] text-gw-text-muted italic">From script</p>
               </div>
             </div>
           }
@@ -69,19 +69,19 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
           <!-- Script Selection -->
           <div class="bg-white rounded-2xl border border-gw-card-border p-5">
             <div class="flex items-center justify-between mb-3">
-              <label class="text-[10px] font-bold uppercase tracking-[0.22em] text-gw-text-muted">Script</label>
-              <a routerLink="/scripts" class="text-[10px] font-bold uppercase tracking-[0.16em] text-gw-primary hover:opacity-70 transition-opacity">Browse Library →</a>
+              <label class="text-[11px] font-bold uppercase tracking-[0.22em] text-gw-text-muted">Script</label>
+              <a routerLink="/scripts" class="text-[11px] font-bold uppercase tracking-[0.16em] text-gw-primary hover:opacity-70 transition-opacity">Browse Library →</a>
             </div>
 
             @if (selectedScript()) {
               <div class="flex items-center justify-between bg-gw-primary/8 border border-gw-primary/20 rounded-xl px-4 py-3">
                 <div>
-                  <p class="text-[10px] font-bold uppercase tracking-[0.16em] text-gw-primary mb-0.5">Selected</p>
+                  <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-gw-primary mb-0.5">Selected</p>
                   <p class="text-[14px] font-bold text-gw-text">{{ selectedScript()?.scriptTitle }}</p>
-                  <p class="text-[10px] text-gw-text-muted mt-0.5">{{ selectedScript()?.utteranceCount }} lines · {{ selectedScript()?.grammarFocusTag }}</p>
+                  <p class="text-[11px] text-gw-text-muted mt-0.5">{{ selectedScript()?.utteranceCount }} lines · {{ selectedScript()?.grammarFocusTag }}</p>
                 </div>
                 <button type="button" (click)="clearSelectedScript()"
-                  class="text-[10px] font-bold uppercase tracking-[0.16em] text-gw-text-muted hover:text-gw-error transition-colors ml-4 shrink-0">
+                  class="text-[11px] font-bold uppercase tracking-[0.16em] text-gw-text-muted hover:text-gw-error transition-colors ml-4 shrink-0">
                   Remove
                 </button>
               </div>
@@ -104,31 +104,31 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
                         class="w-full flex flex-col items-start gap-1 px-4 py-3 hover:bg-gw-bg border-b border-gw-bg last:border-0 transition-colors text-left"
                       >
                         <span class="text-[13px] font-bold text-gw-text">{{ script.scriptTitle }}</span>
-                        <span class="text-[10px] text-gw-text-muted">{{ script.utteranceCount }} lines · {{ script.grammarFocusTag }}</span>
+                        <span class="text-[11px] text-gw-text-muted">{{ script.utteranceCount }} lines · {{ script.grammarFocusTag }}</span>
                       </button>
                     }
                   </div>
                 }
               </div>
               @if (scriptSearch.value && !selectedScript()) {
-                <p class="text-[10px] text-gw-accent font-semibold mt-2 pl-1">Pick a result above to enable session creation.</p>
+                <p class="text-[11px] text-gw-accent font-semibold mt-2 pl-1">Pick a result above to enable session creation.</p>
               }
             }
           </div>
 
           <!-- Duration + Expiry -->
           <div class="bg-white rounded-2xl border border-gw-card-border p-5">
-            <label class="block text-[10px] font-bold uppercase tracking-[0.22em] text-gw-text-muted mb-3">Duration &amp; Room Expiry</label>
+            <label class="block text-[11px] font-bold uppercase tracking-[0.22em] text-gw-text-muted mb-3">Duration &amp; Room Expiry</label>
             <div class="grid grid-cols-2 gap-3">
               <select formControlName="sessionDuration"
-                class="w-full h-10 bg-gw-bg rounded-xl px-3 text-[13px] font-bold text-gw-text border-2 border-transparent focus:border-gw-primary outline-none cursor-pointer">
+                class="w-full h-12 bg-gw-bg rounded-xl px-3 text-[13px] font-bold text-gw-text border-2 border-transparent focus:border-gw-primary outline-none cursor-pointer">
                 <option [value]="15">15 minutes</option>
                 <option [value]="30">30 minutes</option>
                 <option [value]="45">45 minutes</option>
                 <option [value]="60">60 minutes</option>
               </select>
               <select formControlName="roomExpiry"
-                class="w-full h-10 bg-gw-bg rounded-xl px-3 text-[13px] font-bold text-gw-text border-2 border-transparent focus:border-gw-primary outline-none cursor-pointer">
+                class="w-full h-12 bg-gw-bg rounded-xl px-3 text-[13px] font-bold text-gw-text border-2 border-transparent focus:border-gw-primary outline-none cursor-pointer">
                 <option value="1hr">Expires in 1 hr</option>
                 <option value="6hr">Expires in 6 hrs</option>
                 <option value="24hr">Expires in 24 hrs</option>

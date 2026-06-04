@@ -1,4 +1,4 @@
-// File: src/app/modules/user/profile/profile.component.ts
+﻿// File: src/app/modules/user/profile/profile.component.ts
 import { Component, inject, signal, OnInit, computed, effect, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { CommonModule } from '@angular/common';
@@ -12,14 +12,15 @@ import {
 import { AuthService } from '@core/services/auth.service';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ToastService } from '@core/services/toast.service';
+import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.component';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, ReactiveFormsModule],
+  imports: [CommonModule, LucideAngularModule, ReactiveFormsModule, UserAvatarComponent],
   template: `
     <div class="min-h-screen bg-gw-bg">
-      <div class="max-w-lg mx-auto space-y-4 pb-28 px-4 pt-2 animate-in fade-in duration-500">
+      <div class="max-w-lg mx-auto space-y-4 gwf-page-bottom px-4 pt-2 animate-in fade-in duration-500">
 
         <!-- ── Profile Hero ─────────────────────────────────────────── -->
         <div class="bg-white rounded-3xl border border-gw-card-border shadow-sm overflow-hidden">
@@ -31,14 +32,12 @@ import { ToastService } from '@core/services/toast.service';
           <!-- Avatar + Identity -->
           <div class="px-6 pb-6 -mt-12 flex flex-col items-center text-center gap-3">
 
-            <!-- Initials avatar -->
-            <div class="w-24 h-24 rounded-2xl border-4 border-white shadow-xl
-                        flex items-center justify-center shrink-0 select-none"
-                 style="background: linear-gradient(135deg, #3D5A99 0%, #5B7EC9 100%);">
-              <span class="text-3xl font-black text-white tracking-tight leading-none">
-                {{ initials() }}
-              </span>
-            </div>
+            <!-- Avatar -->
+            <app-user-avatar
+              [name]="profile()?.fullName ?? ''"
+              [avatarUrl]="userState.avatarUrl()"
+              size="xl">
+            </app-user-avatar>
 
             <!-- View mode -->
             @if (!isEditing()) {
@@ -58,12 +57,12 @@ import { ToastService } from '@core/services/toast.service';
                   }
                 </div>
                 <div class="flex flex-wrap gap-1.5 justify-center">
-                  <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide"
+                  <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wide"
                         style="background: rgba(61,90,153,0.08); color: #3D5A99;">
                     {{ profile()?.ageGroup }}
                   </span>
                   <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg
-                               bg-amber-50 text-amber-600 text-[10px] font-bold uppercase tracking-wide">
+                               bg-amber-50 text-amber-600 text-[11px] font-bold uppercase tracking-wide">
                     <i-lucide [img]="FlameIcon" size="10"></i-lucide>
                     {{ profile()?.dailyStreakCount }} Days
                   </span>
@@ -107,17 +106,18 @@ import { ToastService } from '@core/services/toast.service';
         <!-- ── Stats Row ─────────────────────────────────────────────── -->
         <div class="grid grid-cols-2 gap-3">
           @for (stat of stats(); track stat.label) {
-            <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm p-4
-                        relative overflow-hidden">
-              <div class="absolute -right-3 -bottom-3 opacity-[0.05] pointer-events-none">
-                <i-lucide [img]="stat.icon" size="64"></i-lucide>
+            <div class="rounded-2xl border border-gw-card-border shadow-sm p-4
+                        relative overflow-hidden"
+                 [style.background]="stat.cardBg">
+              <div class="absolute -right-3 -bottom-3 opacity-[0.18] pointer-events-none">
+                <i-lucide [img]="stat.icon" size="72" [style.color]="stat.color"></i-lucide>
               </div>
               <div class="w-9 h-9 rounded-xl flex items-center justify-center mb-3"
-                   [style.background]="stat.bg">
+                   [style.background]="stat.iconBg">
                 <i-lucide [img]="stat.icon" size="16" [style.color]="stat.color"></i-lucide>
               </div>
               <p class="text-2xl font-black text-gw-text leading-none tabular-nums">{{ stat.value }}</p>
-              <p class="text-[10px] font-bold text-gw-text-muted uppercase tracking-widest mt-1">{{ stat.label }}</p>
+              <p class="text-[11px] font-bold text-gw-text-muted uppercase tracking-widest mt-1">{{ stat.label }}</p>
             </div>
           }
         </div>
@@ -125,7 +125,7 @@ import { ToastService } from '@core/services/toast.service';
         <!-- ── Account Details ───────────────────────────────────────── -->
         <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
           <div class="px-5 py-3.5 border-b border-gw-bg">
-            <p class="text-[10px] font-black text-gw-text-muted uppercase tracking-widest">Account</p>
+            <p class="text-[11px] font-black text-gw-text-muted uppercase tracking-widest">Account</p>
           </div>
           <div class="divide-y divide-gw-bg">
 
@@ -134,7 +134,7 @@ import { ToastService } from '@core/services/toast.service';
                 <i-lucide [img]="SmartphoneIcon" size="15" class="text-gw-text-muted"></i-lucide>
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-[10px] font-bold text-gw-text-muted uppercase tracking-wider">Mobile</p>
+                <p class="text-[11px] font-bold text-gw-text-muted uppercase tracking-wider">Mobile</p>
                 <p class="text-sm font-semibold text-gw-text mt-0.5 truncate">
                   {{ profile()?.mobileNumber }}
                 </p>
@@ -146,7 +146,7 @@ import { ToastService } from '@core/services/toast.service';
                 <i-lucide [img]="MailIcon" size="15" class="text-gw-text-muted"></i-lucide>
               </div>
               <div class="flex-1 min-w-0">
-                <p class="text-[10px] font-bold text-gw-text-muted uppercase tracking-wider">Email</p>
+                <p class="text-[11px] font-bold text-gw-text-muted uppercase tracking-wider">Email</p>
                 <p class="text-sm font-semibold mt-0.5 truncate"
                    [class.text-gw-text]="profile()?.email"
                    [class.text-gw-text-muted]="!profile()?.email">
@@ -160,7 +160,7 @@ import { ToastService } from '@core/services/toast.service';
                 <i-lucide [img]="CalendarIcon" size="15" class="text-gw-text-muted"></i-lucide>
               </div>
               <div class="flex-1">
-                <p class="text-[10px] font-bold text-gw-text-muted uppercase tracking-wider">Member Since</p>
+                <p class="text-[11px] font-bold text-gw-text-muted uppercase tracking-wider">Member Since</p>
                 <p class="text-sm font-semibold text-gw-text mt-0.5">
                   {{ profile()?.registrationDate | date:'MMMM yyyy' }}
                 </p>
@@ -174,22 +174,22 @@ import { ToastService } from '@core/services/toast.service';
         @if (earnedCertificates().length > 0) {
           <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
             <div class="px-5 py-3.5 border-b border-gw-bg flex items-center justify-between">
-              <p class="text-[10px] font-black text-gw-text-muted uppercase tracking-widest">Certificates</p>
-              <span class="text-[9px] font-bold text-gw-text-muted">{{ earnedCertificates().length }}</span>
+              <p class="text-[11px] font-black text-gw-text-muted uppercase tracking-widest">Certificates</p>
+              <span class="text-[11px] font-bold text-gw-text-muted">{{ earnedCertificates().length }}</span>
             </div>
             <div class="divide-y divide-gw-bg">
               @for (cert of earnedCertificates(); track cert.code) {
                 <div class="flex items-center gap-3.5 px-5 py-3.5">
                   <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
                        style="background: rgba(224,123,57,0.08);">
-                    <i-lucide [img]="AwardIcon" size="15" style="color:#E07B39;"></i-lucide>
+                    <i-lucide [img]="AwardIcon" size="15" class="text-gw-accent"></i-lucide>
                   </div>
                   <div class="flex-1 min-w-0">
                     <p class="text-sm font-bold text-gw-text">{{ cert.name }}</p>
-                    <p class="text-[9px] text-gw-text-muted mt-0.5">{{ cert.earnedDate | date:'MMMM d, y' }}</p>
+                    <p class="text-[11px] text-gw-text-muted mt-0.5">{{ cert.earnedDate | date:'MMMM d, y' }}</p>
                   </div>
                   <button (click)="downloadCertificate(cert)"
-                          class="w-8 h-8 rounded-lg bg-gw-bg flex items-center justify-center text-gw-text-muted hover:text-gw-primary hover:bg-gw-primary/10 transition-all">
+                          class="w-10 h-10 rounded-lg bg-gw-bg flex items-center justify-center text-gw-text-muted hover:text-gw-primary hover:bg-gw-primary/10 transition-all">
                     <i-lucide [img]="DownloadIcon" size="13"></i-lucide>
                   </button>
                 </div>
@@ -265,10 +265,10 @@ export class ProfileComponent implements OnInit {
     const s   = this.streak();
     if (!res || !s) return [];
     return [
-      { label: 'Sessions',    value: res.totalSessionsPlayed,  icon: Award,      bg: '#EEF2FF', color: '#3D5A99' },
-      { label: 'Avg Fluency', value: res.avgFluencyScore + '%', icon: TrendingUp, bg: '#ECFDF5', color: '#2E7D32' },
-      { label: 'Day Streak',  value: s.currentStreak,          icon: Flame,      bg: '#FFFBEB', color: '#F59E0B' },
-      { label: 'Best Streak', value: s.longestStreak,          icon: Zap,        bg: '#FFF7ED', color: '#E07B39' }
+      { label: 'Sessions',    value: res.totalSessionsPlayed,  icon: Award,      cardBg: 'rgba(61,90,153,0.09)',  iconBg: 'rgba(61,90,153,0.18)',  color: '#3D5A99' },
+      { label: 'Avg Fluency', value: res.avgFluencyScore + '%', icon: TrendingUp, cardBg: 'rgba(46,125,50,0.09)',  iconBg: 'rgba(46,125,50,0.20)',  color: '#2E7D32' },
+      { label: 'Day Streak',  value: s.currentStreak,          icon: Flame,      cardBg: 'rgba(245,158,11,0.10)', iconBg: 'rgba(245,158,11,0.22)', color: '#F59E0B' },
+      { label: 'Best Streak', value: s.longestStreak,          icon: Zap,        cardBg: 'rgba(224,123,57,0.10)', iconBg: 'rgba(224,123,57,0.22)', color: '#E07B39' }
     ];
   });
 

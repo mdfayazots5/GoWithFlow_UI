@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+﻿import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ScriptService } from '@core/services/script.service';
@@ -44,7 +44,7 @@ interface ScriptDetail {
           <i-lucide [img]="BackIcon" size="20"></i-lucide>
         </button>
         <div class="min-w-0">
-          <p class="text-[10px] font-bold text-gw-text-muted uppercase tracking-widest italic">Session Preparation — Read Only</p>
+          <p class="text-[11px] font-bold text-gw-text-muted uppercase tracking-widest italic">Session Preparation — Read Only</p>
           @if (script()) {
             <h2 class="text-xl font-black text-gw-text italic uppercase tracking-tighter truncate">{{ script()!.scriptTitle }}</h2>
           }
@@ -69,28 +69,28 @@ interface ScriptDetail {
         <!-- Script metadata card -->
         <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm p-5 space-y-3">
           <div class="flex flex-wrap gap-2">
-            <span class="px-2.5 py-1 bg-gw-primary/10 text-gw-primary text-[9px] font-black uppercase tracking-wider rounded-lg italic">
+            <span class="px-2.5 py-1 bg-gw-primary/10 text-gw-primary text-[11px] font-black uppercase tracking-wider rounded-lg italic">
               {{ script()!.category }}
             </span>
-            <span class="px-2.5 py-1 bg-gw-bg text-gw-text-muted text-[9px] font-black uppercase tracking-wider rounded-lg italic">
+            <span class="px-2.5 py-1 bg-gw-bg text-gw-text-muted text-[11px] font-black uppercase tracking-wider rounded-lg italic">
               Level {{ script()!.complexityLevel }}
             </span>
             @if (script()!.grammarFocusTag && script()!.grammarFocusTag !== 'None') {
-              <span class="px-2.5 py-1 bg-amber-50 text-amber-600 border border-amber-100 text-[9px] font-black uppercase tracking-wider rounded-lg italic">
+              <span class="px-2.5 py-1 bg-amber-50 text-amber-600 border border-amber-100 text-[11px] font-black uppercase tracking-wider rounded-lg italic">
                 {{ script()!.grammarFocusTag }}
               </span>
             }
             @if (script()!.contextTag) {
-              <span class="px-2.5 py-1 bg-gw-bg text-gw-text-muted text-[9px] font-black uppercase tracking-wider rounded-lg italic">
+              <span class="px-2.5 py-1 bg-gw-bg text-gw-text-muted text-[11px] font-black uppercase tracking-wider rounded-lg italic">
                 {{ script()!.contextTag }}
               </span>
             }
           </div>
-          <div class="flex items-center gap-4 text-[9px] font-bold text-gw-text-muted italic">
+          <div class="flex items-center gap-4 text-[11px] font-bold text-gw-text-muted italic">
             <span>{{ script()!.utteranceCount }} turns</span>
             <span>{{ script()!.targetAgeGroup }}</span>
           </div>
-          <p class="text-[10px] font-semibold text-gw-text-muted italic bg-gw-bg px-3 py-2 rounded-xl">
+          <p class="text-[11px] font-semibold text-gw-text-muted italic bg-gw-bg px-3 py-2 rounded-xl">
             Read through the script below to prepare before joining the session. No recording occurs here.
           </p>
         </div>
@@ -102,7 +102,7 @@ interface ScriptDetail {
           @if (isMockInterview()) {
             <div class="bg-gw-primary/5 border border-gw-primary/20 rounded-xl px-4 py-2.5 flex items-start gap-2">
               <i-lucide [img]="MsgIcon" size="14" class="text-gw-primary mt-0.5 flex-shrink-0"></i-lucide>
-              <p class="text-[9px] font-bold text-gw-primary italic">Interviewer turns are shaded. Prepare your Candidate answers before joining.</p>
+              <p class="text-[11px] font-bold text-gw-primary italic">Interviewer turns are shaded. Prepare your Candidate answers before joining.</p>
             </div>
           }
 
@@ -116,14 +116,14 @@ interface ScriptDetail {
               <div class="px-4 py-3">
                 <!-- Speaker row -->
                 <div class="flex items-center gap-2 mb-1.5">
-                  <span class="text-[8px] font-black uppercase tracking-widest"
+                  <span class="text-[11px] font-black uppercase tracking-widest"
                     [class.text-gw-text-muted]="isFacilitatorTurn(turn.speakerLabel)"
                     [class.text-gw-primary]="!isFacilitatorTurn(turn.speakerLabel)">
                     {{ turn.speakerLabel }}
                   </span>
-                  <span class="text-[7px] font-bold text-gw-text-muted">#{{ turn.sequenceId }}</span>
+                  <span class="text-[11px] font-bold text-gw-text-muted">#{{ turn.sequenceId }}</span>
                   @if (isFacilitatorTurn(turn.speakerLabel)) {
-                    <span class="text-[7px] font-black uppercase tracking-wider text-gw-text-muted italic px-1.5 py-0.5 bg-white rounded border border-gw-card-border">Facilitator</span>
+                    <span class="text-[11px] font-black uppercase tracking-wider text-gw-text-muted italic px-1.5 py-0.5 bg-white rounded border border-gw-card-border">Facilitator</span>
                   }
                 </div>
 
@@ -136,20 +136,20 @@ interface ScriptDetail {
 
                 <!-- HintText -->
                 @if (turn.hintText) {
-                  <p class="text-[10px] text-gw-text-muted italic mt-1 pl-2 border-l-2 border-gw-card-border">{{ turn.hintText }}</p>
+                  <p class="text-[11px] text-gw-text-muted italic mt-1 pl-2 border-l-2 border-gw-card-border">{{ turn.hintText }}</p>
                 }
 
                 <!-- Tags row -->
                 @if (turn.grammarTag || turn.focusWord || turn.pronunciationNote) {
                   <div class="flex flex-wrap gap-1.5 mt-2">
                     @if (turn.grammarTag) {
-                      <span class="flex items-center gap-1 text-[7px] font-black uppercase tracking-wider text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
+                      <span class="flex items-center gap-1 text-[11px] font-black uppercase tracking-wider text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">
                         <i-lucide [img]="TagIcon" size="9"></i-lucide>
                         {{ turn.grammarTag }}
                       </span>
                     }
                     @if (turn.focusWord) {
-                      <span class="text-[7px] font-black uppercase tracking-wider text-gw-primary bg-gw-primary/10 px-1.5 py-0.5 rounded">
+                      <span class="text-[11px] font-black uppercase tracking-wider text-gw-primary bg-gw-primary/10 px-1.5 py-0.5 rounded">
                         {{ turn.focusWord }}
                         @if (turn.pronunciationNote) { · {{ turn.pronunciationNote }} }
                       </span>
@@ -164,12 +164,12 @@ interface ScriptDetail {
         <!-- Start session CTA -->
         <div class="sticky bottom-4 flex gap-3 justify-center">
           <a routerLink="/scripts"
-            class="h-12 px-5 bg-gw-bg text-gw-text-muted font-black text-[10px] uppercase tracking-widest italic rounded-2xl shadow-sm hover:bg-gw-card-border transition-all flex items-center gap-2">
+            class="h-12 px-5 bg-gw-bg text-gw-text-muted font-black text-[11px] uppercase tracking-widest italic rounded-2xl shadow-sm hover:bg-gw-card-border transition-all flex items-center gap-2">
             <i-lucide [img]="BookIcon" size="14"></i-lucide>
             Library
           </a>
           <button (click)="startSession()"
-            class="h-12 px-8 bg-gw-primary text-white font-black text-[10px] uppercase tracking-widest italic rounded-2xl shadow-lg hover:opacity-90 transition-all flex items-center gap-2">
+            class="h-12 px-8 bg-gw-primary text-white font-black text-[11px] uppercase tracking-widest italic rounded-2xl shadow-lg hover:opacity-90 transition-all flex items-center gap-2">
             <i-lucide [img]="PlayIcon" size="14"></i-lucide>
             Start Session
           </button>

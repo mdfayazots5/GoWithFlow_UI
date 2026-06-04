@@ -1,4 +1,4 @@
-// File: src/app/modules/session/session-review/session-review.component.ts
+﻿// File: src/app/modules/session/session-review/session-review.component.ts
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -22,7 +22,7 @@ import { AudioArchiveService } from '@core/services/audio-archive.service';
             <h2 class="text-base font-black text-gw-text italic uppercase tracking-tight truncate">
               {{ review()?.scriptTitle || 'Session Review' }}
             </h2>
-            <p class="text-[9px] font-bold text-gw-text-muted uppercase tracking-widest">
+            <p class="text-[11px] font-bold text-gw-text-muted uppercase tracking-widest">
               {{ review()?.category }} · {{ review()?.grammarFocusTag }}
             </p>
           </div>
@@ -61,17 +61,17 @@ import { AudioArchiveService } from '@core/services/audio-archive.service';
           <!-- Score Summary Bar -->
           <div class="grid grid-cols-3 gap-3 mb-6">
             <div class="bg-white border border-gw-card-border rounded-2xl p-4 text-center">
-              <p class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Turns</p>
+              <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Turns</p>
               <p class="text-2xl font-black text-gw-text italic">{{ review()!.totalTurns }}</p>
             </div>
             <div class="bg-white border border-gw-card-border rounded-2xl p-4 text-center">
-              <p class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Avg Score</p>
+              <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Avg Score</p>
               <p class="text-2xl font-black italic" [class]="avgScoreColor(review()!.averageOverallScore)">
                 {{ review()!.averageOverallScore | number:'1.0-0' }}%
               </p>
             </div>
             <div class="bg-white border border-gw-card-border rounded-2xl p-4 text-center">
-              <p class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Errors</p>
+              <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Errors</p>
               <p class="text-2xl font-black italic"
                  [class.text-gw-error]="totalErrors() > 0"
                  [class.text-gw-success]="totalErrors() === 0">
@@ -94,10 +94,10 @@ import { AudioArchiveService } from '@core/services/audio-archive.service';
                    [ngClass]="{'bg-gw-bg/50': !turn.isFacilitatorTurn}"
                    [class.bg-white]="turn.isFacilitatorTurn">
                 <div class="flex items-center gap-2">
-                  <span class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted italic">
+                  <span class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">
                     Turn {{ turn.turnIndex }}
                   </span>
-                  <span class="px-2 py-0.5 rounded-lg text-[8px] font-black uppercase tracking-wider"
+                  <span class="px-2 py-0.5 rounded-lg text-[11px] font-black uppercase tracking-wider"
                         [ngClass]="{'bg-gw-primary/10': !turn.isFacilitatorTurn}"
                         [class.text-gw-primary]="!turn.isFacilitatorTurn"
                         [class.bg-gw-bg]="turn.isFacilitatorTurn"
@@ -105,7 +105,7 @@ import { AudioArchiveService } from '@core/services/audio-archive.service';
                     {{ turn.speakerLabel }}
                   </span>
                   @if (turn.isFacilitatorTurn) {
-                    <span class="text-[8px] font-bold text-gw-text-muted italic">Facilitator</span>
+                    <span class="text-[11px] font-bold text-gw-text-muted italic">Facilitator</span>
                   }
                 </div>
                 @if (!turn.isFacilitatorTurn && turn.wasAnalyzed) {
@@ -117,16 +117,16 @@ import { AudioArchiveService } from '@core/services/audio-archive.service';
                         <i-lucide [img]="PlayIcon" size="11"></i-lucide>
                       </button>
                     }
-                    <span class="text-[9px] font-black italic" [class]="scoreColor(turn.overallScore)">
+                    <span class="text-[11px] font-black italic" [class]="scoreColor(turn.overallScore)">
                       {{ turn.overallScore | number:'1.0-0' }}%
                     </span>
-                    <span class="text-[8px] font-bold italic text-gw-text-muted">
+                    <span class="text-[11px] font-bold italic text-gw-text-muted">
                       {{ scoreBand(turn.overallScore) }}
                     </span>
                   </div>
                 }
                 @if (!turn.isFacilitatorTurn && !turn.wasAnalyzed) {
-                  <span class="text-[8px] font-bold text-gw-text-muted italic">Skipped</span>
+                  <span class="text-[11px] font-bold text-gw-text-muted italic">Skipped</span>
                 }
               </div>
 
@@ -140,7 +140,7 @@ import { AudioArchiveService } from '@core/services/audio-archive.service';
                 <!-- Transcribed text (what was spoken) — only for analyzed turns -->
                 @if (!turn.isFacilitatorTurn && turn.wasAnalyzed && turn.transcribedText) {
                   <div class="space-y-1">
-                    <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted italic">What you said</p>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">What you said</p>
                     <p class="text-sm text-gw-text/75 italic leading-snug">
                       "{{ turn.transcribedText }}"
                     </p>
@@ -150,14 +150,14 @@ import { AudioArchiveService } from '@core/services/audio-archive.service';
                 <!-- Metrics row — for analyzed performance turns -->
                 @if (!turn.isFacilitatorTurn && turn.wasAnalyzed) {
                   <div class="flex flex-wrap gap-2">
-                    <span class="text-[9px] font-bold text-gw-text-muted px-2 py-1 bg-gw-bg rounded-lg">
+                    <span class="text-[11px] font-bold text-gw-text-muted px-2 py-1 bg-gw-bg rounded-lg">
                       Fluency {{ turn.fluencyScore | number:'1.0-0' }}%
                     </span>
-                    <span class="text-[9px] font-bold text-gw-text-muted px-2 py-1 bg-gw-bg rounded-lg">
+                    <span class="text-[11px] font-bold text-gw-text-muted px-2 py-1 bg-gw-bg rounded-lg">
                       Confidence {{ turn.confidenceScore | number:'1.0-0' }}%
                     </span>
                     @if (turn.speakingSpeedWpm > 0) {
-                      <span class="text-[9px] font-bold text-gw-text-muted px-2 py-1 bg-gw-bg rounded-lg">
+                      <span class="text-[11px] font-bold text-gw-text-muted px-2 py-1 bg-gw-bg rounded-lg">
                         {{ turn.speakingSpeedWpm }} wpm
                       </span>
                     }
@@ -167,16 +167,16 @@ import { AudioArchiveService } from '@core/services/audio-archive.service';
                 <!-- Grammar errors -->
                 @if (turn.grammarErrors.length > 0) {
                   <div class="space-y-1.5">
-                    <p class="text-[9px] font-black uppercase tracking-widest text-gw-error italic">Grammar Errors</p>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-gw-error italic">Grammar Errors</p>
                     @for (err of turn.grammarErrors; track $index) {
                       <div class="flex items-start gap-2 px-3 py-2 bg-red-50 border border-red-100 rounded-xl">
                         <i-lucide [img]="ErrorIcon" size="12" class="text-gw-error mt-0.5 flex-shrink-0"></i-lucide>
                         <div class="min-w-0">
-                          <span class="text-[10px] font-bold text-gw-error line-through">{{ err.spokenPhrase }}</span>
-                          <span class="text-[10px] text-gw-text-muted mx-1.5">→</span>
-                          <span class="text-[10px] font-bold text-gw-success">{{ err.expectedPhrase }}</span>
+                          <span class="text-[11px] font-bold text-gw-error line-through">{{ err.spokenPhrase }}</span>
+                          <span class="text-[11px] text-gw-text-muted mx-1.5">→</span>
+                          <span class="text-[11px] font-bold text-gw-success">{{ err.expectedPhrase }}</span>
                           @if (err.errorType) {
-                            <span class="ml-2 text-[8px] font-bold text-gw-text-muted uppercase tracking-wider">({{ err.errorType }})</span>
+                            <span class="ml-2 text-[11px] font-bold text-gw-text-muted uppercase tracking-wider">({{ err.errorType }})</span>
                           }
                         </div>
                       </div>
@@ -187,9 +187,9 @@ import { AudioArchiveService } from '@core/services/audio-archive.service';
                 <!-- Hesitation words -->
                 @if (turn.hesitationWords.length > 0) {
                   <div class="flex items-center gap-2 flex-wrap">
-                    <span class="text-[9px] font-black uppercase tracking-widest text-amber-600 italic">Hesitations:</span>
+                    <span class="text-[11px] font-black uppercase tracking-widest text-amber-600 italic">Hesitations:</span>
                     @for (word of turn.hesitationWords; track $index) {
-                      <span class="px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-lg text-[9px] font-bold text-amber-700">
+                      <span class="px-2 py-0.5 bg-amber-50 border border-amber-200 rounded-lg text-[11px] font-bold text-amber-700">
                         {{ word }}
                       </span>
                     }
@@ -199,9 +199,9 @@ import { AudioArchiveService } from '@core/services/audio-archive.service';
                 <!-- Pronunciation issues -->
                 @if (turn.pronunciationIssues.length > 0) {
                   <div class="space-y-1">
-                    <p class="text-[9px] font-black uppercase tracking-widest text-purple-600 italic">Pronunciation</p>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-purple-600 italic">Pronunciation</p>
                     @for (pi of turn.pronunciationIssues; track $index) {
-                      <div class="flex items-center gap-2 text-[10px] text-gw-text-muted italic">
+                      <div class="flex items-center gap-2 text-[11px] text-gw-text-muted italic">
                         <span class="font-bold text-purple-600">{{ pi.word }}</span>
                         @if (pi.expectedPhonetic) {
                           <span class="text-gw-text-muted">→ {{ pi.expectedPhonetic }}</span>

@@ -1,4 +1,4 @@
-// File: src/app/modules/live-session/listener-screen/listener-screen.component.ts
+﻿// File: src/app/modules/live-session/listener-screen/listener-screen.component.ts
 import { Component, Input, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TurnState } from '@core/models/voice.model';
@@ -17,10 +17,10 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
       <!-- Turn Progress -->
       <div class="space-y-1.5">
         <div class="flex justify-between items-center">
-          <span class="text-[10px] font-black uppercase tracking-widest text-white/30 italic">
+          <span class="text-[11px] font-black uppercase tracking-widest text-white/30 italic">
             Turn {{ turnState.turnIndex }} / {{ turnState.totalTurns }}
           </span>
-          <span class="px-2 py-0.5 bg-[#E07B39]/15 text-[#E07B39] text-[9px] font-black uppercase tracking-wider rounded-full italic">
+          <span class="px-2 py-0.5 bg-[#E07B39]/15 text-[#E07B39] text-[11px] font-black uppercase tracking-wider rounded-full italic">
             {{ turnState.utterance.grammarTag }}
           </span>
         </div>
@@ -40,6 +40,7 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
           <div class="relative z-10">
             <app-user-avatar
               [name]="turnState.activeMemberName"
+              [avatarUrl]="turnState.activeMemberAvatarUrl"
               size="lg"
               [dark]="true">
             </app-user-avatar>
@@ -55,12 +56,12 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
           </h2>
           <div class="flex items-center justify-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-[#E07B39] animate-pulse"></span>
-            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-[#E07B39] italic">Speaking Now</span>
+            <span class="text-[11px] font-black uppercase tracking-[0.2em] text-[#E07B39] italic">Speaking Now</span>
           </div>
           @if (voiceBroadcast.isReceivingAudio()) {
             <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 bg-[#34d399]/15 border border-[#34d399]/30 rounded-full animate-in fade-in duration-300">
               <i-lucide [img]="VolumeIcon" size="10" class="text-[#34d399]"></i-lucide>
-              <span class="text-[9px] font-black uppercase tracking-widest text-[#34d399] italic">Live Audio</span>
+              <span class="text-[11px] font-black uppercase tracking-widest text-[#34d399] italic">Live Audio</span>
               <span class="w-1 h-1 rounded-full bg-[#34d399] animate-pulse"></span>
             </div>
           }
@@ -80,7 +81,7 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
 
       <!-- Utterance Card -->
       <div class="bg-white/5 rounded-[20px] border border-white/8 px-4 py-3 space-y-2">
-        <span class="text-[9px] font-black uppercase tracking-widest text-white/25 italic">Currently Reading</span>
+        <span class="text-[11px] font-black uppercase tracking-widest text-white/25 italic">Currently Reading</span>
         <p class="text-base font-black text-white/75 italic leading-snug tracking-tight">
           "{{ turnState.utterance.englishText }}"
         </p>
@@ -90,19 +91,19 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
       @if (showReReadBanner) {
         <div class="flex items-center gap-2.5 px-4 py-2.5 bg-[#E07B39]/10 border border-[#E07B39]/25 rounded-xl animate-in slide-in-from-top-2 duration-300">
           <span class="w-1.5 h-1.5 rounded-full bg-[#E07B39] animate-pulse flex-shrink-0"></span>
-          <span class="text-[10px] font-black uppercase tracking-widest text-[#E07B39] italic">Speaker is re-reading</span>
+          <span class="text-[11px] font-black uppercase tracking-widest text-[#E07B39] italic">Speaker is re-reading</span>
         </div>
       }
       @if (listenerTagFlash) {
         <div class="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#3D5A99]/15 border border-[#3D5A99]/30 rounded-xl animate-in zoom-in duration-300">
-          <span class="text-[10px] font-black uppercase tracking-widest text-[#3D5A99] italic">Sent: {{ listenerTagFlash }}</span>
+          <span class="text-[11px] font-black uppercase tracking-widest text-[#3D5A99] italic">Sent: {{ listenerTagFlash }}</span>
         </div>
       }
 
       <!-- Quick Feedback — suppressed on facilitator turns (Interviewer/Tutor/Coach) -->
       @if (!turnState.isFacilitatorTurn) {
         <div class="space-y-2">
-          <p class="text-[9px] font-black uppercase tracking-[0.2em] text-white/30 italic text-center">Give Quick Feedback</p>
+          <p class="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 italic text-center">Give Quick Feedback</p>
           <div class="grid grid-cols-2 gap-2">
             @for (action of feedbackActions; track action.label) {
               <button
@@ -119,7 +120,7 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
                 >
                   <i-lucide [img]="action.icon" size="14"></i-lucide>
                 </div>
-                <span class="text-[10px] font-black uppercase tracking-wider text-white/55 leading-tight">{{ action.label }}</span>
+                <span class="text-[11px] font-black uppercase tracking-wider text-white/55 leading-tight">{{ action.label }}</span>
               </button>
             }
           </div>
@@ -129,7 +130,7 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
       <!-- Your Turn Is Next -->
       <div class="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-[#3D5A99]/20 to-transparent border border-[#3D5A99]/25">
         <span class="w-1.5 h-1.5 rounded-full bg-[#3D5A99] animate-pulse flex-shrink-0"></span>
-        <span class="text-[10px] font-black uppercase tracking-widest text-white/35 italic">Waiting...</span>
+        <span class="text-[11px] font-black uppercase tracking-widest text-white/35 italic">Waiting...</span>
         <div class="flex-1"></div>
         <span class="text-[11px] font-black uppercase tracking-widest text-[#3D5A99] italic">Your Turn Is Next →</span>
       </div>

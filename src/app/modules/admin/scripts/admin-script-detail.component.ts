@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+﻿import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ScriptService } from '@core/services/script.service';
@@ -32,13 +32,13 @@ import {
             <div>
               <h2 class="text-xl font-black text-gw-text">{{ script()!.scriptTitle }}</h2>
               <div class="flex items-center gap-3 mt-0.5">
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider"
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider"
                   [class]="script()!.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'">
                   <span class="w-1.5 h-1.5 rounded-full flex-shrink-0"
                     [class]="script()!.active ? 'bg-green-500' : 'bg-red-400'"></span>
                   {{ script()!.active ? 'Active' : 'Inactive' }}
                 </span>
-                <span class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted">v{{ script()!.version }}</span>
+                <span class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">v{{ script()!.version }}</span>
               </div>
             </div>
           </div>
@@ -71,7 +71,7 @@ import {
                 <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
                   <i-lucide [img]="TagIcon" size="16" class="text-gw-text-muted flex-shrink-0"></i-lucide>
                   <div>
-                    <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Category</p>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Category</p>
                     <p class="text-sm font-bold text-gw-text mt-0.5">{{ script()!.category }}</p>
                   </div>
                 </div>
@@ -79,7 +79,7 @@ import {
                 <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
                   <i-lucide [img]="HashIcon" size="16" class="text-gw-text-muted flex-shrink-0"></i-lucide>
                   <div>
-                    <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Grammar Tag</p>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Grammar Tag</p>
                     <p class="text-sm font-bold text-gw-text mt-0.5">{{ script()!.grammarFocusTag }}</p>
                   </div>
                 </div>
@@ -87,7 +87,7 @@ import {
                 <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
                   <i-lucide [img]="UsersIcon" size="16" class="text-gw-text-muted flex-shrink-0"></i-lucide>
                   <div>
-                    <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Age Group</p>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Age Group</p>
                     <p class="text-sm font-bold text-gw-text mt-0.5">{{ script()!.targetAgeGroup }}</p>
                   </div>
                 </div>
@@ -95,7 +95,7 @@ import {
                 <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
                   <i-lucide [img]="LinesIcon" size="16" class="text-gw-text-muted flex-shrink-0"></i-lucide>
                   <div>
-                    <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Utterance Lines</p>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Utterance Lines</p>
                     <p class="text-sm font-bold text-gw-text mt-0.5">{{ script()!.utteranceCount }}</p>
                   </div>
                 </div>
@@ -103,7 +103,7 @@ import {
                 <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
                   <i-lucide [img]="LayersIcon" size="16" class="text-gw-text-muted flex-shrink-0"></i-lucide>
                   <div>
-                    <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Complexity</p>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Complexity</p>
                     <div class="flex gap-1 mt-1.5">
                       @for (d of [1,2,3,4,5]; track d) {
                         <span class="w-3 h-3 rounded-full"
@@ -116,7 +116,7 @@ import {
                 <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
                   <i-lucide [img]="CalendarIcon" size="16" class="text-gw-text-muted flex-shrink-0"></i-lucide>
                   <div>
-                    <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Uploaded</p>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Uploaded</p>
                     <p class="text-sm font-bold text-gw-text mt-0.5">{{ script()!.uploadedDate | date:'d MMM y' }}</p>
                   </div>
                 </div>
@@ -144,10 +144,10 @@ import {
                   <table class="w-full">
                     <thead>
                       <tr class="border-b border-gw-card-border">
-                        <th class="px-5 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Version</th>
-                        <th class="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gw-text-muted hidden sm:table-cell">Date</th>
-                        <th class="px-4 py-3 text-left text-[10px] font-black uppercase tracking-widest text-gw-text-muted hidden md:table-cell">Notes</th>
-                        <th class="px-4 py-3 text-right text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Action</th>
+                        <th class="px-5 py-3 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Version</th>
+                        <th class="px-4 py-3 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden sm:table-cell">Date</th>
+                        <th class="px-4 py-3 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden md:table-cell">Notes</th>
+                        <th class="px-4 py-3 text-right text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Action</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -157,7 +157,7 @@ import {
                             <div class="flex items-center gap-2">
                               <span class="text-sm font-black text-gw-text">v{{ v.versionNumber }}</span>
                               @if (first) {
-                                <span class="px-2 py-0.5 bg-gw-primary/10 text-gw-primary text-[9px] font-black uppercase tracking-wider rounded-full">Current</span>
+                                <span class="px-2 py-0.5 bg-gw-primary/10 text-gw-primary text-[11px] font-black uppercase tracking-wider rounded-full">Current</span>
                               }
                             </div>
                           </td>
@@ -172,7 +172,7 @@ import {
                           <td class="px-4 py-3.5 text-right">
                             @if (!first) {
                               <button (click)="rollback(v.versionNumber)"
-                                class="h-7 px-3 text-[10px] font-black uppercase tracking-wider text-gw-primary border border-gw-primary/30 rounded-lg hover:bg-gw-primary/10 transition-colors">
+                                class="h-7 px-3 text-[11px] font-black uppercase tracking-wider text-gw-primary border border-gw-primary/30 rounded-lg hover:bg-gw-primary/10 transition-colors">
                                 Rollback
                               </button>
                             }

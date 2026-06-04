@@ -1,4 +1,4 @@
-// File: src/app/modules/session/history/session-history.component.ts
+﻿// File: src/app/modules/session/history/session-history.component.ts
 import { Component, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -46,7 +46,7 @@ type Filter = typeof FILTERS[number];
   imports: [CommonModule, LucideAngularModule, RouterLink],
   template: `
     <div class="min-h-screen bg-gw-bg">
-      <div class="max-w-lg mx-auto px-4 pt-2 pb-28 space-y-4 animate-in fade-in duration-500">
+      <div class="max-w-lg mx-auto px-4 pt-2 gwf-page-bottom space-y-4 animate-in fade-in duration-500">
 
         <!-- ── Page Heading ─────────────────────────────────────── -->
         <div class="flex items-center justify-between gap-3">
@@ -64,7 +64,7 @@ type Filter = typeof FILTERS[number];
         <div class="flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
           @for (f of filters; track f) {
             <button (click)="setFilter(f)"
-                    class="shrink-0 h-8 px-4 rounded-full text-[10px] font-black uppercase tracking-widest
+                    class="shrink-0 h-8 px-4 rounded-full text-[11px] font-black uppercase tracking-widest
                            transition-all border"
                     [class.bg-gw-primary]="activeFilter() === f"
                     [class.text-white]="activeFilter() === f"
@@ -119,16 +119,16 @@ type Filter = typeof FILTERS[number];
                       {{ s.sessionName }}
                     </p>
                     <div class="flex items-center gap-2 mt-1 flex-wrap">
-                      <span class="text-[10px] font-semibold text-gw-text-muted">
+                      <span class="text-[11px] font-semibold text-gw-text-muted">
                         {{ s.createdDate | date:'MMM d, yyyy' }}
                       </span>
-                      <span class="text-[10px] font-semibold text-gw-text-muted">·</span>
-                      <span class="text-[10px] font-semibold text-gw-text-muted">
+                      <span class="text-[11px] font-semibold text-gw-text-muted">·</span>
+                      <span class="text-[11px] font-semibold text-gw-text-muted">
                         {{ s.sessionDuration }} min
                       </span>
                       @if (s.mistakesCount) {
-                        <span class="text-[10px] font-semibold text-gw-text-muted">·</span>
-                        <span class="text-[10px] font-semibold"
+                        <span class="text-[11px] font-semibold text-gw-text-muted">·</span>
+                        <span class="text-[11px] font-semibold"
                               style="color:#C62828;">
                           {{ s.mistakesCount }} error{{ s.mistakesCount === 1 ? '' : 's' }}
                         </span>
@@ -145,7 +145,7 @@ type Filter = typeof FILTERS[number];
                         {{ s.fluencyScore | number:'1.0-0' }}%
                       </span>
                     }
-                    <span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+                    <span class="text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
                           [style.background]="statusBg(s.status)"
                           [style.color]="statusColor(s.status)">
                       {{ s.status | titlecase }}

@@ -1,4 +1,4 @@
-// File: src/app/modules/user/invitations/my-invitations.component.ts
+﻿// File: src/app/modules/user/invitations/my-invitations.component.ts
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -17,7 +17,7 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
   imports: [CommonModule, LucideAngularModule, UserAvatarComponent],
   template: `
     <div class="min-h-screen bg-gw-bg">
-      <div class="max-w-lg mx-auto px-4 pt-4 pb-28 space-y-4 animate-in fade-in duration-500">
+      <div class="max-w-lg mx-auto px-4 pt-4 gwf-page-bottom space-y-4 animate-in fade-in duration-500">
 
         <div>
           <h1 class="text-lg font-black text-gw-text tracking-tight">My Invitations</h1>
@@ -47,9 +47,9 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
                 <div class="flex items-start justify-between gap-2">
                   <div class="min-w-0">
                     <p class="text-sm font-black text-gw-text truncate">{{ inv.sessionName }}</p>
-                    <p class="text-[10px] text-gw-text-muted mt-0.5 italic">{{ inv.sessionMode }}</p>
+                    <p class="text-[11px] text-gw-text-muted mt-0.5 italic">{{ inv.sessionMode }}</p>
                   </div>
-                  <span class="text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full shrink-0"
+                  <span class="text-[11px] font-black uppercase tracking-widest px-2 py-1 rounded-full shrink-0"
                         [class.bg-amber-100]="inv.status === 'PENDING'"
                         [class.text-amber-700]="inv.status === 'PENDING'">
                     {{ inv.status }}
@@ -66,11 +66,11 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
 
                 <div class="grid grid-cols-2 gap-3">
                   <div>
-                    <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Your Role</p>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Your Role</p>
                     <p class="text-xs font-bold text-gw-primary mt-0.5">{{ inv.slotName }}</p>
                   </div>
                   <div>
-                    <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Duration</p>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Duration</p>
                     <p class="text-xs font-bold text-gw-text mt-0.5">{{ inv.sessionDuration }} min</p>
                   </div>
                 </div>

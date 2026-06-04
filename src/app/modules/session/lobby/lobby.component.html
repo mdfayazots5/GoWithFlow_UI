@@ -1,4 +1,4 @@
-<div class="max-w-lg mx-auto flex flex-col gap-5 pb-10 animate-in fade-in duration-400">
+﻿<div class="max-w-lg mx-auto flex flex-col gap-5 pb-10 animate-in fade-in duration-400">
 
   <!-- Session Hero Card -->
   <div class="bg-gw-primary rounded-[32px] p-7 text-white relative overflow-hidden">
@@ -8,11 +8,11 @@
     <div class="relative z-10 space-y-4">
       <!-- Mode badge + script -->
       <div class="flex items-center gap-2 flex-wrap">
-        <span class="px-2.5 py-1 bg-white/20 text-white rounded-lg text-[9px] font-black uppercase tracking-widest italic">
+        <span class="px-2.5 py-1 bg-white/20 text-white rounded-lg text-[11px] font-black uppercase tracking-widest italic">
           {{ state()?.session?.sessionMode || '—' }}
         </span>
         @if (state()?.session?.sessionDuration) {
-          <span class="flex items-center gap-1 text-white/50 text-[9px] font-black uppercase tracking-wider italic">
+          <span class="flex items-center gap-1 text-white/50 text-[11px] font-black uppercase tracking-wider italic">
             <i-lucide [img]="ClockIcon" size="10"></i-lucide>
             {{ state()?.session?.sessionDuration }} min
           </span>
@@ -20,16 +20,16 @@
       </div>
 
       <!-- Session name -->
-      <h2 class="text-3xl font-black italic uppercase tracking-tighter leading-tight">
+      <h2 class="lobby-session-name font-black italic uppercase tracking-tighter leading-tight">
         {{ state()?.session?.sessionName || 'Loading session...' }}
       </h2>
 
       <!-- Join code row -->
       <div class="flex items-end justify-between">
         <div>
-          <p class="text-white/40 text-[8px] font-black uppercase tracking-[0.3em] mb-1.5">Room Code</p>
+          <p class="text-white/40 text-[11px] font-black uppercase tracking-[0.3em] mb-1.5">Room Code</p>
           <div class="flex items-center gap-3">
-            <span class="text-3xl font-black tracking-[0.3em] italic font-mono">
+            <span class="lobby-join-code font-black tracking-[0.25em] italic font-mono">
               {{ state()?.session?.joinCode || '———' }}
             </span>
             <button (click)="copyCode()"
@@ -42,7 +42,7 @@
         <div class="bg-white/15 rounded-2xl px-4 py-2 text-center">
           <span class="text-2xl font-black italic text-white">{{ state()?.members?.length || 0 }}</span>
           <span class="text-white/50 text-sm font-black italic">/{{ state()?.session?.maxMembers || '?' }}</span>
-          <p class="text-white/40 text-[7px] font-black uppercase tracking-wider mt-0.5">Members</p>
+          <p class="text-white/40 text-[11px] font-black uppercase tracking-wider mt-0.5">Members</p>
         </div>
       </div>
     </div>
@@ -50,19 +50,19 @@
 
   <!-- Status Bar -->
   <div class="flex items-center justify-between px-1">
-    <h3 class="text-[9px] font-black uppercase tracking-[0.25em] text-gw-text-muted italic">Players</h3>
+    <h3 class="text-[11px] font-black uppercase tracking-[0.25em] text-gw-text-muted italic">Players</h3>
     @if (allReady()) {
-      <span class="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-emerald-500 italic">
+      <span class="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-emerald-500 italic">
         <i-lucide [img]="CheckIcon" size="11"></i-lucide>
         All ready
       </span>
     } @else if (hasEnoughPlayers()) {
-      <span class="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-amber-500 italic">
+      <span class="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-amber-500 italic">
         <i-lucide [img]="ZapIcon" size="11"></i-lucide>
         Waiting for readiness
       </span>
     } @else {
-      <span class="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-amber-500 italic">
+      <span class="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-amber-500 italic">
         <i-lucide [img]="ZapIcon" size="11"></i-lucide>
         Waiting for players
       </span>
@@ -96,13 +96,13 @@
             <div class="flex items-center gap-2 flex-wrap">
               <span class="text-[15px] font-black text-gw-text italic tracking-tight truncate">{{ member.name }}</span>
               @if (member.isHost) {
-                <span class="px-2 py-0.5 bg-gw-accent/10 text-gw-accent rounded-md text-[8px] font-black uppercase tracking-widest italic shrink-0">Host</span>
+                <span class="px-2 py-0.5 bg-gw-accent/10 text-gw-accent rounded-md text-[11px] font-black uppercase tracking-widest italic shrink-0">Host</span>
               }
               @if (isMe(member)) {
-                <span class="px-2 py-0.5 bg-gw-primary/10 text-gw-primary rounded-md text-[8px] font-black uppercase tracking-widest italic shrink-0">You</span>
+                <span class="px-2 py-0.5 bg-gw-primary/10 text-gw-primary rounded-md text-[11px] font-black uppercase tracking-widest italic shrink-0">You</span>
               }
             </div>
-            <span class="text-[9px] font-black uppercase tracking-wider text-gw-text-muted italic">{{ member.slotName || 'Slot ' + i }}</span>
+            <span class="text-[11px] font-black uppercase tracking-wider text-gw-text-muted italic">{{ member.slotName || 'Slot ' + i }}</span>
           </div>
 
           <!-- Ready status -->
@@ -113,12 +113,12 @@
               <div class="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center">
                 <i-lucide [img]="CheckIcon" size="18" class="text-emerald-500"></i-lucide>
               </div>
-              <span class="text-[7px] font-black uppercase tracking-wider text-emerald-500 italic">Ready</span>
+              <span class="text-[11px] font-black uppercase tracking-wider text-emerald-500 italic">Ready</span>
             } @else {
               <div class="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center">
                 <i-lucide [img]="EmptyIcon" size="18" class="text-amber-400"></i-lucide>
               </div>
-              <span class="text-[7px] font-black uppercase tracking-wider text-amber-400 italic">Waiting</span>
+              <span class="text-[11px] font-black uppercase tracking-wider text-amber-400 italic">Waiting</span>
             }
           </div>
 
@@ -130,7 +130,7 @@
           </div>
           <div>
             <p class="text-sm font-black text-gw-card-border/60 italic tracking-tight">Open Slot</p>
-            <span class="text-[9px] font-black uppercase tracking-wider text-gw-card-border/40 italic">Waiting to join</span>
+            <span class="text-[11px] font-black uppercase tracking-wider text-gw-card-border/40 italic">Waiting to join</span>
           </div>
         }
       </div>
@@ -145,7 +145,7 @@
       <!-- Leave -->
       <button (click)="leaveSession()"
         class="h-14 px-5 bg-white border-2 border-gw-card-border text-gw-text-muted rounded-2xl flex items-center gap-2
-          hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-all font-black text-[9px] uppercase tracking-widest italic shrink-0">
+          hover:bg-red-50 hover:text-red-500 hover:border-red-200 transition-all font-black text-[11px] uppercase tracking-widest italic shrink-0">
         <i-lucide [img]="LeaveIcon" size="18"></i-lucide>
         <span class="hidden sm:inline">Leave</span>
       </button>
@@ -212,7 +212,7 @@
     <div class="bg-white rounded-[20px] border border-gw-card-border p-4 flex items-center justify-between gap-4">
       <div class="flex-1 min-w-0">
         <p class="text-xs font-black text-gw-text">Record Session Audio</p>
-        <p class="text-[10px] text-gw-text-muted mt-0.5 leading-snug">Records all participant turns from start to finish. Stored 90 days.</p>
+        <p class="text-[11px] text-gw-text-muted mt-0.5 leading-snug">Records all participant turns from start to finish. Stored 90 days.</p>
       </div>
       <button (click)="toggleAudioConsent()"
               class="w-12 h-6 rounded-full flex items-center transition-all duration-200 flex-shrink-0 relative"
@@ -227,7 +227,7 @@
   } @else if (audioConsentEnabled()) {
     <div class="bg-gw-bg rounded-[20px] border border-gw-card-border px-4 py-3 flex items-center gap-2.5">
       <i-lucide [img]="ShieldIcon" size="14" class="text-gw-text-muted shrink-0"></i-lucide>
-      <p class="text-[10px] text-gw-text-muted">This session is being recorded by the host.</p>
+      <p class="text-[11px] text-gw-text-muted">This session is being recorded by the host.</p>
     </div>
   }
 
@@ -240,7 +240,7 @@
     >
       <span class="flex items-center gap-3">
         <i-lucide [img]="ScriptIcon" size="16" class="text-gw-primary shrink-0"></i-lucide>
-        <span class="text-[10px] font-black uppercase tracking-widest text-gw-text italic text-left truncate">
+        <span class="text-[11px] font-black uppercase tracking-widest text-gw-text italic text-left truncate">
           Script: {{ state()?.session?.scriptTitle || '—' }}
         </span>
       </span>

@@ -1,4 +1,4 @@
-// ── Page shell ────────────────────────────────────────────────────────────────
+﻿// ── Page shell ────────────────────────────────────────────────────────────────
 
 .login-page {
   min-height: 100vh;
@@ -31,7 +31,7 @@
 .logo-icon {
   width: clamp(52px, 9vw, 64px);
   height: clamp(52px, 9vw, 64px);
-  background: #3D5A99;
+  background: var(--gwf-secondary);
   border-radius: 18px;
   display: flex;
   align-items: center;
@@ -92,26 +92,26 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.7px;
-  color: #6B7280;
+  color: var(--gwf-text-muted);
 }
 
 .field-input {
   height: 50px;
-  border: 1.5px solid #E5E7EB;
+  border: 1.5px solid var(--gwf-card-border);
   border-radius: 10px;
   padding: 0 16px;
   font-size: 15px;
   font-weight: 500;
   font-family: inherit;
-  color: #1A1A2E;
-  background: #F9FAFB;
+  color: var(--gwf-text);
+  background: var(--gwf-bg);
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 
   &::placeholder { color: #C0C8D4; }
 
   &:focus {
-    border-color: #3D5A99;
+    border-color: var(--gwf-secondary);
     background: #FFFFFF;
     box-shadow: 0 0 0 3px rgba(61, 90, 153, 0.12);
   }
@@ -120,7 +120,7 @@
 .field-error {
   font-size: 12px;
   font-weight: 500;
-  color: #D32F2F;
+  color: var(--gwf-error);
 }
 
 .error-banner {
@@ -130,7 +130,7 @@
   padding: 10px 14px;
   font-size: 13px;
   font-weight: 500;
-  color: #D32F2F;
+  color: var(--gwf-error);
   text-align: center;
 }
 
@@ -139,7 +139,7 @@
 .btn-login {
   width: 100%;
   height: 52px;
-  background: #3D5A99;
+  background: var(--gwf-secondary);
   color: #FFFFFF;
   border: none;
   border-radius: 12px;
@@ -156,7 +156,7 @@
   transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.1s ease;
 
   &:hover:not(:disabled) {
-    background: #2D4580;
+    background: var(--gwf-secondary-dark);
     box-shadow: 0 6px 20px rgba(61, 90, 153, 0.5);
     transform: translateY(-1px);
   }

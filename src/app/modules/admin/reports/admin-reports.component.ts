@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+﻿import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { AdminService } from '@core/services/admin.service';
@@ -41,23 +41,23 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
 
           <!-- Date From -->
           <div class="flex flex-col gap-1.5 flex-1 min-w-[140px]">
-            <label class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Date From</label>
+            <label class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Date From</label>
             <input type="date" [formControl]="dateFrom"
-              class="h-10 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all">
+              class="h-11 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all">
           </div>
 
           <!-- Date To -->
           <div class="flex flex-col gap-1.5 flex-1 min-w-[140px]">
-            <label class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Date To</label>
+            <label class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Date To</label>
             <input type="date" [formControl]="dateTo"
-              class="h-10 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all">
+              class="h-11 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all">
           </div>
 
           <!-- User Filter -->
           <div class="flex flex-col gap-1.5 flex-1 min-w-[160px]">
-            <label class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted">User</label>
+            <label class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">User</label>
             <select [formControl]="userFilter"
-              class="h-10 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all appearance-none cursor-pointer">
+              class="h-11 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all appearance-none cursor-pointer">
               <option value="">All Users</option>
               @for (u of userList(); track u.id) {
                 <option [value]="u.id">{{ u.name }}</option>
@@ -85,43 +85,43 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
         <!-- Avg Fluency -->
         <div class="bg-white border border-gw-card-border rounded-2xl p-4 shadow-sm">
           <div class="flex items-center justify-between mb-3">
-            <p class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Avg Fluency</p>
+            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Avg Fluency</p>
             <div class="w-8 h-8 rounded-xl bg-gw-primary/10 flex items-center justify-center">
               <i-lucide [img]="BarIcon" size="15" class="text-gw-primary"></i-lucide>
             </div>
           </div>
           <p class="text-2xl font-black text-gw-text">{{ avgFluency() | number:'1.0-1' }}%</p>
-          <p class="text-[10px] text-gw-text-muted mt-1">Across all users</p>
+          <p class="text-[11px] text-gw-text-muted mt-1">Across all users</p>
         </div>
 
         <!-- Total Sessions -->
         <div class="bg-white border border-gw-card-border rounded-2xl p-4 shadow-sm">
           <div class="flex items-center justify-between mb-3">
-            <p class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Total Sessions</p>
+            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Total Sessions</p>
             <div class="w-8 h-8 rounded-xl bg-gw-accent/10 flex items-center justify-center">
               <i-lucide [img]="CalendarIcon" size="15" class="text-gw-accent"></i-lucide>
             </div>
           </div>
           <p class="text-2xl font-black text-gw-text">{{ totalSessions() }}</p>
-          <p class="text-[10px] text-gw-text-muted mt-1">All time</p>
+          <p class="text-[11px] text-gw-text-muted mt-1">All time</p>
         </div>
 
         <!-- Most Improved -->
         <div class="bg-white border border-gw-card-border rounded-2xl p-4 shadow-sm">
           <div class="flex items-center justify-between mb-3">
-            <p class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Most Improved</p>
+            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Most Improved</p>
             <div class="w-8 h-8 rounded-xl bg-green-100 flex items-center justify-center">
               <i-lucide [img]="TrendUpIcon" size="15" class="text-green-600"></i-lucide>
             </div>
           </div>
           <p class="text-base font-black text-gw-text truncate">{{ mostImproved() || '—' }}</p>
-          <p class="text-[10px] text-gw-text-muted mt-1">Highest improvement</p>
+          <p class="text-[11px] text-gw-text-muted mt-1">Highest improvement</p>
         </div>
 
         <!-- Top Struggled Tag -->
         <div class="bg-white border border-gw-card-border rounded-2xl p-4 shadow-sm">
           <div class="flex items-center justify-between mb-3">
-            <p class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Top Struggle</p>
+            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Top Struggle</p>
             <div class="w-8 h-8 rounded-xl bg-red-100 flex items-center justify-center">
               <i-lucide [img]="AlertIcon" size="15" class="text-red-500"></i-lucide>
             </div>
@@ -133,7 +133,7 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
           } @else {
             <p class="text-base font-black text-gw-text">—</p>
           }
-          <p class="text-[10px] text-gw-text-muted mt-1">Most common mistake</p>
+          <p class="text-[11px] text-gw-text-muted mt-1">Most common mistake</p>
         </div>
       </div>
 
@@ -164,13 +164,13 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
             <table class="w-full">
               <thead>
                 <tr class="border-b border-gw-card-border">
-                  <th class="px-5 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-gw-text-muted">User</th>
-                  <th class="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-gw-text-muted hidden sm:table-cell">Sessions</th>
-                  <th class="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Avg Score</th>
-                  <th class="px-4 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-gw-text-muted hidden lg:table-cell">Common Mistake</th>
-                  <th class="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-gw-text-muted hidden md:table-cell">Improvement</th>
-                  <th class="px-4 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-gw-text-muted hidden lg:table-cell">Last Session</th>
-                  <th class="px-4 py-3.5 text-right text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Actions</th>
+                  <th class="px-5 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted">User</th>
+                  <th class="px-4 py-3.5 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden sm:table-cell">Sessions</th>
+                  <th class="px-4 py-3.5 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Avg Score</th>
+                  <th class="px-4 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden lg:table-cell">Common Mistake</th>
+                  <th class="px-4 py-3.5 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden md:table-cell">Improvement</th>
+                  <th class="px-4 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden lg:table-cell">Last Session</th>
+                  <th class="px-4 py-3.5 text-right text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Actions</th>
                 </tr>
               </thead>
               <tbody>

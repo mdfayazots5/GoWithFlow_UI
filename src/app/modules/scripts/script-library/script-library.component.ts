@@ -1,4 +1,4 @@
-// File: src/app/modules/scripts/script-library/script-library.component.ts
+﻿// File: src/app/modules/scripts/script-library/script-library.component.ts
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -21,7 +21,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
   imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, MatBottomSheetModule, RouterLink],
   template: `
     <div class="min-h-screen bg-gw-bg">
-      <div class="max-w-lg mx-auto px-4 pt-2 pb-28 space-y-4 animate-in fade-in duration-500">
+      <div class="max-w-lg mx-auto px-4 pt-2 gwf-page-bottom space-y-4 animate-in fade-in duration-500">
 
         <!-- ── Page Heading ─────────────────────────────────────── -->
         <div class="flex items-center justify-between gap-3">
@@ -57,7 +57,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
              style="-ms-overflow-style:none;scrollbar-width:none;">
           <select [formControl]="categoryControl"
                   class="shrink-0 h-9 bg-white border border-gw-card-border rounded-full
-                         px-4 text-[10px] font-black uppercase tracking-widest text-gw-text
+                         px-4 text-[11px] font-black uppercase tracking-widest text-gw-text
                          outline-none appearance-none cursor-pointer
                          focus:border-gw-primary transition-colors shadow-sm">
             <option value="">All Categories</option>
@@ -70,7 +70,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
 
           <select [formControl]="grammarControl"
                   class="shrink-0 h-9 bg-white border border-gw-card-border rounded-full
-                         px-4 text-[10px] font-black uppercase tracking-widest text-gw-text
+                         px-4 text-[11px] font-black uppercase tracking-widest text-gw-text
                          outline-none appearance-none cursor-pointer
                          focus:border-gw-primary transition-colors shadow-sm">
             <option value="">All Grammar</option>
@@ -83,7 +83,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
 
           <select [formControl]="ageControl"
                   class="shrink-0 h-9 bg-white border border-gw-card-border rounded-full
-                         px-4 text-[10px] font-black uppercase tracking-widest text-gw-text
+                         px-4 text-[11px] font-black uppercase tracking-widest text-gw-text
                          outline-none appearance-none cursor-pointer
                          focus:border-gw-primary transition-colors shadow-sm">
             <option value="">All Ages</option>
@@ -134,18 +134,18 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
                         {{ script.scriptTitle }}
                       </p>
                       <div class="flex items-center gap-2 mt-1 flex-wrap">
-                        <span class="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
+                        <span class="text-[11px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full"
                               [style.background]="categoryBg(script.category)"
                               [style.color]="categoryColor(script.category)">
                           {{ script.category }}
                         </span>
                         @if (script.grammarFocusTag && script.grammarFocusTag !== 'None') {
-                          <span class="text-[9px] font-bold text-amber-600 bg-amber-50
+                          <span class="text-[11px] font-bold text-amber-600 bg-amber-50
                                        px-2 py-0.5 rounded-full border border-amber-100">
                             {{ script.grammarFocusTag }}
                           </span>
                         }
-                        <span class="text-[10px] font-semibold text-gw-text-muted">
+                        <span class="text-[11px] font-semibold text-gw-text-muted">
                           {{ script.utteranceCount }} lines
                         </span>
                         <!-- Complexity dots -->
@@ -162,21 +162,21 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
                     <!-- Action buttons -->
                     <div class="flex items-center gap-1.5 shrink-0">
                       <button (click)="previewScript(script)"
-                              class="w-8 h-8 rounded-xl flex items-center justify-center
+                              class="w-10 h-10 rounded-xl flex items-center justify-center
                                      text-gw-text-muted bg-gw-bg
                                      hover:text-gw-primary hover:bg-gw-primary/10 transition-all"
                               title="Preview">
                         <i-lucide [img]="PreviewIcon" size="15"></i-lucide>
                       </button>
                       <a [routerLink]="['/scripts/prepare', script.id]"
-                         class="w-8 h-8 rounded-xl flex items-center justify-center
+                         class="w-10 h-10 rounded-xl flex items-center justify-center
                                 text-gw-text-muted bg-gw-bg
                                 hover:text-gw-primary hover:bg-gw-primary/10 transition-all no-underline"
                          title="Prepare">
                         <i-lucide [img]="PrepareIcon" size="15"></i-lucide>
                       </a>
                       <button (click)="startSession(script)"
-                              class="w-8 h-8 rounded-xl flex items-center justify-center
+                              class="w-10 h-10 rounded-xl flex items-center justify-center
                                      text-white hover:opacity-90 active:scale-95 transition-all"
                               style="background:var(--gw-primary);"
                               title="Start session">
@@ -184,7 +184,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
                       </button>
                       @if (isAdmin()) {
                         <button (click)="deactivateScript(script)"
-                                class="w-8 h-8 rounded-xl flex items-center justify-center
+                                class="w-10 h-10 rounded-xl flex items-center justify-center
                                        text-gw-text-muted bg-gw-bg
                                        hover:text-gw-error hover:bg-red-50 transition-all"
                                 title="Deactivate">

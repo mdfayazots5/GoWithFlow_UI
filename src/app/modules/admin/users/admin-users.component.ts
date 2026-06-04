@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+﻿import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AdminService, AdminUserListItem, AdminUserDetail } from '@core/services/admin.service';
@@ -34,7 +34,7 @@ import { Router } from '@angular/router';
                 {{ editingUserId() ? 'Edit User' : 'Add User' }}
               </h2>
             </div>
-            <button (click)="closeUserModal()" class="w-8 h-8 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gw-text-muted">
+            <button (click)="closeUserModal()" class="w-11 h-11 flex items-center justify-center rounded-xl hover:bg-gray-100 transition-colors text-gw-text-muted">
               <i-lucide [img]="XIcon" size="16"></i-lucide>
             </button>
           </div>
@@ -77,38 +77,38 @@ import { Router } from '@angular/router';
                   <button type="button" (click)="clearAvatarFile()" class="text-red-400 hover:text-red-600 font-black flex-shrink-0">✕</button>
                 </div>
               } @else {
-                <p class="text-[10px] text-gw-text-muted italic">Click camera to upload image (max 2 MB)</p>
+                <p class="text-[11px] text-gw-text-muted italic">Click camera to upload image (max 2 MB)</p>
               }
             </div>
 
             <!-- Full Name -->
             <div>
-              <label class="block text-[10px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">Full Name <span class="text-red-500">*</span></label>
+              <label class="block text-[11px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">Full Name <span class="text-red-500">*</span></label>
               <input formControlName="fullName" type="text" placeholder="e.g. Ravi Kumar" autocomplete="off"
-                class="w-full h-10 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all"
+                class="w-full h-11 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all"
                 [class.border-red-400]="userForm.get('fullName')?.invalid && userForm.get('fullName')?.touched">
             </div>
 
             <!-- Mobile Number -->
             <div>
-              <label class="block text-[10px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">Mobile Number <span class="text-red-500">*</span></label>
+              <label class="block text-[11px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">Mobile Number <span class="text-red-500">*</span></label>
               <input formControlName="mobileNumber" type="tel" placeholder="e.g. 9876543210" autocomplete="off"
-                class="w-full h-10 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all"
+                class="w-full h-11 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all"
                 [class.border-red-400]="userForm.get('mobileNumber')?.invalid && userForm.get('mobileNumber')?.touched">
             </div>
 
             <!-- Email -->
             <div>
-              <label class="block text-[10px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">Email <span class="text-gw-text-muted font-medium normal-case">(optional)</span></label>
+              <label class="block text-[11px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">Email <span class="text-gw-text-muted font-medium normal-case">(optional)</span></label>
               <input formControlName="email" type="email" placeholder="e.g. ravi@example.com" autocomplete="off"
-                class="w-full h-10 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all">
+                class="w-full h-11 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all">
             </div>
 
             <!-- Age Group -->
             <div>
-              <label class="block text-[10px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">Age Group <span class="text-red-500">*</span></label>
+              <label class="block text-[11px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">Age Group <span class="text-red-500">*</span></label>
               <select formControlName="ageGroup"
-                class="w-full h-10 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all appearance-none cursor-pointer"
+                class="w-full h-11 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all appearance-none cursor-pointer"
                 [class.border-red-400]="userForm.get('ageGroup')?.invalid && userForm.get('ageGroup')?.touched">
                 <option value="">Select</option>
                 <option value="Child (6-12)">Child (6–12)</option>
@@ -119,7 +119,7 @@ import { Router } from '@angular/router';
 
             <!-- Password -->
             <div>
-              <label class="block text-[10px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">
+              <label class="block text-[11px] font-black uppercase tracking-widest text-gw-text-muted mb-1.5">
                 Password
                 @if (editingUserId()) {
                   <span class="text-gw-text-muted font-medium normal-case">(leave blank to keep current)</span>
@@ -132,7 +132,7 @@ import { Router } from '@angular/router';
                   [type]="showPassword() ? 'text' : 'password'"
                   [placeholder]="editingUserId() ? 'Enter new password to change' : 'Min. 6 characters'"
                   autocomplete="new-password"
-                  class="w-full h-10 bg-gw-bg border border-transparent rounded-xl px-3 pr-10 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all"
+                  class="w-full h-11 bg-gw-bg border border-transparent rounded-xl px-3 pr-10 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all"
                   [class.border-red-400]="userForm.get('password')?.invalid && userForm.get('password')?.touched">
                 <button type="button" (click)="showPassword.set(!showPassword())"
                   class="absolute right-3 top-1/2 -translate-y-1/2 text-gw-text-muted hover:text-gw-text transition-colors">
@@ -140,7 +140,7 @@ import { Router } from '@angular/router';
                 </button>
               </div>
               @if (userForm.get('password')?.invalid && userForm.get('password')?.touched) {
-                <p class="text-[10px] text-red-500 mt-1">
+                <p class="text-[11px] text-red-500 mt-1">
                   {{ editingUserId() ? 'Min. 6 characters if changing password' : 'Password is required (min. 6 characters)' }}
                 </p>
               }
@@ -195,7 +195,7 @@ import { Router } from '@angular/router';
             [formControl]="searchControl"
             type="text"
             placeholder="Search name or mobile..."
-            class="w-full h-10 bg-gw-bg border border-transparent rounded-xl pl-9 pr-4 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all"
+            class="w-full h-11 bg-gw-bg border border-transparent rounded-xl pl-9 pr-4 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all"
           >
         </div>
 
@@ -203,7 +203,7 @@ import { Router } from '@angular/router';
         <div class="relative">
           <select
             [formControl]="ageFilterControl"
-            class="h-10 bg-gw-bg border border-transparent rounded-xl pl-3 pr-8 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all appearance-none cursor-pointer"
+            class="h-11 bg-gw-bg border border-transparent rounded-xl pl-3 pr-8 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all appearance-none cursor-pointer"
           >
             <option value="">All Ages</option>
             <option value="Child (6-12)">Child (6–12)</option>
@@ -259,12 +259,12 @@ import { Router } from '@angular/router';
             <table class="w-full">
               <thead>
                 <tr class="border-b border-gw-card-border">
-                  <th class="px-5 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-gw-text-muted">User</th>
-                  <th class="px-4 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-gw-text-muted hidden md:table-cell">Age Group</th>
-                  <th class="px-4 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-gw-text-muted hidden sm:table-cell">Activity</th>
-                  <th class="px-4 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-gw-text-muted hidden lg:table-cell">Last Active</th>
-                  <th class="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Status</th>
-                  <th class="px-4 py-3.5 text-right text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Actions</th>
+                  <th class="px-5 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted">User</th>
+                  <th class="px-4 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden md:table-cell">Age Group</th>
+                  <th class="px-4 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden sm:table-cell">Activity</th>
+                  <th class="px-4 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden lg:table-cell">Last Active</th>
+                  <th class="px-4 py-3.5 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Status</th>
+                  <th class="px-4 py-3.5 text-right text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -299,12 +299,12 @@ import { Router } from '@angular/router';
                         <div class="flex items-center gap-1.5">
                           <i-lucide [img]="SessionsIcon" size="13" class="text-gw-accent flex-shrink-0"></i-lucide>
                           <span class="text-xs font-black text-gw-text">{{ row.sessions }}</span>
-                          <span class="text-[10px] text-gw-text-muted">sessions</span>
+                          <span class="text-[11px] text-gw-text-muted">sessions</span>
                         </div>
                         <div class="flex items-center gap-1.5">
                           <i-lucide [img]="FlameIcon" size="13" class="text-orange-400 flex-shrink-0"></i-lucide>
                           <span class="text-xs font-black text-gw-text">{{ row.streak }}</span>
-                          <span class="text-[10px] text-gw-text-muted">streak</span>
+                          <span class="text-[11px] text-gw-text-muted">streak</span>
                         </div>
                       </div>
                     </td>
@@ -318,7 +318,7 @@ import { Router } from '@angular/router';
 
                     <!-- Status Badge -->
                     <td class="px-4 py-4 text-center">
-                      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide"
+                      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wide"
                         [class]="row.status === 'ACTIVE'
                           ? 'bg-green-100 text-green-700'
                           : 'bg-red-100 text-red-600'">
@@ -334,19 +334,19 @@ import { Router } from '@angular/router';
                         <button
                           (click)="openDetail(row)"
                           title="View profile"
-                          class="w-8 h-8 flex items-center justify-center rounded-lg text-gw-primary hover:bg-gw-primary/10 transition-colors">
+                          class="w-10 h-10 flex items-center justify-center rounded-lg text-gw-primary hover:bg-gw-primary/10 transition-colors">
                           <i-lucide [img]="ViewIcon" size="15"></i-lucide>
                         </button>
                         <button
                           (click)="openEditModal(row)"
                           title="Edit user"
-                          class="w-8 h-8 flex items-center justify-center rounded-lg text-gw-text-muted hover:text-gw-primary hover:bg-gw-primary/10 transition-colors">
+                          class="w-10 h-10 flex items-center justify-center rounded-lg text-gw-text-muted hover:text-gw-primary hover:bg-gw-primary/10 transition-colors">
                           <i-lucide [img]="EditIcon" size="15"></i-lucide>
                         </button>
                         <button
                           (click)="toggleStatus(row)"
                           [title]="row.status === 'ACTIVE' ? 'Deactivate' : 'Activate'"
-                          class="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+                          class="w-10 h-10 flex items-center justify-center rounded-lg transition-colors"
                           [class]="row.status === 'ACTIVE'
                             ? 'text-gw-text-muted hover:text-red-500 hover:bg-red-50'
                             : 'text-gw-text-muted hover:text-green-600 hover:bg-green-50'">

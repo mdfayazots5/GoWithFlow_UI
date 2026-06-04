@@ -1,4 +1,4 @@
-// File: src/app/modules/user/dashboard/user-dashboard.component.ts
+﻿// File: src/app/modules/user/dashboard/user-dashboard.component.ts
 import { Component, inject, computed, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -23,7 +23,7 @@ import { catchError, of, Subscription } from 'rxjs';
   imports: [CommonModule, LucideAngularModule, RouterLink],
   template: `
     <div class="min-h-screen bg-gw-bg">
-      <div class="max-w-lg mx-auto px-4 pt-2 pb-28 space-y-4 animate-in fade-in duration-500">
+      <div class="max-w-lg mx-auto px-4 pt-2 gwf-page-bottom space-y-4 animate-in fade-in duration-500">
 
         <!-- ── Greeting Header ──────────────────────────────────────── -->
         <div class="flex items-center justify-between gap-3">
@@ -38,8 +38,8 @@ import { catchError, of, Subscription } from 'rxjs';
           <!-- Streak chip — from cached state, no API call -->
           <div class="flex items-center gap-1.5 px-3 py-2 rounded-xl shrink-0"
                style="background: rgba(245,158,11,0.1);">
-            <i-lucide [img]="FlameIcon" size="14" style="color:#F59E0B;"></i-lucide>
-            <span class="text-xs font-black" style="color:#F59E0B;">
+            <i-lucide [img]="FlameIcon" size="14" class="text-gw-warning"></i-lucide>
+            <span class="text-xs font-black" class="text-gw-warning">
               {{ dashboard()?.currentStreak || 0 }} Day Streak
             </span>
           </div>
@@ -55,9 +55,9 @@ import { catchError, of, Subscription } from 'rxjs';
                     active:scale-95 transition-all no-underline">
             <div class="w-11 h-11 rounded-xl flex items-center justify-center"
                  style="background: rgba(224,123,57,0.08);">
-              <i-lucide [img]="AddIcon" size="20" style="color:#E07B39;"></i-lucide>
+              <i-lucide [img]="AddIcon" size="20" class="text-gw-accent"></i-lucide>
             </div>
-            <span class="text-[10px] font-black text-gw-text uppercase tracking-wide text-center leading-tight">
+            <span class="text-[11px] font-black text-gw-text uppercase tracking-wide text-center leading-tight">
               Create
             </span>
           </a>
@@ -69,9 +69,9 @@ import { catchError, of, Subscription } from 'rxjs';
                     active:scale-95 transition-all no-underline">
             <div class="w-11 h-11 rounded-xl flex items-center justify-center"
                  style="background: rgba(46,125,50,0.08);">
-              <i-lucide [img]="BookIcon" size="20" style="color:#2E7D32;"></i-lucide>
+              <i-lucide [img]="BookIcon" size="20" class="text-gw-success"></i-lucide>
             </div>
-            <span class="text-[10px] font-black text-gw-text uppercase tracking-wide text-center leading-tight">
+            <span class="text-[11px] font-black text-gw-text uppercase tracking-wide text-center leading-tight">
               Scripts
             </span>
           </a>
@@ -83,9 +83,9 @@ import { catchError, of, Subscription } from 'rxjs';
                     active:scale-95 transition-all no-underline">
             <div class="w-11 h-11 rounded-xl flex items-center justify-center"
                  style="background: rgba(245,158,11,0.08);">
-              <i-lucide [img]="TrendIcon" size="20" style="color:#F59E0B;"></i-lucide>
+              <i-lucide [img]="TrendIcon" size="20" class="text-gw-warning"></i-lucide>
             </div>
-            <span class="text-[10px] font-black text-gw-text uppercase tracking-wide text-center leading-tight">
+            <span class="text-[11px] font-black text-gw-text uppercase tracking-wide text-center leading-tight">
               Progress
             </span>
           </a>
@@ -107,7 +107,7 @@ import { catchError, of, Subscription } from 'rxjs';
                 <p class="text-sm font-black text-gw-text">
                   {{ pendingInvitationCount() === 1 ? '1 session invitation' : pendingInvitationCount() + ' session invitations' }}
                 </p>
-                <p class="text-[10px] text-gw-text-muted italic">Tap to view and respond</p>
+                <p class="text-[11px] text-gw-text-muted italic">Tap to view and respond</p>
               </div>
             </div>
             <i-lucide [img]="ChevronIcon" size="16" class="text-gw-primary shrink-0"></i-lucide>
@@ -120,7 +120,7 @@ import { catchError, of, Subscription } from 'rxjs';
             <div class="flex items-center justify-between px-5 py-3 border-b border-gw-bg">
               <div class="flex items-center gap-2">
                 <i-lucide [img]="CalendarIcon" size="14" class="text-gw-primary flex-shrink-0"></i-lucide>
-                <p class="text-[10px] font-black text-gw-primary uppercase tracking-widest italic">This Week's Report</p>
+                <p class="text-[11px] font-black text-gw-primary uppercase tracking-widest italic">This Week's Report</p>
               </div>
               <button (click)="dismissWeeklyReport()" class="text-gw-text-muted hover:text-gw-text transition-colors">
                 <i-lucide [img]="CloseIcon" size="16"></i-lucide>
@@ -135,7 +135,7 @@ import { catchError, of, Subscription } from 'rxjs';
                 }
                 @if (weeklyReport()!.recommendedScript1Id) {
                   <a [routerLink]="['/scripts/prepare', weeklyReport()!.recommendedScript1Id]"
-                     class="inline-flex items-center gap-1.5 mt-2 text-[10px] font-black text-gw-primary uppercase tracking-widest italic hover:underline">
+                     class="inline-flex items-center gap-1.5 mt-2 text-[11px] font-black text-gw-primary uppercase tracking-widest italic hover:underline">
                     Pick up where you left off <i-lucide [img]="ArrowIcon" size="12"></i-lucide>
                   </a>
                 }
@@ -144,29 +144,29 @@ import { catchError, of, Subscription } from 'rxjs';
               <div class="px-5 py-4 space-y-3">
                 <div class="grid grid-cols-2 gap-3">
                   <div class="text-center">
-                    <p class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Sessions</p>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Sessions</p>
                     <p class="text-xl font-black text-gw-text italic">{{ weeklyReport()!.sessionsThisWeek }}</p>
                   </div>
                   <div class="text-center">
-                    <p class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Practice</p>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Practice</p>
                     <p class="text-xl font-black text-gw-text italic">{{ weeklyReport()!.practiceMinutesThisWeek }}m</p>
                   </div>
                   <div class="text-center">
-                    <p class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Errors</p>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Errors</p>
                     <p class="text-xl font-black text-gw-text italic">{{ weeklyReport()!.errorsDetectedThisWeek }}</p>
                   </div>
                   <div class="text-center">
-                    <p class="text-[8px] font-black uppercase tracking-widest text-gw-text-muted italic">Resolved</p>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Resolved</p>
                     <p class="text-xl font-black text-gw-success italic">{{ weeklyReport()!.errorsResolvedThisWeek }}</p>
                   </div>
                 </div>
                 @if (weeklyReport()!.topImprovementMetric) {
                   <div class="px-3 py-2 bg-gw-success/5 border border-gw-success/20 rounded-xl">
-                    <p class="text-[9px] font-bold text-gw-success italic">{{ weeklyReport()!.topImprovementMetric }}</p>
+                    <p class="text-[11px] font-bold text-gw-success italic">{{ weeklyReport()!.topImprovementMetric }}</p>
                   </div>
                 }
                 @if (weeklyReport()!.weakestGrammarTag) {
-                  <p class="text-[9px] text-gw-text-muted italic">
+                  <p class="text-[11px] text-gw-text-muted italic">
                     Work on: <span class="font-black text-gw-text">{{ weeklyReport()!.weakestGrammarTag }}</span>
                   </p>
                 }
@@ -181,26 +181,26 @@ import { catchError, of, Subscription } from 'rxjs';
             <div class="flex items-center gap-2 px-5 py-3 border-b border-gw-bg"
                  style="background: linear-gradient(135deg, rgba(61,90,153,0.04), rgba(224,123,57,0.04))">
               <i-lucide [img]="StarIcon" size="14" class="text-amber-500 flex-shrink-0"></i-lucide>
-              <p class="text-[10px] font-black text-gw-text-muted uppercase tracking-widest italic">Weekly Challenge</p>
-              <span class="ml-auto text-[9px] font-bold text-gw-text-muted">{{ activeChallenge()!.daysRemaining }} days left</span>
+              <p class="text-[11px] font-black text-gw-text-muted uppercase tracking-widest italic">Weekly Challenge</p>
+              <span class="ml-auto text-[11px] font-bold text-gw-text-muted">{{ activeChallenge()!.daysRemaining }} days left</span>
             </div>
             <div class="px-5 py-4 space-y-3">
               <div>
                 <p class="text-sm font-black text-gw-text">{{ activeChallenge()!.scriptTitle }}</p>
-                <p class="text-[10px] font-bold text-gw-text-muted uppercase tracking-wide mt-0.5">
+                <p class="text-[11px] font-bold text-gw-text-muted uppercase tracking-wide mt-0.5">
                   {{ activeChallenge()!.category }} · Level {{ activeChallenge()!.complexityLevel }}
                 </p>
               </div>
               @if (activeChallenge()!.userBestScore > 0) {
                 <div class="flex items-center gap-2">
-                  <span class="text-[10px] font-black text-gw-text-muted uppercase tracking-widest">Your best:</span>
+                  <span class="text-[11px] font-black text-gw-text-muted uppercase tracking-widest">Your best:</span>
                   <span class="text-sm font-black text-gw-primary">{{ activeChallenge()!.userBestScore | number:'1.0-1' }}%</span>
                 </div>
               }
               @if (activeChallenge()!.leaderboard?.length) {
                 <div class="space-y-1">
                   @for (entry of activeChallenge()!.leaderboard.slice(0,3); track entry.rank) {
-                    <div class="flex items-center gap-2 text-[10px]">
+                    <div class="flex items-center gap-2 text-[11px]">
                       <span class="w-4 font-black text-gw-text-muted text-right">{{ entry.rank }}.</span>
                       <span class="flex-1 font-semibold text-gw-text truncate">{{ entry.fullName }}</span>
                       <span class="font-black text-gw-primary">{{ entry.bestScore | number:'1.0-1' }}%</span>
@@ -209,7 +209,7 @@ import { catchError, of, Subscription } from 'rxjs';
                 </div>
               }
               <a [routerLink]="['/scripts']" [queryParams]="{ scriptId: activeChallenge()!.scriptId }"
-                 class="flex items-center justify-center gap-2 h-9 w-full bg-gw-primary text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:opacity-90 transition-opacity no-underline">
+                 class="flex items-center justify-center gap-2 h-9 w-full bg-gw-primary text-white font-black text-[11px] uppercase tracking-widest rounded-xl hover:opacity-90 transition-opacity no-underline">
                 {{ activeChallenge()!.userAttemptCount > 0 ? 'Try Again' : 'Accept Challenge' }}
                 <i-lucide [img]="ArrowIcon" size="12"></i-lucide>
               </a>
@@ -223,10 +223,10 @@ import { catchError, of, Subscription } from 'rxjs';
              class="block bg-white rounded-2xl border border-gw-card-border shadow-sm p-5 hover:border-gw-primary transition-all group no-underline">
             <div class="flex items-start justify-between gap-3 mb-3">
               <div>
-                <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted italic">Active Goal</p>
+                <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Active Goal</p>
                 <p class="text-sm font-black text-gw-text italic mt-0.5">{{ goalProgress()!.goalLabel }}</p>
               </div>
-              <span class="text-[8px] font-black uppercase tracking-wider px-2 py-1 rounded-lg italic flex-shrink-0"
+              <span class="text-[11px] font-black uppercase tracking-wider px-2 py-1 rounded-lg italic flex-shrink-0"
                 [ngClass]="{
                   'bg-gw-success/10': goalProgress()!.trendLabel === 'Improving',
                   'text-gw-success': goalProgress()!.trendLabel === 'Improving',
@@ -243,7 +243,7 @@ import { catchError, of, Subscription } from 'rxjs';
                 [style.width.%]="goalProgress()!.progressPercent">
               </div>
             </div>
-            <div class="flex items-center justify-between text-[8px] font-bold text-gw-text-muted italic">
+            <div class="flex items-center justify-between text-[11px] font-bold text-gw-text-muted italic">
               <span>{{ goalProgress()!.sessionsCompleted }}/{{ goalProgress()!.sessionsTarget }} sessions</span>
               <span>{{ goalProgress()!.estimatedWeeksRemaining }} weeks remaining</span>
             </div>
@@ -251,7 +251,7 @@ import { catchError, of, Subscription } from 'rxjs';
         } @else {
           <a routerLink="/user/goals"
              class="block bg-gw-bg border border-dashed border-gw-card-border rounded-2xl p-4 text-center hover:border-gw-primary transition-all group no-underline">
-            <p class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted italic group-hover:text-gw-primary">Set a Learning Goal →</p>
+            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic group-hover:text-gw-primary">Set a Learning Goal →</p>
           </a>
         }
 
@@ -264,7 +264,7 @@ import { catchError, of, Subscription } from 'rxjs';
             <div class="flex items-center justify-between px-5 py-3.5 border-b border-gw-bg">
               <div class="flex items-center gap-2">
                 <i-lucide [img]="TargetIcon" size="14" class="text-gw-accent flex-shrink-0"></i-lucide>
-                <p class="text-[10px] font-black text-gw-text-muted uppercase tracking-widest">Recommended Next</p>
+                <p class="text-[11px] font-black text-gw-text-muted uppercase tracking-widest">Recommended Next</p>
               </div>
             </div>
             <div class="divide-y divide-gw-bg">
@@ -277,13 +277,13 @@ import { catchError, of, Subscription } from 'rxjs';
                   </div>
                   <div class="flex-1 min-w-0">
                     <p class="text-sm font-semibold text-gw-text truncate">{{ rec.scriptTitle }}</p>
-                    <p class="text-[9px] font-bold text-gw-text-muted mt-0.5 uppercase tracking-wide">
+                    <p class="text-[11px] font-bold text-gw-text-muted mt-0.5 uppercase tracking-wide">
                       {{ rec.category }} · Level {{ rec.complexityLevel }}
                     </p>
-                    <p class="text-[9px] text-gw-text-muted italic mt-1 leading-tight">{{ rec.reasonText }}</p>
+                    <p class="text-[11px] text-gw-text-muted italic mt-1 leading-tight">{{ rec.reasonText }}</p>
                   </div>
                   <a [routerLink]="['/scripts/prepare', rec.scriptId]"
-                     class="shrink-0 w-8 h-8 rounded-xl bg-gw-primary/10 flex items-center justify-center text-gw-primary hover:bg-gw-primary hover:text-white transition-all"
+                     class="shrink-0 w-10 h-10 rounded-xl bg-gw-primary/10 flex items-center justify-center text-gw-primary hover:bg-gw-primary hover:text-white transition-all"
                      title="Read script &amp; start session">
                     <i-lucide [img]="ArrowIcon" size="14"></i-lucide>
                   </a>
@@ -306,7 +306,7 @@ import { catchError, of, Subscription } from 'rxjs';
               </div>
               <div>
                 <p class="text-sm font-bold text-gw-text">Correction rounds waiting</p>
-                <p class="text-[10px] font-semibold text-gw-text-muted mt-0.5">
+                <p class="text-[11px] font-semibold text-gw-text-muted mt-0.5">
                   {{ dashboard()?.pendingRepracticeCount }} rounds ready to practice
                 </p>
               </div>
@@ -327,11 +327,11 @@ import { catchError, of, Subscription } from 'rxjs';
             <div class="flex items-center gap-3">
               <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
                    style="background: rgba(245,158,11,0.08);">
-                <i-lucide [img]="ClockIcon" size="15" style="color:#F59E0B;"></i-lucide>
+                <i-lucide [img]="ClockIcon" size="15" class="text-gw-warning"></i-lucide>
               </div>
               <div>
                 <p class="text-sm font-bold text-gw-text">Grammar reviews due</p>
-                <p class="text-[10px] font-semibold text-gw-text-muted mt-0.5">
+                <p class="text-[11px] font-semibold text-gw-text-muted mt-0.5">
                   {{ dueForReview()!.dueCount }} mistake{{ dueForReview()!.dueCount === 1 ? '' : 's' }} ready for spaced review
                 </p>
               </div>
@@ -339,7 +339,7 @@ import { catchError, of, Subscription } from 'rxjs';
             <div class="w-7 h-7 rounded-lg flex items-center justify-center
                         shrink-0 group-hover:opacity-90 transition-opacity"
                  style="background: rgba(245,158,11,0.15);">
-              <i-lucide [img]="ChevronIcon" size="14" style="color:#F59E0B;"></i-lucide>
+              <i-lucide [img]="ChevronIcon" size="14" class="text-gw-warning"></i-lucide>
             </div>
           </a>
         }
@@ -348,11 +348,11 @@ import { catchError, of, Subscription } from 'rxjs';
         <!-- ── Recent Sessions ───────────────────────────────────────── -->
         <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
           <div class="flex items-center justify-between px-5 py-3.5 border-b border-gw-bg">
-            <p class="text-[10px] font-black text-gw-text-muted uppercase tracking-widest">
+            <p class="text-[11px] font-black text-gw-text-muted uppercase tracking-widest">
               Recent Sessions
             </p>
             <a routerLink="/session/history"
-               class="text-[10px] font-bold text-gw-primary hover:underline no-underline">
+               class="text-[11px] font-bold text-gw-primary hover:underline no-underline">
               View All
             </a>
           </div>
@@ -373,10 +373,10 @@ import { catchError, of, Subscription } from 'rxjs';
                     <p class="text-sm font-semibold text-gw-text truncate group-hover:text-gw-primary transition-colors">
                       {{ session.sessionName }}
                     </p>
-                    <p class="text-[10px] font-semibold text-gw-text-muted mt-0.5 truncate">
+                    <p class="text-[11px] font-semibold text-gw-text-muted mt-0.5 truncate">
                       {{ session.sessionMode }} · {{ session.duration }}min · {{ session.sessionDate | date:'MMM d, yyyy' }}
                     </p>
-                    <p class="text-[9px] text-gw-text-muted/70 mt-0.5 truncate">{{ session.scriptTitle }}</p>
+                    <p class="text-[11px] text-gw-text-muted/70 mt-0.5 truncate">{{ session.scriptTitle }}</p>
                   </div>
                   <div class="flex flex-col items-end gap-1 shrink-0">
                     <span class="px-2.5 py-1 rounded-lg text-xs font-bold"
@@ -384,7 +384,7 @@ import { catchError, of, Subscription } from 'rxjs';
                           [style.color]="getScoreColor(session.fluencyScore)">
                       {{ session.fluencyScore != null ? (session.fluencyScore | number:'1.0-1') + '%' : '—' }}
                     </span>
-                    <span class="text-[8px] font-black uppercase tracking-wider"
+                    <span class="text-[11px] font-black uppercase tracking-wider"
                           [style.color]="session.status === 'COMPLETED' ? '#166534' : '#92400E'">
                       {{ session.status }}
                     </span>
@@ -398,11 +398,11 @@ import { catchError, of, Subscription } from 'rxjs';
         <!-- ── Pending Mistakes ──────────────────────────────────────── -->
         <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
           <div class="flex items-center justify-between px-5 py-3.5 border-b border-gw-bg">
-            <p class="text-[10px] font-black text-gw-text-muted uppercase tracking-widest">
+            <p class="text-[11px] font-black text-gw-text-muted uppercase tracking-widest">
               Pending Mistakes
             </p>
             <a routerLink="/user/my-mistakes"
-               class="text-[10px] font-bold text-gw-primary hover:underline no-underline">
+               class="text-[11px] font-bold text-gw-primary hover:underline no-underline">
               View All
             </a>
           </div>
@@ -422,16 +422,16 @@ import { catchError, of, Subscription } from 'rxjs';
                     <div class="flex-1 min-w-0 space-y-1">
                       <!-- Type + grammar tag badges -->
                       <div class="flex items-center gap-1.5 flex-wrap">
-                        <span class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-gw-error/10 text-gw-error">
+                        <span class="text-[11px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-gw-error/10 text-gw-error">
                           {{ mistake.mistakeType }}
                         </span>
                         @if (mistake.grammarTag) {
-                          <span class="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-gw-primary/10 text-gw-primary">
+                          <span class="text-[11px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-gw-primary/10 text-gw-primary">
                             {{ mistake.grammarTag }}
                           </span>
                         }
                         @if (mistake.contextTag) {
-                          <span class="text-[9px] font-semibold px-2 py-0.5 rounded-md bg-gw-bg text-gw-text-muted">
+                          <span class="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-gw-bg text-gw-text-muted">
                             {{ mistake.contextTag }}
                           </span>
                         }
@@ -441,22 +441,22 @@ import { catchError, of, Subscription } from 'rxjs';
                         <p class="text-sm font-semibold text-gw-text truncate">"{{ mistake.spokenText }}"</p>
                       }
                       <!-- Expected utterance -->
-                      <p class="text-[10px] text-gw-text-muted truncate">
+                      <p class="text-[11px] text-gw-text-muted truncate">
                         Expected: <span class="font-semibold">{{ mistake.utteranceText }}</span>
                       </p>
                       <!-- Optional detail note -->
                       @if (mistake.mistakeDetail) {
-                        <p class="text-[9px] text-gw-text-muted/80 italic truncate">{{ mistake.mistakeDetail }}</p>
+                        <p class="text-[11px] text-gw-text-muted/80 italic truncate">{{ mistake.mistakeDetail }}</p>
                       }
                       <!-- Session / script source -->
-                      <p class="text-[9px] text-gw-text-muted/70 truncate">
+                      <p class="text-[11px] text-gw-text-muted/70 truncate">
                         {{ mistake.sessionName }} · {{ mistake.scriptTitle }}
                       </p>
                       <!-- First occurrence date -->
-                      <p class="text-[9px] text-gw-text-muted/50">{{ mistake.firstOccurrence | date:'MMM d, yyyy' }}</p>
+                      <p class="text-[11px] text-gw-text-muted/50">{{ mistake.firstOccurrence | date:'MMM d, yyyy' }}</p>
                     </div>
                     <a routerLink="/user/my-mistakes"
-                       class="shrink-0 h-8 px-3 rounded-xl text-[10px] font-bold
+                       class="shrink-0 h-8 px-3 rounded-xl text-[11px] font-bold
                               bg-gw-primary text-white flex items-center mt-0.5
                               hover:opacity-90 transition-opacity no-underline">
                       Practice

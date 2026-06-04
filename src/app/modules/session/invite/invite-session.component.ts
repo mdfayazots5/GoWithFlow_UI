@@ -1,4 +1,4 @@
-// File: src/app/modules/session/invite/invite-session.component.ts
+﻿// File: src/app/modules/session/invite/invite-session.component.ts
 import {
   Component, inject, signal, computed, OnInit
 } from '@angular/core';
@@ -28,7 +28,7 @@ interface SlotAssignment {
   imports: [CommonModule, FormsModule, LucideAngularModule, UserAvatarComponent],
   template: `
     <div class="min-h-screen bg-gw-bg">
-      <div class="max-w-lg mx-auto px-4 pt-4 pb-28 space-y-5 animate-in fade-in duration-500">
+      <div class="max-w-lg mx-auto px-4 pt-4 gwf-page-bottom space-y-5 animate-in fade-in duration-500">
 
         <div>
           <h1 class="text-lg font-black text-gw-text tracking-tight">Assign Roles</h1>
@@ -41,7 +41,7 @@ interface SlotAssignment {
           <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm p-4 space-y-3">
             <div class="flex items-center justify-between">
               <div>
-                <p class="text-[10px] font-black uppercase tracking-widest text-gw-primary italic">Role {{ slot.slotIndex }}</p>
+                <p class="text-[11px] font-black uppercase tracking-widest text-gw-primary italic">Role {{ slot.slotIndex }}</p>
                 <p class="text-sm font-bold text-gw-text">{{ slot.slotName }}</p>
               </div>
               @if (slot.assignedUser) {

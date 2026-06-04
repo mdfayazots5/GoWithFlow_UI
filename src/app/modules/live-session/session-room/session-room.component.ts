@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
+﻿import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { LiveSessionService } from '../live-session.service';
@@ -15,6 +15,7 @@ import { VoiceBroadcastService } from '@core/services/voice-broadcast.service';
 type TurnShiftEvent = {
   newActiveMemberId: string | number;
   newActiveMemberName: string;
+  activeMemberAvatarUrl?: string | null;
   slotIndex: number;
   turnIndex: number;
   nextUtterance: TurnState['utterance'];
@@ -39,9 +40,9 @@ type PresenceToast = {
           <div class="w-8 h-8 rounded-lg bg-gw-primary/20 flex items-center justify-center text-gw-primary flex-shrink-0">
             <i-lucide [img]="ActivityIcon" size="16"></i-lucide>
           </div>
-          <div class="hidden sm:block min-w-0">
-            <h4 class="text-[10px] font-black uppercase tracking-widest italic leading-tight text-white/70 truncate max-w-[160px]">{{ turnState()?.utterance?.contextTag || 'SESSION' }}</h4>
-            <p class="text-[9px] font-bold text-white/30 italic uppercase tracking-tighter truncate max-w-[160px]">{{ sessionName() }}</p>
+          <div class="min-w-0">
+            <h4 class="text-[11px] font-black uppercase tracking-widest italic leading-tight text-white/70 truncate max-w-[160px]">{{ turnState()?.utterance?.contextTag || 'SESSION' }}</h4>
+            <p class="text-[11px] font-bold text-white/30 italic uppercase tracking-tighter truncate max-w-[120px]">{{ sessionName() }}</p>
           </div>
         </div>
 
@@ -50,7 +51,7 @@ type PresenceToast = {
           <!-- ● Live indicator -->
           <div class="flex items-center gap-1.5 bg-emerald-500/10 px-2.5 py-1.5 rounded-full border border-emerald-500/20">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0"></span>
-            <span class="text-[10px] font-black italic text-emerald-400 uppercase tracking-wider">Live</span>
+            <span class="text-[11px] font-black italic text-emerald-400 uppercase tracking-wider">Live</span>
           </div>
 
           <div class="flex items-center gap-1.5 bg-white/5 px-3 py-1.5 rounded-full border border-white/10">
@@ -60,13 +61,13 @@ type PresenceToast = {
 
           <button (click)="showSettings.set(!showSettings())"
             [ngClass]="showSettings() ? 'bg-gw-primary text-white' : 'bg-white/5 text-white/40'"
-            class="w-9 h-9 rounded-xl flex items-center justify-center hover:opacity-80 transition-all"
+            class="w-11 h-11 rounded-xl flex items-center justify-center hover:opacity-80 transition-all"
             title="Session Preferences">
             <i-lucide [img]="SettingsIcon" size="16"></i-lucide>
           </button>
 
           <button (click)="confirmLeave()"
-            class="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-white/40 hover:text-gw-error hover:bg-gw-error/10 transition-all">
+            class="w-11 h-11 rounded-xl bg-white/5 flex items-center justify-center text-white/40 hover:text-gw-error hover:bg-gw-error/10 transition-all">
             <i-lucide [img]="LeaveIcon" size="18"></i-lucide>
           </button>
         </div>
@@ -85,14 +86,14 @@ type PresenceToast = {
               <p class="text-[11px] font-black italic text-amber-400 leading-tight">
                 The current speaker has left
               </p>
-              <p class="text-[9px] font-bold uppercase tracking-wider text-amber-400/60">
+              <p class="text-[11px] font-bold uppercase tracking-wider text-amber-400/60">
                 Waiting for the next turn to begin...
               </p>
             </div>
           </div>
           <button (click)="speakerLeftAlert.set(false)"
-            class="w-6 h-6 flex items-center justify-center text-amber-400/50 hover:text-amber-400 transition-colors flex-shrink-0">
-            <i-lucide [img]="CloseIcon" size="13"></i-lucide>
+            class="w-11 h-11 flex items-center justify-center text-amber-400/50 hover:text-amber-400 transition-colors flex-shrink-0 rounded-lg">
+            <i-lucide [img]="CloseIcon" size="15"></i-lucide>
           </button>
         </div>
       }
@@ -102,14 +103,14 @@ type PresenceToast = {
         <div class="flex-shrink-0 border-b border-white/5 bg-[#121221]/95 backdrop-blur-xl overflow-y-auto animate-in slide-in-from-top-2 duration-200"
              style="max-height: min(40vh, 260px)">
           <div class="max-w-[480px] mx-auto px-4 py-3 space-y-2.5">
-            <p class="text-[9px] font-black uppercase tracking-[0.3em] text-white/30 italic">Session Preferences</p>
+            <p class="text-[11px] font-black uppercase tracking-[0.3em] text-white/30 italic">Session Preferences</p>
             <div class="grid grid-cols-1 gap-2">
 
               <!-- Auto-Start Mic -->
               <div class="flex items-center justify-between py-2.5 px-3.5 bg-white/[0.04] rounded-xl border border-white/[0.08]">
                 <div class="min-w-0 mr-3">
                   <p class="text-[11px] font-black text-white/80 italic">Auto-Start Microphone</p>
-                  <p class="text-[10px] text-white/35 mt-0.5 leading-tight">Mic starts automatically on your turn</p>
+                  <p class="text-[11px] text-white/35 mt-0.5 leading-tight">Mic starts automatically on your turn</p>
                 </div>
                 <button
                   (click)="sessionPrefs.update({ defaultVoiceStarter: !sessionPrefs.prefs.defaultVoiceStarter })"
@@ -126,7 +127,7 @@ type PresenceToast = {
               <div class="flex items-center justify-between py-2.5 px-3.5 bg-white/[0.04] rounded-xl border border-white/[0.08]">
                 <div class="min-w-0 mr-3">
                   <p class="text-[11px] font-black text-white/80 italic">Auto Submit on Stop</p>
-                  <p class="text-[10px] text-white/35 mt-0.5 leading-tight">Shows your score for 3s, then submits automatically</p>
+                  <p class="text-[11px] text-white/35 mt-0.5 leading-tight">Shows your score for 3s, then submits automatically</p>
                 </div>
                 <button
                   (click)="sessionPrefs.update({ autoSubmitOnStop: !sessionPrefs.prefs.autoSubmitOnStop })"
@@ -143,7 +144,7 @@ type PresenceToast = {
               <div class="flex items-center justify-between py-2.5 px-3.5 bg-white/[0.04] rounded-xl border border-white/[0.08]">
                 <div class="min-w-0 mr-3">
                   <p class="text-[11px] font-black text-white/80 italic">Hear Speaker's Voice</p>
-                  <p class="text-[10px] text-white/35 mt-0.5 leading-tight">Receive live audio from the active speaker</p>
+                  <p class="text-[11px] text-white/35 mt-0.5 leading-tight">Receive live audio from the active speaker</p>
                 </div>
                 <button
                   (click)="sessionPrefs.update({ listenVoiceBroadcast: !sessionPrefs.prefs.listenVoiceBroadcast })"
@@ -179,7 +180,7 @@ type PresenceToast = {
                 <p class="text-xs text-white/30 italic leading-relaxed max-w-xs">{{ loadError() }}</p>
               </div>
               <button (click)="retryLoad()"
-                class="px-5 py-2.5 bg-gw-primary rounded-xl font-black text-[10px] uppercase tracking-widest italic text-white flex items-center gap-2 hover:opacity-90 transition-all active:scale-95">
+                class="px-5 py-2.5 bg-gw-primary rounded-xl font-black text-[11px] uppercase tracking-widest italic text-white flex items-center gap-2 hover:opacity-90 transition-all active:scale-95">
                 <i-lucide [img]="RetryIcon" size="13"></i-lucide>
                 Retry
               </button>
@@ -220,7 +221,7 @@ type PresenceToast = {
 
             <div class="min-w-0">
               <p class="text-[11px] font-black text-white leading-tight truncate">{{ toast.name }}</p>
-              <p class="text-[9px] font-bold uppercase tracking-wider mt-0.5"
+              <p class="text-[11px] font-bold uppercase tracking-wider mt-0.5"
                  [ngClass]="toast.type === 'left' ? 'text-red-400/70' : 'text-emerald-400/70'">
                 {{ toast.type === 'left' ? 'left the room' : 'joined the session' }}
               </p>
@@ -487,6 +488,7 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
         turnIndex: shiftEvent.turnIndex,
         activeMemberId: shiftEvent.newActiveMemberId,
         activeMemberName: shiftEvent.newActiveMemberName,
+        activeMemberAvatarUrl: shiftEvent.activeMemberAvatarUrl ?? null,
         utterance: shiftEvent.nextUtterance,
         reReadAllowed: true,
         reReadCount: 0,

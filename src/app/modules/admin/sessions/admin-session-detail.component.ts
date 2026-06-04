@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+﻿import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AdminService } from '@core/services/admin.service';
@@ -29,7 +29,7 @@ import {
             </div>
             <div>
               <h2 class="text-xl font-black text-gw-text">{{ session()!.sessionName }}</h2>
-              <span class="inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider"
+              <span class="inline-flex items-center gap-1.5 mt-1 px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wider"
                 [class]="statusBgClass(session()!.status)">
                 <span class="w-1.5 h-1.5 rounded-full flex-shrink-0"
                   [class]="statusDotClass(session()!.status)"></span>
@@ -68,7 +68,7 @@ import {
                 <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
                   <span class="text-[11px] font-black text-gw-text-muted w-[16px] text-center flex-shrink-0">#</span>
                   <div>
-                    <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Join Code</p>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Join Code</p>
                     <p class="text-sm font-bold text-gw-text tracking-widest mt-0.5">{{ session()!.joinCode || '—' }}</p>
                   </div>
                 </div>
@@ -76,7 +76,7 @@ import {
                 <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
                   <i-lucide [img]="UserIcon" size="16" class="text-gw-text-muted flex-shrink-0"></i-lucide>
                   <div>
-                    <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Host</p>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Host</p>
                     <p class="text-sm font-bold text-gw-text mt-0.5">{{ session()!.hostName || '—' }}</p>
                   </div>
                 </div>
@@ -84,7 +84,7 @@ import {
                 <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
                   <i-lucide [img]="UsersIcon" size="16" class="text-gw-text-muted flex-shrink-0"></i-lucide>
                   <div>
-                    <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Members</p>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Members</p>
                     <p class="text-sm font-bold text-gw-text mt-0.5">{{ session()!.memberCount }}</p>
                   </div>
                 </div>
@@ -92,7 +92,7 @@ import {
                 <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
                   <i-lucide [img]="CalendarIcon" size="16" class="text-gw-text-muted flex-shrink-0"></i-lucide>
                   <div>
-                    <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Date</p>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Date</p>
                     <p class="text-sm font-bold text-gw-text mt-0.5">
                       {{ session()!.sessionDate | date:'d MMM y, h:mm a' }}
                     </p>
@@ -102,7 +102,7 @@ import {
                 <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
                   <i-lucide [img]="ClockIcon" size="16" class="text-gw-text-muted flex-shrink-0"></i-lucide>
                   <div>
-                    <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Duration</p>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Duration</p>
                     <p class="text-sm font-bold text-gw-text mt-0.5">
                       {{ session()!.durationMin > 0 ? session()!.durationMin + ' min' : '—' }}
                     </p>
@@ -112,7 +112,7 @@ import {
                 <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
                   <i-lucide [img]="ScoreIcon" size="16" class="text-gw-text-muted flex-shrink-0"></i-lucide>
                   <div>
-                    <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Avg Fluency</p>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Avg Fluency</p>
                     <p class="text-sm font-bold mt-0.5" [class]="fluencyClass(session()!.avgFluency)">
                       {{ session()!.avgFluency > 0 ? (session()!.avgFluency | number:'1.0-1') + '%' : '—' }}
                     </p>
@@ -122,7 +122,7 @@ import {
                 <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl sm:col-span-2">
                   <i-lucide [img]="MistakeIcon" size="16" class="text-gw-text-muted flex-shrink-0"></i-lucide>
                   <div>
-                    <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted">Mistakes</p>
+                    <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Mistakes</p>
                     <p class="text-sm font-bold mt-0.5"
                       [class]="session()!.mistakeCount > 0 ? 'text-red-500' : 'text-gw-text'">
                       {{ session()!.mistakeCount }}
@@ -156,7 +156,7 @@ import {
                       <div class="flex items-center justify-between gap-3">
                         <div class="min-w-0">
                           <p class="text-sm font-black text-gw-text truncate">{{ clip.userName }}</p>
-                          <p class="text-[10px] text-gw-text-muted mt-0.5">Turn {{ clip.turnIndex }}</p>
+                          <p class="text-[11px] text-gw-text-muted mt-0.5">Turn {{ clip.turnIndex }}</p>
                         </div>
                         <button
                           (click)="togglePlay(clip)"

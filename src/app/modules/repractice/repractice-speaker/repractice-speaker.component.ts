@@ -1,4 +1,4 @@
-import {
+﻿import {
   Component, Input, Output, EventEmitter,
   OnChanges, AfterViewChecked, OnDestroy,
   inject, signal, ViewChild, SimpleChanges
@@ -27,7 +27,7 @@ export interface PracticeAdvancedEvent {
 
       <!-- Mistake Type Tag -->
       @if (utterance.mistakeType) {
-        <span class="inline-flex self-start px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest italic shadow-lg"
+        <span class="inline-flex self-start px-3 py-1 rounded-lg text-[11px] font-black uppercase tracking-widest italic shadow-lg"
               [ngClass]="mistakeTagClass()">
           {{ utterance.mistakeType }}
         </span>
@@ -38,7 +38,7 @@ export interface PracticeAdvancedEvent {
         <div class="bg-white/5 rounded-2xl border border-white/8 p-4 space-y-3">
           @if (utterance.mistakeDetail) {
             <div class="space-y-1">
-              <span class="text-[9px] font-black uppercase tracking-widest text-red-400/80 italic">What went wrong</span>
+              <span class="text-[11px] font-black uppercase tracking-widest text-red-400/80 italic">What went wrong</span>
               <p class="text-sm font-semibold text-white/40 italic line-through decoration-red-400/40 leading-snug">
                 {{ utterance.mistakeDetail }}
               </p>
@@ -46,7 +46,7 @@ export interface PracticeAdvancedEvent {
           }
           @if (utterance.correctionNote) {
             <div class="space-y-1">
-              <span class="text-[9px] font-black uppercase tracking-widest text-emerald-400/80 italic">Correction</span>
+              <span class="text-[11px] font-black uppercase tracking-widest text-emerald-400/80 italic">Correction</span>
               <p class="text-sm font-bold text-white/80 italic leading-snug">{{ utterance.correctionNote }}</p>
             </div>
           }
@@ -55,7 +55,7 @@ export interface PracticeAdvancedEvent {
 
       <!-- Text to Practice -->
       <div class="space-y-2">
-        <span class="text-[9px] font-black uppercase tracking-widest text-[#E07B39]/80 italic">Now say this correctly</span>
+        <span class="text-[11px] font-black uppercase tracking-widest text-[#E07B39]/80 italic">Now say this correctly</span>
         <h1
           class="font-black text-white italic leading-[1.15] tracking-tight break-words"
           [style.fontSize]="textFontSize"
@@ -69,7 +69,7 @@ export interface PracticeAdvancedEvent {
         <div class="space-y-2">
           <button
             (click)="showHint.set(!showHint())"
-            class="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest italic transition-all"
+            class="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest italic transition-all"
             [ngClass]="showHint() ? 'text-[#E07B39]' : 'text-white/35'"
             type="button"
           >
@@ -98,7 +98,7 @@ export interface PracticeAdvancedEvent {
           <button
             (click)="onSkip()"
             [disabled]="isSubmitting()"
-            class="w-full h-12 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/45
+            class="w-full h-12 border border-white/10 rounded-xl text-[11px] font-black uppercase tracking-widest text-white/45
                    flex items-center justify-center gap-2
                    hover:bg-white/5 hover:text-white/65 hover:border-white/20 transition-all
                    disabled:opacity-40 disabled:pointer-events-none"
@@ -122,7 +122,7 @@ export interface PracticeAdvancedEvent {
             @if (autoSubmitSecondsLeft() > 0) {
               <div class="flex items-center justify-center gap-2 py-1.5 px-3 bg-white/[0.04] border border-white/[0.08] rounded-xl">
                 <span class="w-1.5 h-1.5 rounded-full bg-gw-primary animate-pulse flex-shrink-0"></span>
-                <span class="text-[10px] font-black uppercase tracking-widest text-white/45 italic">
+                <span class="text-[11px] font-black uppercase tracking-widest text-white/45 italic">
                   Auto-submitting in {{ autoSubmitSecondsLeft() }}s — tap below to cancel
                 </span>
               </div>
@@ -146,7 +146,7 @@ export interface PracticeAdvancedEvent {
             <div class="flex gap-3">
               <button
                 (click)="onRetryRecording()"
-                class="flex-1 h-12 border border-white/15 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/55
+                class="flex-1 h-12 border border-white/15 rounded-xl text-[11px] font-black uppercase tracking-widest text-white/55
                        flex items-center justify-center gap-2
                        hover:bg-white/5 hover:text-white/75 hover:border-white/25 active:scale-95 transition-all"
                 type="button"
@@ -158,7 +158,7 @@ export interface PracticeAdvancedEvent {
               <button
                 (click)="onSkip()"
                 [disabled]="isSubmitting()"
-                class="flex-1 h-12 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/40
+                class="flex-1 h-12 border border-white/10 rounded-xl text-[11px] font-black uppercase tracking-widest text-white/40
                        flex items-center justify-center gap-2
                        hover:bg-white/5 hover:text-white/60 active:scale-95 transition-all
                        disabled:opacity-40 disabled:pointer-events-none"

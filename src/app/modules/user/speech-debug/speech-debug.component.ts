@@ -1,4 +1,4 @@
-import {
+﻿import {
   Component, OnInit, OnDestroy, inject, signal, ViewChild, ElementRef, AfterViewChecked
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -55,7 +55,7 @@ interface DeviceInfo {
       </button>
       <div>
         <h1 class="text-base font-black text-gw-text tracking-tight">Speech Debug</h1>
-        <p class="text-[10px] text-gw-text-muted font-semibold uppercase tracking-widest">Voice Recognition Diagnostic</p>
+        <p class="text-[11px] text-gw-text-muted font-semibold uppercase tracking-widest">Voice Recognition Diagnostic</p>
       </div>
     </div>
 
@@ -63,7 +63,7 @@ interface DeviceInfo {
     <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
       <button (click)="deviceExpanded.set(!deviceExpanded())"
               class="w-full flex items-center justify-between px-4 py-3 text-left">
-        <span class="text-[10px] font-black text-gw-primary uppercase tracking-widest">Device &amp; Platform</span>
+        <span class="text-[11px] font-black text-gw-primary uppercase tracking-widest">Device &amp; Platform</span>
         <svg [class.rotate-180]="deviceExpanded()" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-gw-text-muted transition-transform duration-200">
           <polyline points="6 9 12 15 18 9"/>
         </svg>
@@ -72,8 +72,8 @@ interface DeviceInfo {
         <div class="px-4 pb-4 space-y-1 border-t border-gw-bg">
           @for (row of deviceRows; track row.label) {
             <div class="flex justify-between items-start gap-2 py-1">
-              <span class="text-[10px] font-black text-gw-text-muted uppercase tracking-wide shrink-0">{{ row.label }}</span>
-              <span class="text-[10px] font-semibold text-gw-text text-right break-all leading-relaxed">{{ row.value }}</span>
+              <span class="text-[11px] font-black text-gw-text-muted uppercase tracking-wide shrink-0">{{ row.label }}</span>
+              <span class="text-[11px] font-semibold text-gw-text text-right break-all leading-relaxed">{{ row.value }}</span>
             </div>
           }
         </div>
@@ -82,7 +82,7 @@ interface DeviceInfo {
 
     <!-- Test Phrase Input -->
     <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm px-4 py-3 space-y-2">
-      <label class="text-[10px] font-black text-gw-primary uppercase tracking-widest">Test Phrase</label>
+      <label class="text-[11px] font-black text-gw-primary uppercase tracking-widest">Test Phrase</label>
       <textarea
         [(ngModel)]="expectedText"
         [disabled]="isRunning()"
@@ -94,7 +94,7 @@ interface DeviceInfo {
         @for (phrase of presets; track phrase) {
           <button (click)="setPreset(phrase)"
                   [disabled]="isRunning()"
-                  class="text-[10px] font-black px-2.5 py-1 rounded-lg border border-gw-card-border text-gw-text-muted hover:border-gw-primary hover:text-gw-primary active:scale-95 transition-all disabled:opacity-40">
+                  class="text-[11px] font-black px-2.5 py-1 rounded-lg border border-gw-card-border text-gw-text-muted hover:border-gw-primary hover:text-gw-primary active:scale-95 transition-all disabled:opacity-40">
             {{ phrase.substring(0, 20) }}…
           </button>
         }
@@ -121,7 +121,7 @@ interface DeviceInfo {
 
       <!-- State Pill + Volume Bar -->
       <div class="flex items-center gap-3">
-        <span class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wide"
+        <span class="px-2.5 py-1 rounded-lg text-[11px] font-black uppercase tracking-wide"
               [style.background]="stateColor(currentState()).bg"
               [style.color]="stateColor(currentState()).text">
           {{ currentState() }}
@@ -132,13 +132,13 @@ interface DeviceInfo {
                [style.background]="volumeLevel() > 15 ? '#22C55E' : '#D1D5DB'">
           </div>
         </div>
-        <span class="text-[10px] font-black text-gw-text-muted w-8 text-right">{{ volumeLevel().toFixed(0) }}</span>
+        <span class="text-[11px] font-black text-gw-text-muted w-8 text-right">{{ volumeLevel().toFixed(0) }}</span>
       </div>
 
       <!-- Interim Transcript -->
       @if (interimText()) {
         <div class="bg-gw-bg rounded-xl px-3 py-2">
-          <p class="text-[10px] font-black text-gw-text-muted uppercase tracking-widest mb-1">Interim</p>
+          <p class="text-[11px] font-black text-gw-text-muted uppercase tracking-widest mb-1">Interim</p>
           <p class="text-sm font-semibold text-gw-text italic">"{{ interimText() }}"</p>
         </div>
       }
@@ -147,11 +147,11 @@ interface DeviceInfo {
     <!-- Log Panel -->
     <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
       <div class="flex items-center justify-between px-4 py-3 border-b border-gw-bg">
-        <span class="text-[10px] font-black text-gw-primary uppercase tracking-widest">
+        <span class="text-[11px] font-black text-gw-primary uppercase tracking-widest">
           Logs ({{ logs().length }})
         </span>
         <button (click)="clearLogs()"
-                class="text-[10px] font-black text-gw-text-muted hover:text-gw-text uppercase tracking-wide px-2 py-1 rounded-lg hover:bg-gw-bg transition-all">
+                class="text-[11px] font-black text-gw-text-muted hover:text-gw-text uppercase tracking-wide px-2 py-1 rounded-lg hover:bg-gw-bg transition-all">
           Clear
         </button>
       </div>
@@ -163,10 +163,10 @@ interface DeviceInfo {
         @for (entry of logs(); track $index) {
           <div class="flex gap-2 px-3 py-1 border-b border-gw-bg last:border-0"
                [style.background]="logBg(entry.level)">
-            <span class="text-[9px] text-gw-text-muted shrink-0 pt-px leading-5">{{ entry.ts }}</span>
-            <span class="text-[10px] font-black shrink-0 w-16 pt-px leading-5"
+            <span class="text-[11px] text-gw-text-muted shrink-0 pt-px leading-5">{{ entry.ts }}</span>
+            <span class="text-[11px] font-black shrink-0 w-16 pt-px leading-5"
                   [style.color]="logColor(entry.level)">{{ entry.level }}</span>
-            <span class="text-[10px] text-gw-text leading-5 break-all">{{ entry.msg }}</span>
+            <span class="text-[11px] text-gw-text leading-5 break-all">{{ entry.msg }}</span>
           </div>
         }
       </div>
@@ -175,26 +175,26 @@ interface DeviceInfo {
     <!-- Result Card -->
     @if (sessionResult()) {
       <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm px-4 py-4 space-y-3 animate-in fade-in duration-300">
-        <p class="text-[10px] font-black text-gw-primary uppercase tracking-widest">Result</p>
+        <p class="text-[11px] font-black text-gw-primary uppercase tracking-widest">Result</p>
 
         <!-- Score row -->
         <div class="grid grid-cols-3 gap-2">
           @for (s of scoreRows(); track s.label) {
             <div class="bg-gw-bg rounded-xl px-3 py-2 text-center">
               <p class="text-xl font-black" [style.color]="scoreColor(s.val)">{{ s.val }}</p>
-              <p class="text-[9px] font-black text-gw-text-muted uppercase tracking-wide mt-0.5">{{ s.label }}</p>
+              <p class="text-[11px] font-black text-gw-text-muted uppercase tracking-wide mt-0.5">{{ s.label }}</p>
             </div>
           }
         </div>
 
         <!-- Transcribed text -->
         <div class="bg-gw-bg rounded-xl px-3 py-2 space-y-1">
-          <p class="text-[10px] font-black text-gw-text-muted uppercase tracking-wide">Transcribed</p>
+          <p class="text-[11px] font-black text-gw-text-muted uppercase tracking-wide">Transcribed</p>
           <p class="text-sm font-semibold text-gw-text italic">"{{ sessionResult()!.transcribedText || '(empty)' }}"</p>
         </div>
 
         <!-- Stats row -->
-        <div class="grid grid-cols-2 gap-2 text-[10px]">
+        <div class="grid grid-cols-2 gap-2 text-[11px]">
           <div class="flex justify-between border-b border-gw-bg pb-1">
             <span class="font-black text-gw-text-muted uppercase">Speed</span>
             <span class="font-bold text-gw-text">{{ sessionResult()!.speakingSpeedWpm }} wpm</span>
@@ -216,10 +216,10 @@ interface DeviceInfo {
         <!-- Hesitations -->
         @if (sessionResult()!.hesitationWords.length) {
           <div>
-            <p class="text-[10px] font-black text-gw-text-muted uppercase tracking-wide mb-1">Hesitations</p>
+            <p class="text-[11px] font-black text-gw-text-muted uppercase tracking-wide mb-1">Hesitations</p>
             <div class="flex flex-wrap gap-1">
               @for (w of sessionResult()!.hesitationWords; track w) {
-                <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg" style="background:rgba(239,68,68,0.1);color:#EF4444;">{{ w }}</span>
+                <span class="text-[11px] font-bold px-2 py-0.5 rounded-lg" style="background:rgba(239,68,68,0.1);color:#EF4444;">{{ w }}</span>
               }
             </div>
           </div>
@@ -227,10 +227,10 @@ interface DeviceInfo {
 
         <!-- Word breakdown -->
         <div>
-          <p class="text-[10px] font-black text-gw-text-muted uppercase tracking-wide mb-1">Word Breakdown</p>
+          <p class="text-[11px] font-black text-gw-text-muted uppercase tracking-wide mb-1">Word Breakdown</p>
           <div class="flex flex-wrap gap-1">
             @for (w of sessionResult()!.wordResults; track $index) {
-              <span class="text-[10px] font-bold px-2 py-0.5 rounded-lg"
+              <span class="text-[11px] font-bold px-2 py-0.5 rounded-lg"
                     [style.background]="w.matched ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.12)'"
                     [style.color]="w.matched ? '#16A34A' : '#EF4444'">
                 {{ w.word || '—' }}

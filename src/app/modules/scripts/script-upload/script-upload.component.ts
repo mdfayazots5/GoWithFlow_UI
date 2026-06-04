@@ -1,4 +1,4 @@
-// File: src/app/modules/scripts/script-upload/script-upload.component.ts
+﻿// File: src/app/modules/scripts/script-upload/script-upload.component.ts
 import { Component, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -78,11 +78,11 @@ import { RouterLink } from '@angular/router';
 
           <div class="flex flex-col md:flex-row items-center justify-between gap-4 pt-4">
             <div class="flex flex-col gap-2 w-full md:w-auto">
-              <span class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted italic">Download Category Template</span>
+              <span class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Download Category Template</span>
               <div class="flex flex-wrap gap-2">
                 @for (cat of categoryTemplateOptions; track cat.value) {
                   <button (click)="downloadTemplate(cat.value)"
-                    class="h-9 px-4 border font-black text-[9px] uppercase tracking-widest italic rounded-xl transition-all flex items-center gap-1.5"
+                    class="h-9 px-4 border font-black text-[11px] uppercase tracking-widest italic rounded-xl transition-all flex items-center gap-1.5"
                     [class.border-gw-primary]="selectedCategoryForPrompt() !== cat.value"
                     [class.text-gw-primary]="selectedCategoryForPrompt() !== cat.value"
                     [class.hover:bg-gw-primary]="selectedCategoryForPrompt() !== cat.value"
@@ -101,16 +101,16 @@ import { RouterLink } from '@angular/router';
                 <div class="mt-4 bg-gw-primary/5 border border-gw-primary/20 rounded-2xl overflow-hidden">
                   <div class="flex items-center justify-between px-4 py-3 border-b border-gw-primary/15">
                     <div>
-                      <p class="text-[9px] font-black uppercase tracking-widest text-gw-primary italic">
+                      <p class="text-[11px] font-black uppercase tracking-widest text-gw-primary italic">
                         Claude Prompt — {{ selectedCategoryForPrompt() }}
                         @if (promptData()?.activeScriptCount > 0) {
                           <span class="ml-2 normal-case font-semibold text-gw-text-muted not-italic">({{ promptData()!.activeScriptCount }} scripts in DB — tags included)</span>
                         }
                       </p>
-                      <p class="text-[8px] text-gw-text-muted italic mt-0.5">Copy → paste into claude.ai → get JSON → upload here</p>
+                      <p class="text-[11px] text-gw-text-muted italic mt-0.5">Copy → paste into claude.ai → get JSON → upload here</p>
                     </div>
                     <button (click)="copyPrompt()" [disabled]="promptLoading()"
-                      class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider italic transition-all disabled:opacity-50"
+                      class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider italic transition-all disabled:opacity-50"
                       [class.bg-gw-success]="promptCopied()"
                       [class.text-white]="promptCopied()"
                       [class.bg-gw-primary]="!promptCopied()"
@@ -124,7 +124,7 @@ import { RouterLink } from '@angular/router';
                     </button>
                   </div>
                   <div class="px-4 py-3 max-h-48 overflow-y-auto">
-                    <pre class="text-[8px] text-gw-text-muted font-mono whitespace-pre-wrap leading-relaxed">{{ promptData()?.fullPrompt || buildClaudePrompt(selectedCategoryForPrompt()) }}</pre>
+                    <pre class="text-[11px] text-gw-text-muted font-mono whitespace-pre-wrap leading-relaxed">{{ promptData()?.fullPrompt || buildClaudePrompt(selectedCategoryForPrompt()) }}</pre>
                   </div>
                 </div>
               }
@@ -177,9 +177,9 @@ import { RouterLink } from '@angular/router';
           <!-- Preview Table -->
           <div class="bg-white rounded-[32px] border border-gw-card-border shadow-sm overflow-hidden">
             <div class="px-8 py-4 border-b border-gw-bg flex justify-between items-center bg-gw-bg/30">
-               <span class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted italic">Lines Preview (Showing {{ visiblePreviewCount() }} of {{ validatedRowCount() }})</span>
+               <span class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Lines Preview (Showing {{ visiblePreviewCount() }} of {{ validatedRowCount() }})</span>
                @if (validatedRows().length > previewLimit) {
-                 <button type="button" (click)="togglePreviewRows()" class="text-[10px] font-black uppercase tracking-widest text-gw-primary italic hover:underline">
+                 <button type="button" (click)="togglePreviewRows()" class="text-[11px] font-black uppercase tracking-widest text-gw-primary italic hover:underline">
                    {{ showAllRows() ? 'Show Less' : 'Show All' }}
                  </button>
                }
@@ -188,10 +188,10 @@ import { RouterLink } from '@angular/router';
               <table class="w-full text-left">
                 <thead class="bg-gw-bg/50">
                   <tr>
-                    <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Seq</th>
-                    <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Speaker</th>
-                    <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gw-text-muted">English Text</th>
-                    <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Hint</th>
+                    <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Seq</th>
+                    <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Speaker</th>
+                    <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-gw-text-muted">English Text</th>
+                    <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Hint</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gw-bg">
@@ -214,12 +214,12 @@ import { RouterLink } from '@angular/router';
             
             <form [formGroup]="metadataForm" class="grid md:grid-cols-2 gap-8">
               <div class="md:col-span-2 space-y-2">
-                <label class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted px-2">Script Title*</label>
+                <label class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted px-2">Script Title*</label>
                 <input formControlName="scriptTitle" type="text" class="w-full h-14 bg-gw-bg/50 border-2 border-transparent focus:border-gw-primary rounded-2xl px-6 font-bold text-gw-text outline-none transition-all placeholder:italic" placeholder="e.g., Office Gossip Protocol">
               </div>
 
               <div class="space-y-2">
-                <label class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted px-2">Category*</label>
+                <label class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted px-2">Category*</label>
                 <select formControlName="category" class="w-full h-14 bg-gw-bg/50 border-2 border-transparent focus:border-gw-primary rounded-2xl px-6 font-bold text-gw-text outline-none appearance-none transition-all">
                   <option value="Grammar Drill">Grammar Drill</option>
                   <option value="Roleplay">Roleplay</option>
@@ -231,7 +231,7 @@ import { RouterLink } from '@angular/router';
               </div>
 
               <div class="space-y-2">
-                <label class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted px-2">Complexity*</label>
+                <label class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted px-2">Complexity*</label>
                 <div class="flex gap-3">
                   @for (level of [1, 2, 3, 4, 5]; track level) {
                     <button 
@@ -252,13 +252,13 @@ import { RouterLink } from '@angular/router';
               </div>
 
               <div class="space-y-2">
-                <label class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted px-2">Target Age Group*</label>
+                <label class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted px-2">Target Age Group*</label>
                 <div class="flex gap-2">
                   @for (age of ['All', 'Child', 'Teen', 'Adult']; track age) {
                     <button 
                       type="button"
                       (click)="metadataForm.get('targetAgeGroup')?.setValue(age)"
-                      class="flex-1 h-12 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all border-2"
+                      class="flex-1 h-12 rounded-xl text-[11px] font-black uppercase tracking-widest transition-all border-2"
                       [class.bg-gw-text]="metadataForm.get('targetAgeGroup')?.value === age"
                       [class.text-white]="metadataForm.get('targetAgeGroup')?.value === age"
                       [class.border-gw-text]="metadataForm.get('targetAgeGroup')?.value === age"
@@ -301,15 +301,15 @@ import { RouterLink } from '@angular/router';
                     <h3 class="text-2xl font-black text-gw-text italic uppercase tracking-tight">Confirm Details</h3>
                     <div class="space-y-4">
                        <div class="flex items-center justify-between border-b border-gw-bg pb-3">
-                          <span class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted italic">Title</span>
+                          <span class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Title</span>
                           <span class="text-sm font-black text-gw-text">{{ metadataForm.value.scriptTitle }}</span>
                        </div>
                        <div class="flex items-center justify-between border-b border-gw-bg pb-3">
-                          <span class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted italic">Category</span>
+                          <span class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Category</span>
                           <span class="px-3 py-1 bg-gw-primary/10 text-gw-primary rounded-lg text-xs font-black uppercase tracking-tighter">{{ metadataForm.value.category }}</span>
                        </div>
                        <div class="flex items-center justify-between border-b border-gw-bg pb-3">
-                          <span class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted italic">Complexity</span>
+                          <span class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Complexity</span>
                           <div class="flex gap-1">
                              @for (i of [1, 2, 3, 4, 5]; track i) {
                                <div class="w-3 h-3 rounded-full" [class.bg-gw-accent]="i <= metadataForm.value.complexityLevel" [class.bg-gw-bg]="i > metadataForm.value.complexityLevel"></div>
@@ -317,7 +317,7 @@ import { RouterLink } from '@angular/router';
                           </div>
                        </div>
                        <div class="flex items-center justify-between border-b border-gw-bg pb-3">
-                          <span class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted italic">Age Group</span>
+                          <span class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Age Group</span>
                           <span class="text-sm font-black text-gw-text">{{ metadataForm.value.targetAgeGroup }}</span>
                        </div>
                     </div>
@@ -332,7 +332,7 @@ import { RouterLink } from '@angular/router';
                             <p class="font-medium text-gw-text italic">"{{ row.englishText | slice:0:60 }}..."</p>
                          </div>
                        }
-                       <p class="text-[10px] font-black text-gw-primary italic text-center pt-2">+ {{ (validationResult()?.rows?.length || 0) - 3 }} more utterances</p>
+                       <p class="text-[11px] font-black text-gw-primary italic text-center pt-2">+ {{ (validationResult()?.rows?.length || 0) - 3 }} more utterances</p>
                     </div>
                  </div>
               </div>
@@ -342,7 +342,7 @@ import { RouterLink } from '@angular/router';
                   <div class="h-2 bg-gw-bg rounded-full overflow-hidden">
                     <div class="h-full bg-gw-primary animate-progress-ind"></div>
                   </div>
-                  <p class="text-center text-[10px] font-black text-gw-text-muted uppercase tracking-widest italic animate-pulse">Uploading and Indexing Script...</p>
+                  <p class="text-center text-[11px] font-black text-gw-text-muted uppercase tracking-widest italic animate-pulse">Uploading and Indexing Script...</p>
                 </div>
               }
 

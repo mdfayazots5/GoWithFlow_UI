@@ -1,5 +1,11 @@
 @use 'variables' as *;
 
+@mixin respond-xxs {
+  @media (max-width: #{$breakpoint-xxs}) {
+    @content;
+  }
+}
+
 @mixin respond-mobile {
   @media (max-width: #{$breakpoint-mobile}) {
     @content;
@@ -60,6 +66,23 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+@mixin safe-area-bottom($extra: 16px) {
+  padding-bottom: calc(#{$bottomnav-height} + env(safe-area-inset-bottom, 0px) + #{$extra});
+}
+
+@mixin gwf-icon-btn($size: 44px, $radius: 10px) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: $size;
+  min-height: $size;
+  border-radius: $radius;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.15s ease;
+  &:active { transform: scale(0.9); }
 }
 
 @mixin gwf-button-primary {

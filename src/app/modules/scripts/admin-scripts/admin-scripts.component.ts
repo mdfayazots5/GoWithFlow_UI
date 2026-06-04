@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { LucideAngularModule, Plus, History, Power, Edit3, Trash2, FileText, CheckCircle, XCircle } from 'lucide-angular';
 import { ScriptService } from '@core/services/script.service';
@@ -26,12 +26,12 @@ import { RouterModule, Router } from '@angular/router';
         <table class="w-full text-left">
           <thead class="bg-ls-bg/50 border-b border-ls-card-border">
             <tr>
-              <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-ls-text-muted">Scenario Title</th>
-              <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-ls-text-muted">Category</th>
-              <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-ls-text-muted">Focus Tag</th>
-              <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-ls-text-muted">Target</th>
-              <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-ls-text-muted text-center">Status</th>
-              <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-ls-text-muted text-right">Actions</th>
+              <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-ls-text-muted">Scenario Title</th>
+              <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-ls-text-muted">Category</th>
+              <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-ls-text-muted">Focus Tag</th>
+              <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-ls-text-muted">Target</th>
+              <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-ls-text-muted text-center">Status</th>
+              <th class="px-6 py-4 text-[11px] font-black uppercase tracking-widest text-ls-text-muted text-right">Actions</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-ls-card-border">
@@ -43,24 +43,24 @@ import { RouterModule, Router } from '@angular/router';
                   </div>
                   <div>
                     <p class="font-bold text-ls-text">{{ s.title }}</p>
-                    <p class="text-[10px] font-medium text-ls-text-muted uppercase tracking-widest">Version {{ s.version }}</p>
+                    <p class="text-[11px] font-medium text-ls-text-muted uppercase tracking-widest">Version {{ s.version }}</p>
                   </div>
                 </div>
               </td>
               <td class="px-6 py-5">
-                <span class="text-[10px] font-black uppercase tracking-widest px-2 py-1 bg-ls-bg rounded-lg text-ls-text-muted">{{ s.category }}</span>
+                <span class="text-[11px] font-black uppercase tracking-widest px-2 py-1 bg-ls-bg rounded-lg text-ls-text-muted">{{ s.category }}</span>
               </td>
               <td class="px-6 py-5">
-                 <span class="text-[10px] font-bold text-ls-accent italic">{{ s.grammarFocusTag }}</span>
+                 <span class="text-[11px] font-bold text-ls-accent italic">{{ s.grammarFocusTag }}</span>
               </td>
               <td class="px-6 py-5">
-                 <span class="text-[10px] font-black uppercase tracking-widest text-ls-text">{{ s.targetAgeGroup }}</span>
+                 <span class="text-[11px] font-black uppercase tracking-widest text-ls-text">{{ s.targetAgeGroup }}</span>
               </td>
               <td class="px-6 py-5 text-center">
                  <div class="flex items-center justify-center gap-2">
                     <i-lucide *ngIf="s.active" [img]="CheckIcon" size="16" class="text-ls-success"></i-lucide>
                     <i-lucide *ngIf="!s.active" [img]="XIcon" size="16" class="text-ls-error"></i-lucide>
-                    <span class="text-[10px] font-black uppercase tracking-widest" [class.text-ls-success]="s.active" [class.text-ls-error]="!s.active">
+                    <span class="text-[11px] font-black uppercase tracking-widest" [class.text-ls-success]="s.active" [class.text-ls-error]="!s.active">
                       {{ s.active ? 'Active' : 'Inactive' }}
                     </span>
                  </div>

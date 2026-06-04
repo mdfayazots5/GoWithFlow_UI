@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, computed } from '@angular/core';
+﻿import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
 import {
@@ -43,7 +43,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
           </div>
           <div>
             <p class="text-2xl font-black text-gw-text leading-none">{{ totalCount() }}</p>
-            <p class="text-[10px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Total</p>
+            <p class="text-[11px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Total</p>
           </div>
         </div>
 
@@ -53,7 +53,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
           </div>
           <div>
             <p class="text-2xl font-black text-gw-text leading-none">{{ completedCount() }}</p>
-            <p class="text-[10px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Completed</p>
+            <p class="text-[11px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Completed</p>
           </div>
         </div>
 
@@ -63,7 +63,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
           </div>
           <div>
             <p class="text-2xl font-black text-gw-text leading-none">{{ avgFluencyDisplay() }}</p>
-            <p class="text-[10px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Avg Score</p>
+            <p class="text-[11px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Avg Score</p>
           </div>
         </div>
 
@@ -80,14 +80,14 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
             [formControl]="searchControl"
             type="text"
             placeholder="Search session or host..."
-            class="w-full h-10 bg-gw-bg border border-transparent rounded-xl pl-9 pr-4 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all">
+            class="w-full h-11 bg-gw-bg border border-transparent rounded-xl pl-9 pr-4 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all">
         </div>
 
         <!-- Status -->
         <div class="relative">
           <select
             [formControl]="statusControl"
-            class="h-10 bg-gw-bg border border-transparent rounded-xl pl-3 pr-8 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all appearance-none cursor-pointer">
+            class="h-11 bg-gw-bg border border-transparent rounded-xl pl-3 pr-8 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all appearance-none cursor-pointer">
             <option value="">All Statuses</option>
             <option value="COMPLETED">Completed</option>
             <option value="ABANDONED">Abandoned</option>
@@ -100,13 +100,13 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
         <input
           [formControl]="fromControl"
           type="date"
-          class="h-10 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all">
+          class="h-11 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all">
 
         <!-- To Date -->
         <input
           [formControl]="toControl"
           type="date"
-          class="h-10 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all">
+          class="h-11 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all">
 
         <!-- Clear (only when filters active) -->
         @if (hasActiveFilters()) {
@@ -157,14 +157,14 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
             <table class="w-full">
               <thead>
                 <tr class="border-b border-gw-card-border">
-                  <th class="px-5 py-3.5 text-left   text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Session</th>
-                  <th class="px-4 py-3.5 text-left   text-[10px] font-black uppercase tracking-widest text-gw-text-muted hidden sm:table-cell">Code</th>
-                  <th class="px-4 py-3.5 text-left   text-[10px] font-black uppercase tracking-widest text-gw-text-muted hidden md:table-cell">Host</th>
-                  <th class="px-4 py-3.5 text-left   text-[10px] font-black uppercase tracking-widest text-gw-text-muted hidden lg:table-cell">Date</th>
-                  <th class="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-gw-text-muted hidden lg:table-cell">Duration</th>
-                  <th class="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Score</th>
-                  <th class="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Status</th>
-                  <th class="px-4 py-3.5 text-right  text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Actions</th>
+                  <th class="px-5 py-3.5 text-left   text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Session</th>
+                  <th class="px-4 py-3.5 text-left   text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden sm:table-cell">Code</th>
+                  <th class="px-4 py-3.5 text-left   text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden md:table-cell">Host</th>
+                  <th class="px-4 py-3.5 text-left   text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden lg:table-cell">Date</th>
+                  <th class="px-4 py-3.5 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden lg:table-cell">Duration</th>
+                  <th class="px-4 py-3.5 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Score</th>
+                  <th class="px-4 py-3.5 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Status</th>
+                  <th class="px-4 py-3.5 text-right  text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -222,7 +222,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
                     <!-- Status Badge -->
                     <td class="px-4 py-4 text-center">
                       <span
-                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide"
+                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wide"
                         [class]="statusBgClass(row.status)">
                         <span class="w-1.5 h-1.5 rounded-full flex-shrink-0"
                           [class]="statusDotClass(row.status)"></span>
@@ -236,7 +236,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
                         <button
                           (click)="viewDetails(row)"
                           title="View Details"
-                          class="w-8 h-8 flex items-center justify-center rounded-lg text-gw-primary hover:bg-gw-primary/10 transition-colors">
+                          class="w-10 h-10 flex items-center justify-center rounded-lg text-gw-primary hover:bg-gw-primary/10 transition-colors">
                           <i-lucide [img]="ViewIcon" size="15"></i-lucide>
                         </button>
                       </div>

@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+﻿import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { UserService } from '@core/services/user.service';
@@ -34,7 +34,7 @@ interface PronunciationTimeline {
   imports: [CommonModule, LucideAngularModule, RouterLink],
   template: `
     <div class="min-h-screen bg-gw-bg">
-      <div class="max-w-lg mx-auto px-4 pt-2 pb-28 space-y-4 animate-in fade-in duration-500">
+      <div class="max-w-lg mx-auto px-4 pt-2 gwf-page-bottom space-y-4 animate-in fade-in duration-500">
 
       <!-- Page heading -->
       <div>
@@ -67,7 +67,7 @@ interface PronunciationTimeline {
           <div class="bg-amber-50 border border-amber-200 rounded-2xl overflow-hidden">
             <div class="px-5 py-3 border-b border-amber-200 flex items-center gap-2">
               <i-lucide [img]="AlertIcon" size="14" class="text-amber-600 flex-shrink-0"></i-lucide>
-              <p class="text-[10px] font-black uppercase tracking-widest text-amber-700 italic">Persistent Problem Words — Practice These</p>
+              <p class="text-[11px] font-black uppercase tracking-widest text-amber-700 italic">Persistent Problem Words — Practice These</p>
             </div>
             <div class="divide-y divide-amber-100">
               @for (word of data()!.topPersistentWords; track word.word) {
@@ -77,14 +77,14 @@ interface PronunciationTimeline {
                       <div class="flex items-center gap-2 flex-wrap">
                         <span class="font-black text-gw-text italic uppercase tracking-wide text-base">{{ word.word }}</span>
                         @if (word.ipaReference) {
-                          <span class="text-[10px] text-amber-600 font-mono bg-amber-100 px-1.5 py-0.5 rounded">{{ word.ipaReference }}</span>
+                          <span class="text-[11px] text-amber-600 font-mono bg-amber-100 px-1.5 py-0.5 rounded">{{ word.ipaReference }}</span>
                         }
                       </div>
-                      <p class="text-[9px] font-bold text-amber-600 mt-0.5 italic">{{ word.totalOccurrences }} sessions with issues</p>
+                      <p class="text-[11px] font-bold text-amber-600 mt-0.5 italic">{{ word.totalOccurrences }} sessions with issues</p>
                     </div>
                     @if (word.practiceScriptId > 0) {
                       <a [routerLink]="['/scripts']" [queryParams]="{ scriptId: word.practiceScriptId }"
-                        class="shrink-0 flex items-center gap-1 px-3 py-1.5 bg-amber-600 text-white rounded-lg text-[8px] font-black uppercase tracking-wider italic hover:bg-amber-700 transition-all">
+                        class="shrink-0 flex items-center gap-1 px-3 py-1.5 bg-amber-600 text-white rounded-lg text-[11px] font-black uppercase tracking-wider italic hover:bg-amber-700 transition-all">
                         <i-lucide [img]="BookIcon" size="10"></i-lucide>
                         Practice
                       </a>
@@ -100,7 +100,7 @@ interface PronunciationTimeline {
                       </div>
                     }
                     @if (word.sessionHistory.length > 12) {
-                      <span class="text-[8px] text-amber-600 font-bold italic">+{{ word.sessionHistory.length - 12 }} more</span>
+                      <span class="text-[11px] text-amber-600 font-bold italic">+{{ word.sessionHistory.length - 12 }} more</span>
                     }
                   </div>
                 </div>
@@ -113,7 +113,7 @@ interface PronunciationTimeline {
         <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
           <div class="px-5 py-3 border-b border-gw-bg flex items-center gap-2">
             <i-lucide [img]="VolumeIcon" size="14" class="text-gw-text-muted"></i-lucide>
-            <p class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted italic">All Problem Words ({{ data()!.problemWords.length }})</p>
+            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">All Problem Words ({{ data()!.problemWords.length }})</p>
           </div>
           <div class="divide-y divide-gw-bg">
             @for (word of data()!.problemWords; track word.word) {
@@ -123,13 +123,13 @@ interface PronunciationTimeline {
                     <div class="flex items-center gap-2 flex-wrap">
                       <span class="font-black text-gw-text italic uppercase tracking-wide">{{ word.word }}</span>
                       @if (word.ipaReference) {
-                        <span class="text-[9px] text-gw-primary font-mono bg-gw-primary/10 px-1.5 py-0.5 rounded">{{ word.ipaReference }}</span>
+                        <span class="text-[11px] text-gw-primary font-mono bg-gw-primary/10 px-1.5 py-0.5 rounded">{{ word.ipaReference }}</span>
                       }
                       @if (word.isPersistent) {
-                        <span class="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[7px] font-black uppercase tracking-wider rounded-md">Persistent</span>
+                        <span class="px-1.5 py-0.5 bg-amber-100 text-amber-700 text-[11px] font-black uppercase tracking-wider rounded-md">Persistent</span>
                       }
                     </div>
-                    <p class="text-[9px] font-semibold text-gw-text-muted mt-0.5 italic">{{ word.totalOccurrences }} occurrence{{ word.totalOccurrences !== 1 ? 's' : '' }}</p>
+                    <p class="text-[11px] font-semibold text-gw-text-muted mt-0.5 italic">{{ word.totalOccurrences }} occurrence{{ word.totalOccurrences !== 1 ? 's' : '' }}</p>
                     <!-- Dot timeline -->
                     <div class="flex items-center gap-1 mt-2 flex-wrap">
                       @for (entry of word.sessionHistory.slice(-10); track entry.sessionId) {
@@ -143,7 +143,7 @@ interface PronunciationTimeline {
                   </div>
                   @if (word.practiceScriptId > 0) {
                     <a [routerLink]="['/scripts']" [queryParams]="{ scriptId: word.practiceScriptId }"
-                      class="shrink-0 text-[8px] font-black text-gw-primary uppercase tracking-wider italic hover:underline mt-0.5">
+                      class="shrink-0 text-[11px] font-black text-gw-primary uppercase tracking-wider italic hover:underline mt-0.5">
                       Practice →
                     </a>
                   }
@@ -157,13 +157,13 @@ interface PronunciationTimeline {
         <div class="flex items-center gap-4 px-1">
           <div class="flex items-center gap-1.5">
             <div class="w-3 h-3 rounded-full bg-gw-error"></div>
-            <span class="text-[9px] font-bold text-gw-text-muted italic">Issue detected</span>
+            <span class="text-[11px] font-bold text-gw-text-muted italic">Issue detected</span>
           </div>
           <div class="flex items-center gap-1.5">
             <div class="w-3 h-3 rounded-full bg-gw-success"></div>
-            <span class="text-[9px] font-bold text-gw-text-muted italic">No issue</span>
+            <span class="text-[11px] font-bold text-gw-text-muted italic">No issue</span>
           </div>
-          <span class="text-[9px] text-gw-text-muted italic">Dots = sessions, newest on right</span>
+          <span class="text-[11px] text-gw-text-muted italic">Dots = sessions, newest on right</span>
         </div>
       }
 

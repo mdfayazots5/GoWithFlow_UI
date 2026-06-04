@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+﻿import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -22,7 +22,7 @@ import { LucideAngularModule, User, Mail, ChevronDown } from 'lucide-angular';
           <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" class="space-y-6">
             <!-- Full Name -->
             <div class="space-y-2">
-              <label class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted px-1">Full Name</label>
+              <label class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted px-1">Full Name</label>
               <div class="relative">
                 <i-lucide [img]="UserIcon" size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-gw-text-muted"></i-lucide>
                 <input
@@ -32,17 +32,17 @@ import { LucideAngularModule, User, Mail, ChevronDown } from 'lucide-angular';
                   placeholder="Official Name"
                 >
               </div>
-              <p *ngIf="registerForm.get('fullName')?.touched && registerForm.get('fullName')?.errors?.['required']" class="text-[10px] font-bold text-gw-error px-1 italic uppercase tracking-wider">
+              <p *ngIf="registerForm.get('fullName')?.touched && registerForm.get('fullName')?.errors?.['required']" class="text-[11px] font-bold text-gw-error px-1 italic uppercase tracking-wider">
                 Full name is required
               </p>
-              <p *ngIf="registerForm.get('fullName')?.touched && (registerForm.get('fullName')?.errors?.['minlength'] || registerForm.get('fullName')?.errors?.['maxlength'])" class="text-[10px] font-bold text-gw-error px-1 italic uppercase tracking-wider">
+              <p *ngIf="registerForm.get('fullName')?.touched && (registerForm.get('fullName')?.errors?.['minlength'] || registerForm.get('fullName')?.errors?.['maxlength'])" class="text-[11px] font-bold text-gw-error px-1 italic uppercase tracking-wider">
                 Name must be 2-60 chars
               </p>
             </div>
 
             <!-- Mobile -->
             <div class="space-y-2">
-              <label class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted px-1">Mobile Number</label>
+              <label class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted px-1">Mobile Number</label>
               <div class="relative">
                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gw-text-muted font-bold text-sm">+91</span>
                 <input
@@ -53,14 +53,14 @@ import { LucideAngularModule, User, Mail, ChevronDown } from 'lucide-angular';
                   maxlength="10"
                 >
               </div>
-              <p *ngIf="registerForm.get('mobileNumber')?.touched && registerForm.get('mobileNumber')?.errors" class="text-[10px] font-bold text-gw-error px-1 italic uppercase tracking-wider">
+              <p *ngIf="registerForm.get('mobileNumber')?.touched && registerForm.get('mobileNumber')?.errors" class="text-[11px] font-bold text-gw-error px-1 italic uppercase tracking-wider">
                 Enter valid 10-digit number
               </p>
             </div>
 
             <!-- Email -->
             <div class="space-y-2">
-              <label class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted px-1">Email Address (Optional)</label>
+              <label class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted px-1">Email Address (Optional)</label>
               <div class="relative">
                 <i-lucide [img]="MailIcon" size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-gw-text-muted"></i-lucide>
                 <input
@@ -74,14 +74,14 @@ import { LucideAngularModule, User, Mail, ChevronDown } from 'lucide-angular';
 
             <!-- Password -->
             <div class="space-y-2">
-              <label class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted px-1">Password</label>
+              <label class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted px-1">Password</label>
               <input
                 type="password"
                 formControlName="password"
                 class="w-full h-14 bg-gw-bg/50 border border-gw-card-border rounded-2xl px-4 font-bold text-gw-text focus:border-gw-primary outline-none transition-all"
                 placeholder="Min. 6 characters"
               >
-              <p *ngIf="registerForm.get('password')?.touched && registerForm.get('password')?.errors" class="text-[10px] font-bold text-gw-error px-1 italic uppercase tracking-wider">
+              <p *ngIf="registerForm.get('password')?.touched && registerForm.get('password')?.errors" class="text-[11px] font-bold text-gw-error px-1 italic uppercase tracking-wider">
                 Password must be at least 6 characters
               </p>
             </div>
@@ -89,7 +89,7 @@ import { LucideAngularModule, User, Mail, ChevronDown } from 'lucide-angular';
             <div class="grid grid-cols-2 gap-4">
               <!-- Age Group -->
               <div class="space-y-2">
-                <label class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted px-1">Age Group</label>
+                <label class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted px-1">Age Group</label>
                 <div class="relative">
                   <select
                     formControlName="ageGroup"

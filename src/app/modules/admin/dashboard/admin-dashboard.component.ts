@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+﻿import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import {
@@ -8,11 +8,12 @@ import {
   LayoutDashboard,
 } from 'lucide-angular';
 import { AdminService } from '@core/services/admin.service';
+import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.component';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, LucideAngularModule],
+  imports: [CommonModule, RouterLink, LucideAngularModule, UserAvatarComponent],
   template: `
 
     <div class="space-y-5">
@@ -48,7 +49,7 @@ import { AdminService } from '@core/services/admin.service';
             } @else {
               <p class="text-2xl font-black text-gw-text leading-none">{{ stats()?.totalUsers ?? 0 }}</p>
             }
-            <p class="text-[10px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Total Users</p>
+            <p class="text-[11px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Total Users</p>
           </div>
         </div>
 
@@ -63,7 +64,7 @@ import { AdminService } from '@core/services/admin.service';
             } @else {
               <p class="text-2xl font-black text-gw-text leading-none">{{ stats()?.activeSessions ?? 0 }}</p>
             }
-            <p class="text-[10px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Sessions Today</p>
+            <p class="text-[11px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Sessions Today</p>
           </div>
         </div>
 
@@ -78,7 +79,7 @@ import { AdminService } from '@core/services/admin.service';
             } @else {
               <p class="text-2xl font-black text-gw-text leading-none">{{ stats()?.totalScripts ?? 0 }}</p>
             }
-            <p class="text-[10px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Total Scripts</p>
+            <p class="text-[11px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Total Scripts</p>
           </div>
         </div>
 
@@ -93,7 +94,7 @@ import { AdminService } from '@core/services/admin.service';
             } @else {
               <p class="text-2xl font-black text-gw-text leading-none">{{ stats()?.totalMistakes ?? 0 }}</p>
             }
-            <p class="text-[10px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Mistakes Logged</p>
+            <p class="text-[11px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Mistakes Logged</p>
           </div>
         </div>
 
@@ -141,67 +142,72 @@ import { AdminService } from '@core/services/admin.service';
             </div>
           }
 
-          <!-- Table -->
+          <!-- Card list — mobile (< 640px) -->
           @else {
-            <div class="overflow-x-auto">
+            <div class="sm:hidden divide-y divide-gw-bg">
+              @for (row of recentActivity(); track $index) {
+                <div class="flex items-center gap-3 px-4 py-3.5">
+                  <app-user-avatar [name]="row.userName" [avatarUrl]="row.avatarUrl" size="sm"></app-user-avatar>
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-bold text-gw-text truncate">{{ row.userName }}</p>
+                    <p class="text-[11px] text-gw-text-muted truncate">{{ row.sessionName }}</p>
+                    <p class="text-[11px] text-gw-text-muted/70">{{ row.sessionDate | date:'d MMM, h:mm a' }}</p>
+                  </div>
+                  <div class="flex flex-col items-end gap-1.5 shrink-0">
+                    <span class="text-sm font-black" [class]="fluencyClass(row.fluencyScore)">
+                      {{ row.fluencyScore > 0 ? (row.fluencyScore | number:'1.0-1') + '%' : '—' }}
+                    </span>
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wide"
+                      [class]="statusBgClass(row.status)">
+                      <span class="w-1 h-1 rounded-full flex-shrink-0" [class]="statusDotClass(row.status)"></span>
+                      {{ statusLabel(row.status) }}
+                    </span>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Table — desktop (>= 640px) -->
+            <div class="hidden sm:block overflow-x-auto">
               <table class="w-full">
                 <thead>
                   <tr class="border-b border-gw-card-border">
-                    <th class="px-5 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-gw-text-muted">User</th>
-                    <th class="px-4 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-gw-text-muted hidden sm:table-cell">Session</th>
-                    <th class="px-4 py-3.5 text-left text-[10px] font-black uppercase tracking-widest text-gw-text-muted hidden md:table-cell">Date</th>
-                    <th class="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Score</th>
-                    <th class="px-4 py-3.5 text-center text-[10px] font-black uppercase tracking-widest text-gw-text-muted">Status</th>
+                    <th class="px-5 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted">User</th>
+                    <th class="px-4 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Session</th>
+                    <th class="px-4 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden md:table-cell">Date</th>
+                    <th class="px-4 py-3.5 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Score</th>
+                    <th class="px-4 py-3.5 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Status</th>
                   </tr>
                 </thead>
                 <tbody>
                   @for (row of recentActivity(); track $index) {
                     <tr class="border-b border-gw-card-border/50 hover:bg-gw-bg/40 transition-colors">
-
-                      <!-- User -->
                       <td class="px-5 py-3.5">
                         <div class="flex items-center gap-3">
-                          @if (row.avatarUrl) {
-                            <img [src]="row.avatarUrl" [alt]="row.userName"
-                              class="w-8 h-8 rounded-full object-cover flex-shrink-0" />
-                          } @else {
-                            <div class="w-8 h-8 rounded-full bg-gw-primary flex items-center justify-center flex-shrink-0">
-                              <span class="text-[10px] font-black text-white leading-none">{{ initials(row.userName) }}</span>
-                            </div>
-                          }
+                          <app-user-avatar [name]="row.userName" [avatarUrl]="row.avatarUrl" size="sm"></app-user-avatar>
                           <span class="text-sm font-bold text-gw-text">{{ row.userName }}</span>
                         </div>
                       </td>
-
-                      <!-- Session -->
-                      <td class="px-4 py-3.5 hidden sm:table-cell">
+                      <td class="px-4 py-3.5">
                         <span class="text-sm font-medium text-gw-text-muted">{{ row.sessionName }}</span>
                       </td>
-
-                      <!-- Date -->
                       <td class="px-4 py-3.5 hidden md:table-cell">
                         <span class="text-xs font-medium text-gw-text-muted whitespace-nowrap">
                           {{ row.sessionDate | date:'d MMM, h:mm a' }}
                         </span>
                       </td>
-
-                      <!-- Score -->
                       <td class="px-4 py-3.5 text-center">
                         <span class="text-sm font-black" [class]="fluencyClass(row.fluencyScore)">
                           {{ row.fluencyScore > 0 ? (row.fluencyScore | number:'1.0-1') + '%' : '—' }}
                         </span>
                       </td>
-
-                      <!-- Status -->
                       <td class="px-4 py-3.5 text-center">
-                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide"
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wide"
                           [class]="statusBgClass(row.status)">
-                          <span class="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                            [class]="statusDotClass(row.status)"></span>
+                          <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" [class]="statusDotClass(row.status)"></span>
                           {{ statusLabel(row.status) }}
                         </span>
                       </td>
-
                     </tr>
                   }
                 </tbody>
@@ -252,11 +258,11 @@ import { AdminService } from '@core/services/admin.service';
 
                   <div class="flex items-center justify-between gap-2 mb-2">
                     <div class="flex items-center gap-2 min-w-0">
-                      <span class="text-[10px] font-black text-gw-text-muted w-5 flex-shrink-0">#{{ i + 1 }}</span>
+                      <span class="text-[11px] font-black text-gw-text-muted w-5 flex-shrink-0">#{{ i + 1 }}</span>
                       <span class="text-sm font-bold text-gw-text truncate">{{ area.tag }}</span>
                     </div>
                     <div class="flex items-center gap-2 flex-shrink-0">
-                      <span class="text-[10px] font-black bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full whitespace-nowrap">
+                      <span class="text-[11px] font-black bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full whitespace-nowrap">
                         {{ area.count }} users
                       </span>
                       <span class="text-[11px] font-black text-gw-text-muted w-8 text-right">
@@ -289,7 +295,7 @@ import { AdminService } from '@core/services/admin.service';
       <!--  Quick Access                                              -->
       <!-- ══════════════════════════════════════════════════════════ -->
       <div>
-        <p class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted mb-3">Quick Access</p>
+        <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted mb-3">Quick Access</p>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
 
           <a routerLink="/admin/scripts/upload"
@@ -371,10 +377,6 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   // ── Helpers ──────────────────────────────────────────────────────
-  initials(name: string): string {
-    return (name ?? '?').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
-  }
-
   statusLabel(status: string): string {
     switch (status?.toUpperCase()) {
       case 'COMPLETED':   return 'Completed';

@@ -66,8 +66,11 @@ export interface GrammarProgress {
 }
 
 export interface RepracticeHistoryItem {
-  date: string;
-  sourceSession: string;
-  mistakesPracticed: number;
+  repracticeSessionId: number;
+  sourceSessionId: number;
+  status: string;
+  totalMistakes: number;
+  completedRounds: number;
   improvementPercent: number;
+  generatedDate: string;
 }
