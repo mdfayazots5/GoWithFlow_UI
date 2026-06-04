@@ -304,28 +304,30 @@ export class VoiceRecognitionEngine implements OnDestroy {
     console.debug('[VRE] Native session start', { deviceLang: navigator.language, cachedLang, candidates });
 
     return new Promise<VoiceSessionResult>((resolve, reject) => {
-      const WATCHDOG_MS   = 4000;   // no signal in this window ⇒ language unusable
-      const SILENCE_MS    = 2500;   // pause after last partial ⇒ user finished
-      const HARD_CEIL_MS  = 20000;  // absolute ceiling
-      const RESTART_GAP_MS = 350;   // let the recognizer release before next start
+      const SILENCE_MS          = 2500;   // pause after last partial ⇒ user finished
+      const KEEPALIVE_MS        = 7000;   // no signal this long ⇒ recognizer timed out on silence; relisten
+      const HARD_CEIL_MS        = 30000;  // absolute ceiling for the whole turn
+      const RESTART_GAP_MS      = 300;    // let the recognizer release before the next start
+      const MAX_SILENT_RESTARTS = 2;      // silent relistens on one language before trying the next candidate
 
       let latestTranscript = '';
       let lastPartialSeen  = '';
-      let langConfirmed    = false; // true once a 'started'/'partial' arrives — stop walking the chain
-      let attemptIndex     = 0;
-      let attemptToken     = 0;     // bumped each attempt; stale-attempt callbacks ignored
+      let langConfirmed    = false; // true once 'started'/'partial' arrives — never switch language after this
+      let attemptIndex     = 0;     // index into `candidates`
+      let silentRestarts   = 0;     // consecutive relistens on the current language with no signal
+      let attemptToken     = 0;     // bumped each (re)start; stale-attempt callbacks ignored
       let settled          = false;
 
-      let silenceTimer:  any = null;
-      let watchdogTimer: any = null;
-      let hardTimeout:   any = null;
-      let stopPoll:      any = null;
+      let silenceTimer:   any = null;
+      let keepaliveTimer: any = null;
+      let hardTimeout:    any = null;
+      let stopPoll:       any = null;
 
       const settle = (fn: () => void) => {
         if (settled) return;
         settled = true;
         clearTimeout(silenceTimer);
-        clearTimeout(watchdogTimer);
+        clearTimeout(keepaliveTimer);
         clearTimeout(hardTimeout);
         clearInterval(stopPoll);
         if (this.nativeSpeechListener) { this.nativeSpeechListener.remove(); this.nativeSpeechListener = null; }
@@ -352,25 +354,40 @@ export class VoiceRecognitionEngine implements OnDestroy {
       const confirmLanguage = (lang: string | undefined) => {
         if (langConfirmed) return;
         langConfirmed = true;
-        clearTimeout(watchdogTimer);
         if (lang) { try { localStorage.setItem(this._langCacheKey, lang); } catch { /* ignore */ } }
         console.debug('[VRE] Native language confirmed', { lang: lang ?? '(device default)' });
       };
 
-      const advanceLanguage = () => {
-        if (settled || langConfirmed) return;   // never re-walk once a language works
-        attemptToken++;                          // invalidate the failed attempt's callbacks
-        clearTimeout(watchdogTimer);
+      // The recognizer ended (onEndOfSpeech / swallowed timeout) with no usable
+      // transcript yet. Keep the mic open by relistening on the SAME language —
+      // Android's SpeechRecognizer is single-utterance, and a still-preparing user
+      // simply produces no signal. Only after MAX_SILENT_RESTARTS silent relistens
+      // (i.e. the language genuinely yields nothing) do we move to the next candidate.
+      // This is what separates "user hasn't spoken yet" (common — same language) from
+      // "language not installed" (rare — advance), without the short watchdog that used
+      // to cut off slow speakers and thrash a working recognizer.
+      const relisten = (reason: string) => {
+        if (settled || latestTranscript) return;
+        attemptToken++;                     // invalidate the ended attempt's callbacks
+        clearTimeout(keepaliveTimer);
         clearTimeout(silenceTimer);
         NativeSpeechRecognition.stop().catch(() => {});
-        attemptIndex++;
-        if (attemptIndex >= candidates.length) {
-          settle(() => {
-            this.state$.next('error');
-            reject(new Error('Speech recognition is unavailable on this device. Open Settings → System → Languages & input → Voice input and download an English voice model, then try again.'));
-          });
-          return;
+
+        if (!langConfirmed) {
+          silentRestarts++;
+          if (silentRestarts > MAX_SILENT_RESTARTS) {
+            silentRestarts = 0;
+            attemptIndex++;
+            if (attemptIndex >= candidates.length) {
+              settle(() => {
+                this.state$.next('error');
+                reject(new Error('Speech recognition is unavailable on this device. Open Settings → System → Languages & input → Voice input and download an English voice model, then try again.'));
+              });
+              return;
+            }
+          }
         }
+        console.debug('[VRE] Native relisten', { reason, attemptIndex, silentRestarts, langConfirmed });
         setTimeout(() => startAttempt(), RESTART_GAP_MS);
       };
 
@@ -378,7 +395,6 @@ export class VoiceRecognitionEngine implements OnDestroy {
         if (settled) return;
         const myToken = ++attemptToken;
         const lang = candidates[attemptIndex];
-        const isCached = !!lang && lang === cachedLang;
 
         if (this.nativeSpeechListener) { this.nativeSpeechListener.remove(); this.nativeSpeechListener = null; }
         if (this.nativeStateListener)  { this.nativeStateListener.remove();  this.nativeStateListener = null; }
@@ -389,6 +405,7 @@ export class VoiceRecognitionEngine implements OnDestroy {
             if (settled || myToken !== attemptToken) return;
             if (data?.matches?.length > 0) {
               confirmLanguage(lang);
+              clearTimeout(keepaliveTimer);     // speech is flowing — don't relisten
               latestTranscript = data.matches[0];
               this.interimTranscript$.next(latestTranscript);
               if (latestTranscript !== lastPartialSeen) {
@@ -407,37 +424,35 @@ export class VoiceRecognitionEngine implements OnDestroy {
           'listeningState',
           (data: { status: string }) => {
             if (settled || myToken !== attemptToken) return;
+            // onBeginningOfSpeech — speech onset detected, so this language works.
             if (data.status === 'started') { confirmLanguage(lang); return; }
             if (data.status !== 'stopped') return;
-            // 'stopped' = end-of-speech (onEndOfSpeech). NOT emitted on a swallowed
-            // language error — those are caught by the watchdog instead.
+            // onEndOfSpeech. With a transcript → done; otherwise keep the mic open.
             if (latestTranscript) { finalizeWithTranscript(); return; }
-            if (!langConfirmed) { advanceLanguage(); return; }
-            finalizeWithTranscript(); // confirmed language but nothing intelligible
+            relisten('stopped');
           }
         );
 
         if (settled || myToken !== attemptToken) return;
 
-        console.debug('[VRE] Native start()', { attemptIndex, lang: lang ?? '(device default)', isCached });
+        console.debug('[VRE] Native start()', { attemptIndex, lang: lang ?? '(device default)' });
         NativeSpeechRecognition.start({ language: lang, maxResults: 3, partialResults: true, popup: false })
           .catch((e: any) => {
             if (settled || myToken !== attemptToken) return;
-            console.warn('[VRE] Native start() threw — advancing language', { lang, err: e?.message ?? e });
-            advanceLanguage();
+            console.warn('[VRE] Native start() threw', { lang, err: e?.message ?? e });
+            relisten('start-threw');
           });
 
-        // Watchdog: a bad language emits no partial/started and the error is
-        // swallowed, so silence here means "advance". Skipped for a cached,
-        // already-known-good language (a silent user must not trigger a swap).
-        clearTimeout(watchdogTimer);
-        if (!isCached) {
-          watchdogTimer = setTimeout(() => {
-            if (settled || myToken !== attemptToken || langConfirmed) return;
-            console.warn('[VRE] Watchdog fired — no speech signal, language likely not installed', { lang: lang ?? '(device default)' });
-            advanceLanguage();
-          }, WATCHDOG_MS);
-        }
+        // Keep-alive: if the recognizer delivers no speech signal within the window it
+        // almost certainly timed out on silence (the error is swallowed). Relisten so a
+        // slow user is never stranded with a dead mic. Cleared as soon as a partial
+        // arrives. A long window (7 s) deliberately lets users read + start speaking.
+        clearTimeout(keepaliveTimer);
+        keepaliveTimer = setTimeout(() => {
+          if (settled || myToken !== attemptToken || latestTranscript) return;
+          console.warn('[VRE] Keep-alive — no speech yet, relistening', { lang: lang ?? '(device default)', silentRestarts, langConfirmed });
+          relisten('keepalive');
+        }, KEEPALIVE_MS);
       };
 
       // External stop (user taps mic) — finalize with whatever was captured.
