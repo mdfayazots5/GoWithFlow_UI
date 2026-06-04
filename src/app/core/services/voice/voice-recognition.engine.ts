@@ -52,6 +52,10 @@ export class VoiceRecognitionEngine implements OnDestroy {
   private allFinalTranscripts: string[] = [];
   private apiConfidences: number[] = [];
 
+  // Set to true after a language-not-supported error so the next startRecognition
+  // attempt uses en-US instead of en-IN (Edge mobile does not support en-IN).
+  private _useFallbackLang = false;
+
   // ─── Platform detection ─────────────────────────────────────────────────────
   // isCapacitorNative: true when running inside Capacitor Android/iOS shell.
   // Web Speech API is unavailable in Capacitor WebView — native plugin path used instead.
@@ -124,6 +128,7 @@ export class VoiceRecognitionEngine implements OnDestroy {
     this.retryCount = 0;
     this._hasSpoken = false;
     this._intentionalStop = false;
+    this._useFallbackLang = false;
     this.allFinalTranscripts = [];
     this.apiConfidences = [];
     this._accumulatedInterim = '';
@@ -390,9 +395,18 @@ export class VoiceRecognitionEngine implements OnDestroy {
 
   // ─── MICROPHONE PERMISSION ──────────────────────────────────────────────────
   private async requestMicPermission(): Promise<boolean> {
-    // Use the Permissions API when available to avoid a redundant getUserMedia
-    // round-trip on mobile (two consecutive getUserMedia calls can cause iOS
-    // Safari to re-present the permission sheet or fail the second stream).
+    // On mobile browsers with SpeechRecognition available, skip the getUserMedia
+    // permission probe entirely. Edge/Chrome mobile do not release the audio
+    // hardware immediately after stream.getTracks().forEach(t => t.stop()), so a
+    // SpeechRecognition.start() call that follows gets an audio-capture error.
+    // SpeechRecognition handles its own permission prompt — not-allowed is caught
+    // in onerror and surfaced as a clear user-facing message.
+    const hasSpeechApi = !!(window as any).SpeechRecognition || !!(window as any).webkitSpeechRecognition;
+    if (this._isMobile && hasSpeechApi) {
+      console.debug('[VRE] Mobile browser — skipping getUserMedia probe, SpeechRecognition handles permissions');
+      return true;
+    }
+
     if (navigator.permissions) {
       try {
         const result = await navigator.permissions.query({ name: 'microphone' as PermissionName });
@@ -435,7 +449,9 @@ export class VoiceRecognitionEngine implements OnDestroy {
     }
 
     this.recognition = new SpeechRecognition();
-    this.recognition.lang = 'en-IN';
+    // en-IN is preferred. Edge mobile does not support it — _useFallbackLang is set
+    // to true after the first language-not-supported error and subsequent attempts use en-US.
+    this.recognition.lang = this._useFallbackLang ? 'en-US' : 'en-IN';
     // continuous=true only on desktop — mobile Chrome with continuous=true fires onend
     // every ~5 s (internal browser timeout) causing restart bells mid-speech.
     // With continuous=false the browser handles end-of-speech naturally and isFinal fires reliably.
@@ -527,7 +543,24 @@ export class VoiceRecognitionEngine implements OnDestroy {
 
     // ── EVENT: error handling ────────────────────────────────────────────────
     this.recognition.onerror = (event: any) => {
-      console.warn('[VRE] Recognition error', { error: event.error, retryCount: this.retryCount, _hasSpoken: this._hasSpoken });
+      console.warn('[VRE] Recognition error', { error: event.error, retryCount: this.retryCount, _hasSpoken: this._hasSpoken, lang: this.recognition?.lang });
+
+      // Permission denied — SpeechRecognition itself asked and was refused.
+      // Surfaces when getUserMedia probe is skipped on mobile browsers.
+      if (event.error === 'not-allowed') {
+        this.state$.next('error');
+        this.vad.stop();
+        reject(new Error('Microphone permission denied. Please allow microphone access in your browser settings and try again.'));
+        return;
+      }
+
+      // Edge mobile does not support en-IN. Retry once with en-US as fallback.
+      if (event.error === 'language-not-supported' && !this._useFallbackLang) {
+        console.warn('[VRE] language-not-supported for en-IN — retrying with en-US');
+        this._useFallbackLang = true;
+        setTimeout(() => this.startRecognition(expectedText, resolve, reject), 300);
+        return;
+      }
 
       // 'no-speech' fires when the browser's own internal silence timer expires.
       // If the user has already produced transcripts, this just means they paused —

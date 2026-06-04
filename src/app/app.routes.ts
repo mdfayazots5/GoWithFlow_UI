@@ -1,6 +1,18 @@
-// File: src/app/app.routes.ts
 import { Routes } from '@angular/router';
+import { inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { AuthService } from './core/services/auth.service';
+
+const autoLoginGuard = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  if (auth.isLoggedIn) {
+    const role = auth.getRole();
+    return router.createUrlTree([role === 'ADMIN' ? '/admin/dashboard' : '/user/dashboard']);
+  }
+  return router.createUrlTree(['/auth/login']);
+};
 
 export const routes: Routes = [
   {
@@ -39,8 +51,9 @@ export const routes: Routes = [
   },
   {
     path: '',
-    redirectTo: 'auth/login',
-    pathMatch: 'full'
+    pathMatch: 'full',
+    canActivate: [autoLoginGuard],
+    children: []
   },
   {
     path: '**',

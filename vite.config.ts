@@ -4,6 +4,12 @@ import path from 'path';
 import {defineConfig} from 'vite';
 
 export default defineConfig(() => {
+  // API_TARGET env var controls which backend the Vite dev proxy forwards to.
+  // Default: production API — dev APK + live reload works without local backend.
+  // Override: API_TARGET=https://localhost:44378 npm run dev — uses local .NET backend.
+  const apiTarget = process.env['API_TARGET'] ?? 'https://gowithflow-api.onrender.com';
+  const isLocalTarget = apiTarget.includes('localhost');
+
   return {
     plugins: [
       angular(),
@@ -32,14 +38,14 @@ export default defineConfig(() => {
       },
       proxy: {
         '/api': {
-          target: 'https://localhost:44378',
+          target: apiTarget,
           changeOrigin: true,
-          secure: false,
+          secure: !isLocalTarget,
         },
         '/hubs': {
-          target: 'https://localhost:44378',
+          target: apiTarget,
           changeOrigin: true,
-          secure: false,
+          secure: !isLocalTarget,
           ws: true,
         },
       },
