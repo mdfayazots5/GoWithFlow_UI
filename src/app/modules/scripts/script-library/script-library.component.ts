@@ -335,7 +335,7 @@ export class ScriptLibraryComponent implements OnInit {
     this.scriptService.getScripts(filters).subscribe({
       next: (res) => {
         const items = res.items ?? [];
-        this.total  = res.total ?? res.totalCount ?? items.length;
+        this.total  = res.total ?? items.length;
         this.scripts.update(prev => append ? [...prev, ...items] : items);
         this.hasMore.set(this.scripts().length < this.total);
         this.isLoading.set(false);

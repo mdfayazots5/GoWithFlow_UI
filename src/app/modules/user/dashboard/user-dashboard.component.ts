@@ -49,7 +49,7 @@ import { catchError, of, Subscription } from 'rxjs';
         <div class="grid grid-cols-3 gap-2.5">
 
           <a routerLink="/session/create"
-             class="bg-white rounded-2xl border border-gw-card-border shadow-sm
+             class="bg-gw-card-bg rounded-2xl border border-gw-card-border shadow-sm
                     flex flex-col items-center gap-2 py-4 px-2
                     hover:border-gw-primary hover:shadow-md
                     active:scale-95 transition-all no-underline">
@@ -63,7 +63,7 @@ import { catchError, of, Subscription } from 'rxjs';
           </a>
 
           <a routerLink="/scripts"
-             class="bg-white rounded-2xl border border-gw-card-border shadow-sm
+             class="bg-gw-card-bg rounded-2xl border border-gw-card-border shadow-sm
                     flex flex-col items-center gap-2 py-4 px-2
                     hover:border-gw-primary hover:shadow-md
                     active:scale-95 transition-all no-underline">
@@ -77,7 +77,7 @@ import { catchError, of, Subscription } from 'rxjs';
           </a>
 
           <a routerLink="/user/progress"
-             class="bg-white rounded-2xl border border-gw-card-border shadow-sm
+             class="bg-gw-card-bg rounded-2xl border border-gw-card-border shadow-sm
                     flex flex-col items-center gap-2 py-4 px-2
                     hover:border-gw-primary hover:shadow-md
                     active:scale-95 transition-all no-underline">
@@ -116,7 +116,7 @@ import { catchError, of, Subscription } from 'rxjs';
 
         <!-- ── Weekly Report Card (shown once per week, dismissible) ── -->
         @if (showWeeklyReport() && weeklyReport()) {
-          <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden animate-in slide-in-from-top-2 duration-300">
+          <div class="bg-gw-card-bg rounded-2xl border border-gw-card-border shadow-sm overflow-hidden animate-in slide-in-from-top-2 duration-300">
             <div class="flex items-center justify-between px-5 py-3 border-b border-gw-bg">
               <div class="flex items-center gap-2">
                 <i-lucide [img]="CalendarIcon" size="14" class="text-gw-primary flex-shrink-0"></i-lucide>
@@ -177,7 +177,7 @@ import { catchError, of, Subscription } from 'rxjs';
 
         <!-- ── Weekly Challenge Banner ──────────────────────────────── -->
         @if (activeChallenge()?.hasActiveChallenge) {
-          <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
+          <div class="bg-gw-card-bg rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
             <div class="flex items-center gap-2 px-5 py-3 border-b border-gw-bg"
                  style="background: linear-gradient(135deg, rgba(61,90,153,0.04), rgba(224,123,57,0.04))">
               <i-lucide [img]="StarIcon" size="14" class="text-amber-500 flex-shrink-0"></i-lucide>
@@ -220,7 +220,7 @@ import { catchError, of, Subscription } from 'rxjs';
         <!-- ── Goal Progress Panel ──────────────────────────────────── -->
         @if (goalProgress()?.hasActiveGoal) {
           <a routerLink="/user/goals"
-             class="block bg-white rounded-2xl border border-gw-card-border shadow-sm p-5 hover:border-gw-primary transition-all group no-underline">
+             class="block bg-gw-card-bg rounded-2xl border border-gw-card-border shadow-sm p-5 hover:border-gw-primary transition-all group no-underline">
             <div class="flex items-start justify-between gap-3 mb-3">
               <div>
                 <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Active Goal</p>
@@ -258,7 +258,7 @@ import { catchError, of, Subscription } from 'rxjs';
         <!-- ── Guided Learning Path ─────────────────────────────────── -->
         @if ((learningPath()?.recommendations?.length || 0) > 0) {
           <div id="recommended-next"
-            class="bg-white rounded-2xl border shadow-sm overflow-hidden transition-colors duration-500"
+            class="bg-gw-card-bg rounded-2xl border shadow-sm overflow-hidden transition-colors duration-500"
             [class.border-gw-primary]="highlightPath()"
             [class.border-gw-card-border]="!highlightPath()">
             <div class="flex items-center justify-between px-5 py-3.5 border-b border-gw-bg">
@@ -297,7 +297,7 @@ import { catchError, of, Subscription } from 'rxjs';
         @if ((dashboard()?.pendingRepracticeCount || 0) > 0) {
           <a routerLink="/user/progress"
              class="flex items-center justify-between gap-3 px-4 py-3.5
-                    bg-white rounded-2xl border border-gw-card-border shadow-sm
+                    bg-gw-card-bg rounded-2xl border border-gw-card-border shadow-sm
                     hover:border-gw-primary transition-colors group no-underline">
             <div class="flex items-center gap-3">
               <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
@@ -322,7 +322,7 @@ import { catchError, of, Subscription } from 'rxjs';
         @if ((dueForReview()?.dueCount || 0) > 0) {
           <a routerLink="/user/my-mistakes"
              class="flex items-center justify-between gap-3 px-4 py-3.5
-                    bg-white rounded-2xl border border-amber-200 shadow-sm
+                    bg-gw-card-bg rounded-2xl border border-amber-200 shadow-sm
                     hover:border-amber-400 transition-colors group no-underline">
             <div class="flex items-center gap-3">
               <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
@@ -346,7 +346,7 @@ import { catchError, of, Subscription } from 'rxjs';
 
 
         <!-- ── Recent Sessions ───────────────────────────────────────── -->
-        <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
+        <div class="bg-gw-card-bg rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
           <div class="flex items-center justify-between px-5 py-3.5 border-b border-gw-bg">
             <p class="text-[11px] font-black text-gw-text-muted uppercase tracking-widest">
               Recent Sessions
@@ -385,7 +385,7 @@ import { catchError, of, Subscription } from 'rxjs';
                       {{ session.fluencyScore != null ? (session.fluencyScore | number:'1.0-1') + '%' : '—' }}
                     </span>
                     <span class="text-[11px] font-black uppercase tracking-wider"
-                          [style.color]="session.status === 'COMPLETED' ? '#166534' : '#92400E'">
+                          [style.color]="session.status === 'COMPLETED' ? '#3DBB6B' : '#F5A623'">
                       {{ session.status }}
                     </span>
                   </div>
@@ -396,7 +396,7 @@ import { catchError, of, Subscription } from 'rxjs';
         </div>
 
         <!-- ── Pending Mistakes ──────────────────────────────────────── -->
-        <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
+        <div class="bg-gw-card-bg rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
           <div class="flex items-center justify-between px-5 py-3.5 border-b border-gw-bg">
             <p class="text-[11px] font-black text-gw-text-muted uppercase tracking-widest">
               Pending Mistakes

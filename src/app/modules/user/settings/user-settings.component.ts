@@ -184,10 +184,10 @@ export class UserSettingsComponent implements OnInit {
     reader.onload = (e: any) => this.avatarPreview = e.target.result;
     reader.readAsDataURL(file);
     this.userService.uploadAvatar(file).subscribe({
-      next: (url: string) => {
-        if (url) {
-          this.avatarPreview = url;
-          this.userState.updateAvatar(url);
+      next: ({ avatarUrl }) => {
+        if (avatarUrl) {
+          this.avatarPreview = avatarUrl;
+          this.userState.updateAvatar(avatarUrl);
         }
       }
     });
