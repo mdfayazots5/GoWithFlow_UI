@@ -1,4 +1,4 @@
-﻿import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
 import {
@@ -6,270 +6,166 @@ import {
   Activity, CheckCircle2, TrendingUp,
   Search, X, Eye,
 } from 'lucide-angular';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { Router } from '@angular/router';
 import { AdminService } from '@core/services/admin.service';
 import { ToastService } from '@core/services/toast.service';
+import { AdminLoadMoreComponent } from '@shared/components/admin-load-more/admin-load-more.component';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
+
+const STATUS_FILTERS = [
+  { label: 'All',         value: '' },
+  { label: 'Completed',   value: 'COMPLETED' },
+  { label: 'Abandoned',   value: 'ABANDONED' },
+  { label: 'In Progress', value: 'IN_PROGRESS' },
+] as const;
 
 @Component({
   selector: 'app-admin-sessions',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, MatPaginatorModule],
+  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, AdminLoadMoreComponent],
   template: `
-    <div class="space-y-5">
+    <div class="max-w-lg mx-auto space-y-4">
 
       <!-- Page Header -->
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-gw-primary/10 flex items-center justify-center">
-            <i-lucide [img]="SessionIcon" size="20" class="text-gw-primary"></i-lucide>
-          </div>
-          <div>
-            <h1 class="text-lg font-black text-gw-text uppercase tracking-wide">Session History</h1>
-            <p class="text-xs text-gw-text-muted font-medium">
-              {{ loading() ? 'Loading...' : totalCount() + ' sessions recorded' }}
-            </p>
-          </div>
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-gw-primary/10 flex items-center justify-center shrink-0">
+          <i-lucide [img]="SessionIcon" size="20" class="text-gw-primary"></i-lucide>
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-lg font-black text-gw-text tracking-tight leading-tight">Session History</h1>
+          <p class="text-[11px] text-gw-text-muted font-semibold">
+            {{ loading() ? 'Loading...' : totalCount() + ' sessions recorded' }}
+          </p>
         </div>
       </div>
 
       <!-- Stats Row -->
-      <div class="grid grid-cols-3 gap-4">
-
-        <div class="bg-white border border-gw-card-border rounded-2xl p-4 flex items-center gap-4 shadow-sm">
-          <div class="w-11 h-11 rounded-xl bg-gw-primary/10 flex items-center justify-center flex-shrink-0">
-            <i-lucide [img]="SessionIcon" size="20" class="text-gw-primary"></i-lucide>
-          </div>
-          <div>
-            <p class="text-2xl font-black text-gw-text leading-none">{{ totalCount() }}</p>
-            <p class="text-[11px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Total</p>
-          </div>
+      <div class="grid grid-cols-3 gap-2.5">
+        <div class="bg-white border border-gw-card-border rounded-2xl p-3 shadow-sm text-center">
+          <p class="text-xl font-black text-gw-text leading-none">{{ totalCount() }}</p>
+          <p class="text-[11px] font-bold uppercase tracking-wide text-gw-text-muted mt-1">Total</p>
         </div>
-
-        <div class="bg-white border border-gw-card-border rounded-2xl p-4 flex items-center gap-4 shadow-sm">
-          <div class="w-11 h-11 rounded-xl bg-green-100 flex items-center justify-center flex-shrink-0">
-            <i-lucide [img]="CompletedIcon" size="20" class="text-green-600"></i-lucide>
-          </div>
-          <div>
-            <p class="text-2xl font-black text-gw-text leading-none">{{ completedCount() }}</p>
-            <p class="text-[11px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Completed</p>
-          </div>
+        <div class="bg-white border border-gw-card-border rounded-2xl p-3 shadow-sm text-center">
+          <p class="text-xl font-black text-green-600 leading-none">{{ completedCount() }}</p>
+          <p class="text-[11px] font-bold uppercase tracking-wide text-gw-text-muted mt-1">Completed</p>
         </div>
-
-        <div class="bg-white border border-gw-card-border rounded-2xl p-4 flex items-center gap-4 shadow-sm">
-          <div class="w-11 h-11 rounded-xl bg-blue-100 flex items-center justify-center flex-shrink-0">
-            <i-lucide [img]="ScoreIcon" size="20" class="text-blue-500"></i-lucide>
-          </div>
-          <div>
-            <p class="text-2xl font-black text-gw-text leading-none">{{ avgFluencyDisplay() }}</p>
-            <p class="text-[11px] font-bold uppercase tracking-widest text-gw-text-muted mt-0.5">Avg Score</p>
-          </div>
+        <div class="bg-white border border-gw-card-border rounded-2xl p-3 shadow-sm text-center">
+          <p class="text-xl font-black text-blue-500 leading-none">{{ avgFluencyDisplay() }}</p>
+          <p class="text-[11px] font-bold uppercase tracking-wide text-gw-text-muted mt-1">Avg Score</p>
         </div>
-
       </div>
 
-      <!-- Filter Bar -->
-      <div class="bg-white border border-gw-card-border rounded-2xl p-4 flex flex-wrap gap-3 items-center shadow-sm">
+      <!-- Search -->
+      <div class="relative">
+        <i-lucide [img]="SearchIcon" size="16" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gw-text-muted pointer-events-none"></i-lucide>
+        <input [formControl]="searchControl" type="text" placeholder="Search session or host..."
+          class="w-full h-11 bg-white border border-gw-card-border rounded-2xl pl-10 pr-4 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary outline-none transition-all shadow-sm">
+      </div>
 
-        <!-- Search -->
-        <div class="relative flex-1 min-w-[180px]">
-          <i-lucide [img]="SearchIcon" size="16"
-            class="absolute left-3 top-1/2 -translate-y-1/2 text-gw-text-muted pointer-events-none"></i-lucide>
-          <input
-            [formControl]="searchControl"
-            type="text"
-            placeholder="Search session or host..."
-            class="w-full h-11 bg-gw-bg border border-transparent rounded-xl pl-9 pr-4 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all">
-        </div>
-
-        <!-- Status -->
-        <div class="relative">
-          <select
-            [formControl]="statusControl"
-            class="h-11 bg-gw-bg border border-transparent rounded-xl pl-3 pr-8 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all appearance-none cursor-pointer">
-            <option value="">All Statuses</option>
-            <option value="COMPLETED">Completed</option>
-            <option value="ABANDONED">Abandoned</option>
-            <option value="IN_PROGRESS">In Progress</option>
-          </select>
-          <span class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gw-text-muted">&#8964;</span>
-        </div>
-
-        <!-- From Date -->
-        <input
-          [formControl]="fromControl"
-          type="date"
-          class="h-11 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all">
-
-        <!-- To Date -->
-        <input
-          [formControl]="toControl"
-          type="date"
-          class="h-11 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all">
-
-        <!-- Clear (only when filters active) -->
-        @if (hasActiveFilters()) {
-          <button
-            (click)="clearFilters()"
-            class="flex items-center gap-1.5 h-10 px-3 rounded-xl text-sm font-bold text-gw-text-muted hover:text-red-500 hover:bg-red-50 transition-all">
-            <i-lucide [img]="XIcon" size="14"></i-lucide>
-            Clear
+      <!-- Status pills -->
+      <div class="flex gap-2 overflow-x-auto no-scrollbar pb-0.5">
+        @for (f of statusFilters; track f.value) {
+          <button (click)="setStatus(f.value)"
+            class="shrink-0 h-8 px-4 rounded-full text-[11px] font-black uppercase tracking-widest transition-all border"
+            [class]="status() === f.value ? 'bg-gw-primary text-white border-gw-primary' : 'bg-white text-gw-text-muted border-gw-card-border'">
+            {{ f.label }}
           </button>
         }
-
       </div>
 
-      <!-- Table Card -->
-      <div class="bg-white border border-gw-card-border rounded-2xl shadow-sm overflow-hidden">
+      <!-- Date range -->
+      <div class="grid grid-cols-2 gap-2.5">
+        <input [formControl]="fromControl" type="date"
+          class="h-11 bg-white border border-gw-card-border rounded-2xl px-3 text-sm font-medium text-gw-text focus:border-gw-primary outline-none transition-all shadow-sm">
+        <input [formControl]="toControl" type="date"
+          class="h-11 bg-white border border-gw-card-border rounded-2xl px-3 text-sm font-medium text-gw-text focus:border-gw-primary outline-none transition-all shadow-sm">
+      </div>
 
-        <!-- Loading -->
-        @if (loading()) {
-          <div class="flex flex-col items-center justify-center py-16 gap-3">
-            <div class="w-8 h-8 border-2 border-gw-primary border-t-transparent rounded-full animate-spin"></div>
-            <p class="text-sm font-medium text-gw-text-muted">Loading sessions...</p>
-          </div>
+      @if (hasActiveFilters()) {
+        <button (click)="clearFilters()"
+          class="flex items-center justify-center gap-1.5 w-full h-9 rounded-xl text-[11px] font-black uppercase tracking-widest text-gw-text-muted hover:text-red-500 hover:bg-red-50 transition-all">
+          <i-lucide [img]="XIcon" size="13"></i-lucide>
+          Clear filters
+        </button>
+      }
+
+      <!-- Loading Skeletons -->
+      @if (loading()) {
+        @for (i of [1,2,3,4,5]; track i) {
+          <div class="h-[72px] bg-white rounded-2xl border border-gw-card-border animate-pulse"></div>
         }
+      }
 
-        <!-- Empty State -->
-        @else if (sessions().length === 0) {
-          <div class="flex flex-col items-center justify-center py-16 gap-4">
-            <div class="w-16 h-16 rounded-2xl bg-gw-bg flex items-center justify-center">
-              <i-lucide [img]="SessionIcon" size="28" class="text-gw-text-muted"></i-lucide>
-            </div>
-            <div class="text-center">
-              <p class="font-black text-gw-text">No sessions found</p>
-              <p class="text-sm text-gw-text-muted mt-1">
-                {{ hasActiveFilters() ? 'Try adjusting your filters' : 'No sessions recorded yet' }}
-              </p>
-            </div>
-            @if (hasActiveFilters()) {
-              <button (click)="clearFilters()" class="text-sm font-bold text-gw-primary hover:underline">
-                Clear filters
-              </button>
+      <!-- Empty State -->
+      @else if (sessions().length === 0) {
+        <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm
+                    flex flex-col items-center justify-center py-16 gap-3 text-center">
+          <div class="w-12 h-12 rounded-2xl bg-gw-bg flex items-center justify-center">
+            <i-lucide [img]="SessionIcon" size="22" class="text-gw-text-muted"></i-lucide>
+          </div>
+          <p class="text-sm font-bold text-gw-text">No sessions found</p>
+          <p class="text-xs text-gw-text-muted">
+            {{ hasActiveFilters() ? 'Try adjusting your filters' : 'No sessions recorded yet' }}
+          </p>
+        </div>
+      }
+
+      <!-- Session List -->
+      @else {
+        <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
+          <div class="divide-y divide-gw-bg">
+            @for (row of sessions(); track row.sessionId) {
+              <div class="flex items-center gap-3 px-4 py-3.5 hover:bg-gw-bg/50 transition-colors">
+
+                <!-- Icon -->
+                <div class="w-10 h-10 rounded-xl bg-gw-primary/10 flex items-center justify-center shrink-0">
+                  <i-lucide [img]="SessionIcon" size="16" class="text-gw-primary"></i-lucide>
+                </div>
+
+                <!-- Meta -->
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-bold text-gw-text truncate leading-tight">{{ row.sessionName }}</p>
+                  <div class="flex items-center gap-2 mt-1 flex-wrap">
+                    <span class="text-[11px] font-semibold text-gw-text-muted">{{ row.memberCount }} member{{ row.memberCount !== 1 ? 's' : '' }}</span>
+                    @if (row.joinCode) {
+                      <span class="text-[11px] font-black text-gw-primary tracking-widest">{{ row.joinCode }}</span>
+                    }
+                    <span class="text-[11px] font-semibold text-gw-text-muted">{{ row.sessionDate | date:'MMM d, y' }}</span>
+                    @if (row.avgFluency > 0) {
+                      <span class="text-[11px] font-black" [class]="fluencyTextClass(row.avgFluency)">{{ row.avgFluency | number:'1.0-0' }}%</span>
+                    }
+                  </div>
+                </div>
+
+                <!-- Status + action -->
+                <div class="flex flex-col items-end gap-1.5 shrink-0">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wide"
+                    [class]="statusBgClass(row.status)">
+                    <span class="w-1.5 h-1.5 rounded-full" [class]="statusDotClass(row.status)"></span>
+                    {{ statusLabel(row.status) }}
+                  </span>
+                  <button (click)="viewDetails(row)" title="View details"
+                    class="w-9 h-9 flex items-center justify-center rounded-lg text-gw-primary hover:bg-gw-primary/10 transition-colors">
+                    <i-lucide [img]="ViewIcon" size="15"></i-lucide>
+                  </button>
+                </div>
+
+              </div>
             }
           </div>
-        }
+        </div>
 
-        <!-- Table -->
-        @else {
-          <div class="overflow-x-auto">
-            <table class="w-full">
-              <thead>
-                <tr class="border-b border-gw-card-border">
-                  <th class="px-5 py-3.5 text-left   text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Session</th>
-                  <th class="px-4 py-3.5 text-left   text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden sm:table-cell">Code</th>
-                  <th class="px-4 py-3.5 text-left   text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden md:table-cell">Host</th>
-                  <th class="px-4 py-3.5 text-left   text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden lg:table-cell">Date</th>
-                  <th class="px-4 py-3.5 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden lg:table-cell">Duration</th>
-                  <th class="px-4 py-3.5 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Score</th>
-                  <th class="px-4 py-3.5 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Status</th>
-                  <th class="px-4 py-3.5 text-right  text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (row of sessions(); track row.sessionId) {
-                  <tr class="border-b border-gw-card-border/50 hover:bg-gw-bg/40 transition-colors group">
-
-                    <!-- Session Name + Members -->
-                    <td class="px-5 py-4">
-                      <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-xl bg-gw-primary/10 flex items-center justify-center flex-shrink-0">
-                          <i-lucide [img]="SessionIcon" size="15" class="text-gw-primary"></i-lucide>
-                        </div>
-                        <div class="min-w-0">
-                          <p class="text-sm font-bold text-gw-text truncate">{{ row.sessionName }}</p>
-                          <p class="text-[11px] text-gw-text-muted font-medium">
-                            {{ row.memberCount }} member{{ row.memberCount !== 1 ? 's' : '' }}
-                          </p>
-                        </div>
-                      </div>
-                    </td>
-
-                    <!-- Session Code -->
-                    <td class="px-4 py-4 hidden sm:table-cell">
-                      <span class="text-xs font-black text-gw-primary bg-gw-primary/10 px-2.5 py-1 rounded-lg tracking-widest">
-                        {{ row.joinCode || '—' }}
-                      </span>
-                    </td>
-
-                    <!-- Host -->
-                    <td class="px-4 py-4 hidden md:table-cell">
-                      <span class="text-sm font-medium text-gw-text">{{ row.hostName || '—' }}</span>
-                    </td>
-
-                    <!-- Date -->
-                    <td class="px-4 py-4 hidden lg:table-cell">
-                      <span class="text-xs font-medium text-gw-text-muted whitespace-nowrap">
-                        {{ row.sessionDate | date:'d MMM y' }}
-                      </span>
-                    </td>
-
-                    <!-- Duration -->
-                    <td class="px-4 py-4 text-center hidden lg:table-cell">
-                      <span class="text-sm font-bold text-gw-text">
-                        {{ row.durationMin > 0 ? row.durationMin + ' min' : '—' }}
-                      </span>
-                    </td>
-
-                    <!-- Fluency Score -->
-                    <td class="px-4 py-4 text-center">
-                      <span class="text-sm font-black" [class]="fluencyTextClass(row.avgFluency)">
-                        {{ row.avgFluency > 0 ? (row.avgFluency | number:'1.0-1') + '%' : '—' }}
-                      </span>
-                    </td>
-
-                    <!-- Status Badge -->
-                    <td class="px-4 py-4 text-center">
-                      <span
-                        class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wide"
-                        [class]="statusBgClass(row.status)">
-                        <span class="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                          [class]="statusDotClass(row.status)"></span>
-                        {{ statusLabel(row.status) }}
-                      </span>
-                    </td>
-
-                    <!-- Actions -->
-                    <td class="px-4 py-4 text-right">
-                      <div class="flex items-center justify-end opacity-60 group-hover:opacity-100 transition-opacity">
-                        <button
-                          (click)="viewDetails(row)"
-                          title="View Details"
-                          class="w-10 h-10 flex items-center justify-center rounded-lg text-gw-primary hover:bg-gw-primary/10 transition-colors">
-                          <i-lucide [img]="ViewIcon" size="15"></i-lucide>
-                        </button>
-                      </div>
-                    </td>
-
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Pagination -->
-          <div class="flex items-center justify-between px-5 py-3.5 border-t border-gw-card-border bg-gw-bg/30">
-            <p class="text-xs font-medium text-gw-text-muted">
-              Showing {{ currentPage() * currentSize() + 1 }}–{{ pageEnd() }} of {{ totalCount() }}
-            </p>
-            <mat-paginator
-              [length]="totalCount()"
-              [pageSize]="currentSize()"
-              [pageSizeOptions]="[10, 20, 50]"
-              (page)="onPageChange($event)"
-              class="!bg-transparent">
-            </mat-paginator>
-          </div>
-        }
-
-      </div>
+        <!-- Standardized pager -->
+        <app-admin-load-more
+          [loading]="loadingMore()" [hasMore]="hasMore()"
+          [loaded]="sessions().length" [total]="totalCount()"
+          (more)="loadMore()"></app-admin-load-more>
+      }
     </div>
   `,
-  styles: [`
-    :host { display: block; }
-    .mat-mdc-paginator { background: transparent; }
-    .mat-mdc-paginator-container { padding: 0; min-height: unset; }
+  styles: [`:host { display: block; }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   `]
 })
 export class AdminSessionsComponent implements OnInit {
@@ -277,7 +173,6 @@ export class AdminSessionsComponent implements OnInit {
   private toast        = inject(ToastService);
   private router       = inject(Router);
 
-  // ── Icon references ─────────────────────────────────────────────
   readonly SessionIcon   = Activity;
   readonly CompletedIcon = CheckCircle2;
   readonly ScoreIcon     = TrendingUp;
@@ -285,20 +180,22 @@ export class AdminSessionsComponent implements OnInit {
   readonly XIcon         = X;
   readonly ViewIcon      = Eye;
 
-  // ── State ────────────────────────────────────────────────────────
+  readonly statusFilters = STATUS_FILTERS;
+
   sessions    = signal<any[]>([]);
   loading     = signal(false);
+  loadingMore = signal(false);
   totalCount  = signal(0);
-  currentPage = signal(0);
-  currentSize = signal(20);
+  status      = signal('');
 
-  // ── Form controls ────────────────────────────────────────────────
+  private page     = 0;
+  private pageSize = 15;
+
   searchControl = new FormControl('');
-  statusControl = new FormControl('');
   fromControl   = new FormControl('');
   toControl     = new FormControl('');
 
-  // ── Computed stats (from current page items) ─────────────────────
+  // Stats from loaded rows
   completedCount = computed(() =>
     this.sessions().filter(s => s.status === 'COMPLETED').length
   );
@@ -310,53 +207,61 @@ export class AdminSessionsComponent implements OnInit {
     return avg.toFixed(0) + '%';
   });
 
-  // ── Lifecycle ────────────────────────────────────────────────────
+  hasMore() {
+    return this.sessions().length < this.totalCount();
+  }
+
   ngOnInit() {
     this.load();
 
-    // debounced search
     this.searchControl.valueChanges.pipe(debounceTime(400), distinctUntilChanged())
-      .subscribe(() => { this.currentPage.set(0); this.load(); });
+      .subscribe(() => this.refresh());
 
-    // immediate on status change
-    this.statusControl.valueChanges
-      .subscribe(() => { this.currentPage.set(0); this.load(); });
-
-    // debounced date range
-    this.fromControl.valueChanges.pipe(debounceTime(600))
-      .subscribe(() => { this.currentPage.set(0); this.load(); });
-
-    this.toControl.valueChanges.pipe(debounceTime(600))
-      .subscribe(() => { this.currentPage.set(0); this.load(); });
+    this.fromControl.valueChanges.pipe(debounceTime(600)).subscribe(() => this.refresh());
+    this.toControl.valueChanges.pipe(debounceTime(600)).subscribe(() => this.refresh());
   }
 
-  // ── Data ─────────────────────────────────────────────────────────
-  load(page = this.currentPage(), size = this.currentSize()) {
-    this.loading.set(true);
+  load(append = false) {
     this.adminService.getSessionHistory({
       searchTerm: this.searchControl.value || undefined,
-      status:     this.statusControl.value || undefined,
+      status:     this.status() || undefined,
       fromDate:   this.fromControl.value   || undefined,
       toDate:     this.toControl.value     || undefined,
-      pageNumber: page + 1,
-      pageSize:   size,
+      pageNumber: this.page + 1,
+      pageSize:   this.pageSize,
     }).subscribe({
       next: res => {
-        this.sessions.set(res.items);
+        const incoming = res.items || [];
+        this.sessions.update(prev => append ? [...prev, ...incoming] : incoming);
         this.totalCount.set(res.totalCount);
         this.loading.set(false);
+        this.loadingMore.set(false);
       },
       error: () => {
         this.toast.error('Failed to load session history');
         this.loading.set(false);
+        this.loadingMore.set(false);
       }
     });
   }
 
-  onPageChange(e: PageEvent) {
-    this.currentPage.set(e.pageIndex);
-    this.currentSize.set(e.pageSize);
-    this.load(e.pageIndex, e.pageSize);
+  private refresh() {
+    this.page = 0;
+    this.sessions.set([]);
+    this.loading.set(true);
+    this.load();
+  }
+
+  loadMore() {
+    this.page++;
+    this.loadingMore.set(true);
+    this.load(true);
+  }
+
+  setStatus(value: string) {
+    if (this.status() === value) return;
+    this.status.set(value);
+    this.refresh();
   }
 
   viewDetails(session: any) {
@@ -365,25 +270,19 @@ export class AdminSessionsComponent implements OnInit {
 
   clearFilters() {
     this.searchControl.setValue('', { emitEvent: false });
-    this.statusControl.setValue('', { emitEvent: false });
     this.fromControl.setValue('',   { emitEvent: false });
     this.toControl.setValue('',     { emitEvent: false });
-    this.currentPage.set(0);
-    this.load();
+    this.status.set('');
+    this.refresh();
   }
 
-  // ── Helpers ──────────────────────────────────────────────────────
   hasActiveFilters(): boolean {
     return !!(
       this.searchControl.value ||
-      this.statusControl.value ||
+      this.status() ||
       this.fromControl.value   ||
       this.toControl.value
     );
-  }
-
-  pageEnd(): number {
-    return Math.min((this.currentPage() + 1) * this.currentSize(), this.totalCount());
   }
 
   statusBgClass(status: string): string {

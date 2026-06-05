@@ -1,278 +1,184 @@
-﻿import { Component, inject, OnInit, signal, computed } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { AdminService } from '@core/services/admin.service';
-import { LucideAngularModule, Download, Eye, TrendingUp, TrendingDown, ChartBar, Users, FileText, TriangleAlert, Calendar } from 'lucide-angular';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { LucideAngularModule, Download, Eye, TrendingUp, TrendingDown, ChartBar, FileText, TriangleAlert, Calendar } from 'lucide-angular';
 import { Router } from '@angular/router';
 import { ToastService } from '@core/services/toast.service';
 import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.component';
+import { AdminLoadMoreComponent } from '@shared/components/admin-load-more/admin-load-more.component';
 
 @Component({
   selector: 'app-admin-reports',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, MatPaginatorModule, UserAvatarComponent],
+  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, UserAvatarComponent, AdminLoadMoreComponent],
   template: `
-    <div class="space-y-5">
+    <div class="max-w-lg mx-auto space-y-4">
 
       <!-- Page Header -->
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-gw-primary/10 flex items-center justify-center">
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-10 h-10 rounded-2xl bg-gw-primary/10 flex items-center justify-center shrink-0">
             <i-lucide [img]="ReportIcon" size="20" class="text-gw-primary"></i-lucide>
           </div>
-          <div>
-            <h1 class="text-lg font-black text-gw-text uppercase tracking-wide">Reports</h1>
-            <p class="text-xs text-gw-text-muted font-medium">
+          <div class="min-w-0">
+            <h1 class="text-lg font-black text-gw-text tracking-tight leading-tight">Reports</h1>
+            <p class="text-[11px] text-gw-text-muted font-semibold">
               {{ loading() ? 'Loading...' : totalCount() + ' users tracked' }}
             </p>
           </div>
         </div>
         <button (click)="exportReport()"
-          class="flex items-center gap-2 h-10 px-4 bg-gw-accent text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-sm hover:opacity-90 transition-opacity">
+          class="flex items-center gap-2 h-10 px-4 bg-gw-accent text-white font-black text-[11px] uppercase tracking-widest rounded-xl shadow-sm hover:opacity-90 transition-opacity shrink-0">
           <i-lucide [img]="DownloadIcon" size="15"></i-lucide>
-          Export Excel
+          Export
         </button>
       </div>
 
-      <!-- Filter Bar -->
-      <div class="bg-white border border-gw-card-border rounded-2xl p-4 shadow-sm">
-        <div class="flex flex-wrap gap-3 items-end">
+      <!-- Summary Stats (top) -->
+      <div class="grid grid-cols-2 gap-2.5">
+        <div class="bg-white border border-gw-card-border rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Avg Fluency</p>
+            <i-lucide [img]="BarIcon" size="14" class="text-gw-primary"></i-lucide>
+          </div>
+          <p class="text-2xl font-black text-gw-text">{{ avgFluency() | number:'1.0-1' }}%</p>
+        </div>
+        <div class="bg-white border border-gw-card-border rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Sessions</p>
+            <i-lucide [img]="CalendarIcon" size="14" class="text-gw-accent"></i-lucide>
+          </div>
+          <p class="text-2xl font-black text-gw-text">{{ totalSessions() }}</p>
+        </div>
+        <div class="bg-white border border-gw-card-border rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Most Improved</p>
+            <i-lucide [img]="TrendUpIcon" size="14" class="text-green-600"></i-lucide>
+          </div>
+          <p class="text-sm font-black text-gw-text truncate">{{ mostImproved() || '—' }}</p>
+        </div>
+        <div class="bg-white border border-gw-card-border rounded-2xl p-4 shadow-sm">
+          <div class="flex items-center justify-between mb-2">
+            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Top Struggle</p>
+            <i-lucide [img]="AlertIcon" size="14" class="text-red-500"></i-lucide>
+          </div>
+          @if (topStruggleTag()) {
+            <span class="inline-block px-2 py-0.5 bg-red-100 text-red-600 rounded-lg text-xs font-black truncate max-w-full">{{ topStruggleTag() }}</span>
+          } @else {
+            <p class="text-sm font-black text-gw-text">—</p>
+          }
+        </div>
+      </div>
 
-          <!-- Date From -->
-          <div class="flex flex-col gap-1.5 flex-1 min-w-[140px]">
-            <label class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Date From</label>
+      <!-- Filters (below summary) -->
+      <div class="bg-white border border-gw-card-border rounded-2xl p-4 shadow-sm space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">From</label>
             <input type="date" [formControl]="dateFrom"
               class="h-11 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all">
           </div>
-
-          <!-- Date To -->
-          <div class="flex flex-col gap-1.5 flex-1 min-w-[140px]">
-            <label class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Date To</label>
+          <div class="flex flex-col gap-1.5">
+            <label class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">To</label>
             <input type="date" [formControl]="dateTo"
               class="h-11 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all">
           </div>
-
-          <!-- User Filter -->
-          <div class="flex flex-col gap-1.5 flex-1 min-w-[160px]">
-            <label class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">User</label>
-            <select [formControl]="userFilter"
-              class="h-11 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all appearance-none cursor-pointer">
-              <option value="">All Users</option>
-              @for (u of userList(); track u.id) {
-                <option [value]="u.id">{{ u.name }}</option>
-              }
-            </select>
-          </div>
-
-          <!-- Filter / Clear buttons -->
-          <div class="flex gap-2 flex-shrink-0">
-            <button (click)="applyFilters()"
-              class="h-10 px-5 bg-gw-primary text-white font-black text-xs uppercase tracking-widest rounded-xl hover:opacity-90 transition-opacity">
-              Apply
-            </button>
-            <button (click)="clearFilters()"
-              class="h-10 px-4 border-2 border-gray-200 text-gw-text-muted font-black text-xs uppercase tracking-widest rounded-xl hover:border-gray-300 transition-all">
-              Clear
-            </button>
-          </div>
+        </div>
+        <div class="flex flex-col gap-1.5">
+          <label class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">User</label>
+          <select [formControl]="userFilter"
+            class="h-11 bg-gw-bg border border-transparent rounded-xl px-3 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all appearance-none cursor-pointer">
+            <option value="">All Users</option>
+            @for (u of userList(); track u.id) {
+              <option [value]="u.id">{{ u.name }}</option>
+            }
+          </select>
+        </div>
+        <div class="flex gap-2">
+          <button (click)="applyFilters()"
+            class="flex-1 h-10 bg-gw-primary text-white font-black text-[11px] uppercase tracking-widest rounded-xl hover:opacity-90 transition-opacity">
+            Apply
+          </button>
+          <button (click)="clearFilters()"
+            class="h-10 px-4 border-2 border-gray-200 text-gw-text-muted font-black text-[11px] uppercase tracking-widest rounded-xl hover:border-gray-300 transition-all">
+            Clear
+          </button>
         </div>
       </div>
 
-      <!-- Summary Stats -->
-      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-
-        <!-- Avg Fluency -->
-        <div class="bg-white border border-gw-card-border rounded-2xl p-4 shadow-sm">
-          <div class="flex items-center justify-between mb-3">
-            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Avg Fluency</p>
-            <div class="w-8 h-8 rounded-xl bg-gw-primary/10 flex items-center justify-center">
-              <i-lucide [img]="BarIcon" size="15" class="text-gw-primary"></i-lucide>
-            </div>
-          </div>
-          <p class="text-2xl font-black text-gw-text">{{ avgFluency() | number:'1.0-1' }}%</p>
-          <p class="text-[11px] text-gw-text-muted mt-1">Across all users</p>
-        </div>
-
-        <!-- Total Sessions -->
-        <div class="bg-white border border-gw-card-border rounded-2xl p-4 shadow-sm">
-          <div class="flex items-center justify-between mb-3">
-            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Total Sessions</p>
-            <div class="w-8 h-8 rounded-xl bg-gw-accent/10 flex items-center justify-center">
-              <i-lucide [img]="CalendarIcon" size="15" class="text-gw-accent"></i-lucide>
-            </div>
-          </div>
-          <p class="text-2xl font-black text-gw-text">{{ totalSessions() }}</p>
-          <p class="text-[11px] text-gw-text-muted mt-1">All time</p>
-        </div>
-
-        <!-- Most Improved -->
-        <div class="bg-white border border-gw-card-border rounded-2xl p-4 shadow-sm">
-          <div class="flex items-center justify-between mb-3">
-            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Most Improved</p>
-            <div class="w-8 h-8 rounded-xl bg-green-100 flex items-center justify-center">
-              <i-lucide [img]="TrendUpIcon" size="15" class="text-green-600"></i-lucide>
-            </div>
-          </div>
-          <p class="text-base font-black text-gw-text truncate">{{ mostImproved() || '—' }}</p>
-          <p class="text-[11px] text-gw-text-muted mt-1">Highest improvement</p>
-        </div>
-
-        <!-- Top Struggled Tag -->
-        <div class="bg-white border border-gw-card-border rounded-2xl p-4 shadow-sm">
-          <div class="flex items-center justify-between mb-3">
-            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Top Struggle</p>
-            <div class="w-8 h-8 rounded-xl bg-red-100 flex items-center justify-center">
-              <i-lucide [img]="AlertIcon" size="15" class="text-red-500"></i-lucide>
-            </div>
-          </div>
-          @if (topStruggleTag()) {
-            <span class="inline-block px-2.5 py-1 bg-red-100 text-red-600 rounded-lg text-xs font-black">
-              {{ topStruggleTag() }}
-            </span>
-          } @else {
-            <p class="text-base font-black text-gw-text">—</p>
-          }
-          <p class="text-[11px] text-gw-text-muted mt-1">Most common mistake</p>
-        </div>
-      </div>
-
-      <!-- Reports Table -->
-      <div class="bg-white border border-gw-card-border rounded-2xl shadow-sm overflow-hidden">
-
-        @if (loading()) {
-          <div class="flex flex-col items-center justify-center py-16 gap-3">
-            <div class="w-8 h-8 border-2 border-gw-primary border-t-transparent rounded-full animate-spin"></div>
-            <p class="text-sm font-medium text-gw-text-muted">Loading reports...</p>
-          </div>
+      <!-- Loading Skeletons -->
+      @if (loading()) {
+        @for (i of [1,2,3,4,5]; track i) {
+          <div class="h-[68px] bg-white rounded-2xl border border-gw-card-border animate-pulse"></div>
         }
+      }
 
-        @else if (reports().length === 0) {
-          <div class="flex flex-col items-center justify-center py-16 gap-4">
-            <div class="w-16 h-16 rounded-2xl bg-gw-bg flex items-center justify-center">
-              <i-lucide [img]="ReportIcon" size="28" class="text-gw-text-muted"></i-lucide>
-            </div>
-            <div class="text-center">
-              <p class="font-black text-gw-text">No reports found</p>
-              <p class="text-sm text-gw-text-muted mt-1">Try adjusting the filters</p>
-            </div>
+      <!-- Empty State -->
+      @else if (reports().length === 0) {
+        <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm
+                    flex flex-col items-center justify-center py-16 gap-3 text-center">
+          <div class="w-12 h-12 rounded-2xl bg-gw-bg flex items-center justify-center">
+            <i-lucide [img]="ReportIcon" size="22" class="text-gw-text-muted"></i-lucide>
           </div>
-        }
+          <p class="text-sm font-bold text-gw-text">No reports found</p>
+          <p class="text-xs text-gw-text-muted">Try adjusting the filters</p>
+        </div>
+      }
 
-        @else {
-          <div class="overflow-x-auto">
-            <table class="w-full">
-              <thead>
-                <tr class="border-b border-gw-card-border">
-                  <th class="px-5 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted">User</th>
-                  <th class="px-4 py-3.5 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden sm:table-cell">Sessions</th>
-                  <th class="px-4 py-3.5 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Avg Score</th>
-                  <th class="px-4 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden lg:table-cell">Common Mistake</th>
-                  <th class="px-4 py-3.5 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden md:table-cell">Improvement</th>
-                  <th class="px-4 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden lg:table-cell">Last Session</th>
-                  <th class="px-4 py-3.5 text-right text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (row of reports(); track row.userId) {
-                  <tr class="border-b border-gw-card-border/50 hover:bg-gw-bg/40 transition-colors group">
+      <!-- Reports List -->
+      @else {
+        <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
+          <div class="divide-y divide-gw-bg">
+            @for (row of reports(); track row.userId) {
+              <div class="flex items-center gap-3 px-4 py-3.5 hover:bg-gw-bg/50 transition-colors">
 
-                    <!-- User -->
-                    <td class="px-5 py-4">
-                      <div class="flex items-center gap-3">
-                        <app-user-avatar [name]="row.fullName" [avatarUrl]="row.avatarUrl" size="sm"></app-user-avatar>
-                        <div>
-                          <p class="text-sm font-bold text-gw-text">{{ row.fullName }}</p>
-                          <p class="text-[11px] text-gw-text-muted font-medium">ID: {{ row.userId }}</p>
-                        </div>
-                      </div>
-                    </td>
+                <app-user-avatar [name]="row.fullName" [avatarUrl]="row.avatarUrl" size="sm"></app-user-avatar>
 
-                    <!-- Sessions -->
-                    <td class="px-4 py-4 text-center hidden sm:table-cell">
-                      <span class="text-sm font-black text-gw-text">{{ row.totalSessions }}</span>
-                    </td>
+                <!-- Meta -->
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-bold text-gw-text truncate leading-tight">{{ row.fullName }}</p>
+                  <div class="flex items-center gap-2 mt-1 flex-wrap">
+                    <span class="text-[11px] font-semibold text-gw-text-muted">{{ row.totalSessions }} sessions</span>
+                    <span class="text-[11px] font-semibold text-gw-text-muted">·</span>
+                    <span class="inline-flex items-center gap-1 text-[11px] font-black"
+                      [class]="row.improvementPercent >= 0 ? 'text-green-600' : 'text-red-500'">
+                      <i-lucide [img]="row.improvementPercent >= 0 ? TrendUpIcon : TrendDownIcon" size="11"></i-lucide>
+                      {{ row.improvementPercent | number:'1.0-1' }}%
+                    </span>
+                  </div>
+                </div>
 
-                    <!-- Avg Score -->
-                    <td class="px-4 py-4 text-center">
-                      <span class="text-sm font-black"
-                        [class]="row.avgFluencyScore >= 70 ? 'text-green-600' : row.avgFluencyScore >= 40 ? 'text-gw-warning' : 'text-gw-text-muted'">
-                        {{ row.avgFluencyScore | number:'1.0-1' }}%
-                      </span>
-                    </td>
+                <!-- Score + action -->
+                <div class="flex flex-col items-end gap-1.5 shrink-0">
+                  <span class="text-[11px] font-black px-2 py-0.5 rounded-lg"
+                    [class]="row.avgFluencyScore >= 70 ? 'bg-green-100 text-green-700' : row.avgFluencyScore >= 40 ? 'bg-amber-100 text-amber-700' : 'bg-gray-100 text-gray-500'">
+                    {{ row.avgFluencyScore | number:'1.0-0' }}%
+                  </span>
+                  <button (click)="viewFullReport(row.userId)" [disabled]="row.totalSessions === 0"
+                    class="flex items-center gap-1 h-7 px-2.5 text-[11px] font-black rounded-lg border transition-colors"
+                    [class]="row.totalSessions > 0
+                      ? 'text-gw-primary border-gw-primary/30 hover:bg-gw-primary/10'
+                      : 'text-gw-text-muted border-gray-200 cursor-not-allowed opacity-50'">
+                    <i-lucide [img]="ViewIcon" size="12"></i-lucide>
+                    {{ row.totalSessions > 0 ? 'View' : 'No Data' }}
+                  </button>
+                </div>
 
-                    <!-- Common Mistake -->
-                    <td class="px-4 py-4 hidden lg:table-cell">
-                      @if (row.mostCommonMistakeType && row.mostCommonMistakeType !== '—') {
-                        <span class="text-xs font-bold text-gw-text-muted bg-gw-bg px-2.5 py-1 rounded-lg">
-                          {{ row.mostCommonMistakeType }}
-                        </span>
-                      } @else {
-                        <span class="text-xs text-gw-text-muted">—</span>
-                      }
-                    </td>
-
-                    <!-- Improvement -->
-                    <td class="px-4 py-4 text-center hidden md:table-cell">
-                      <div class="inline-flex items-center gap-1">
-                        <i-lucide [img]="row.improvementPercent >= 0 ? TrendUpIcon : TrendDownIcon" size="12"
-                          [class]="row.improvementPercent >= 0 ? 'text-green-500' : 'text-red-500'"></i-lucide>
-                        <span class="text-sm font-black"
-                          [class]="row.improvementPercent >= 0 ? 'text-green-600' : 'text-red-500'">
-                          {{ row.improvementPercent | number:'1.0-1' }}%
-                        </span>
-                      </div>
-                    </td>
-
-                    <!-- Last Session -->
-                    <td class="px-4 py-4 hidden lg:table-cell">
-                      <span class="text-xs font-medium text-gw-text-muted">
-                        {{ row.lastSessionDate ? (row.lastSessionDate | date:'d MMM y') : '—' }}
-                      </span>
-                    </td>
-
-                    <!-- Actions -->
-                    <td class="px-4 py-4 text-right">
-                      <button
-                        (click)="viewFullReport(row.userId)"
-                        title="View full report"
-                        [disabled]="row.totalSessions === 0"
-                        class="flex items-center gap-1.5 h-8 px-3 text-xs font-black rounded-lg border transition-colors ml-auto"
-                        [class]="row.totalSessions > 0
-                          ? 'text-gw-primary border-gw-primary/30 hover:bg-gw-primary/10 opacity-70 group-hover:opacity-100'
-                          : 'text-gw-text-muted border-gray-200 cursor-not-allowed opacity-40'">
-                        <i-lucide [img]="ViewIcon" size="12"></i-lucide>
-                        {{ row.totalSessions > 0 ? 'View' : 'No Data' }}
-                      </button>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+              </div>
+            }
           </div>
+        </div>
 
-          <!-- Pagination -->
-          <div class="flex items-center justify-between px-5 py-3.5 border-t border-gw-card-border bg-gw-bg/30">
-            <p class="text-xs font-medium text-gw-text-muted">
-              Showing {{ currentPage() * currentPageSize() + 1 }}–{{ pageEnd() }} of {{ totalCount() }}
-            </p>
-            <mat-paginator
-              [length]="totalCount()"
-              [pageSize]="currentPageSize()"
-              [pageSizeOptions]="[10, 25, 50]"
-              (page)="onPageChange($event)"
-              class="!bg-transparent"
-            ></mat-paginator>
-          </div>
-        }
-      </div>
+        <!-- Standardized pager -->
+        <app-admin-load-more
+          [loading]="loadingMore()" [hasMore]="hasMore()"
+          [loaded]="reports().length" [total]="totalCount()"
+          (more)="loadMore()"></app-admin-load-more>
+      }
     </div>
   `,
-  styles: [`
-    :host { display: block; }
-    .mat-mdc-paginator { background: transparent; }
-    .mat-mdc-paginator-container { padding: 0; min-height: unset; }
-  `]
+  styles: [`:host { display: block; }`]
 })
 export class AdminReportsComponent implements OnInit {
   private adminService = inject(AdminService);
@@ -290,10 +196,12 @@ export class AdminReportsComponent implements OnInit {
 
   reports         = signal<any[]>([]);
   loading         = signal(false);
+  loadingMore     = signal(false);
   totalCount      = signal(0);
-  currentPage     = signal(0);
-  currentPageSize = signal(10);
   userList        = signal<{ id: string; name: string }[]>([]);
+
+  private page     = 0;
+  private pageSize = 15;
 
   dateFrom   = new FormControl('');
   dateTo     = new FormControl('');
@@ -328,8 +236,8 @@ export class AdminReportsComponent implements OnInit {
     return entries.reduce((a, b) => b[1] > a[1] ? b : a)[0];
   });
 
-  pageEnd() {
-    return Math.min((this.currentPage() + 1) * this.currentPageSize(), this.totalCount());
+  hasMore() {
+    return this.reports().length < this.totalCount();
   }
 
   ngOnInit() {
@@ -337,23 +245,25 @@ export class AdminReportsComponent implements OnInit {
     this.loadUsers();
   }
 
-  loadReports(page = this.currentPage(), size = this.currentPageSize()) {
-    this.loading.set(true);
+  loadReports(append = false) {
     this.adminService.getReports({
-      pageNumber: page + 1,
-      pageSize:   size,
+      pageNumber: this.page + 1,
+      pageSize:   this.pageSize,
       dateFrom:   this.dateFrom.value || undefined,
       dateTo:     this.dateTo.value   || undefined,
       userId:     this.userFilter.value || undefined,
     }).subscribe({
       next: (res: any) => {
-        this.reports.set(res.items || []);
+        const incoming = res.items || [];
+        this.reports.update(prev => append ? [...prev, ...incoming] : incoming);
         this.totalCount.set(res.totalCount || 0);
         this.loading.set(false);
+        this.loadingMore.set(false);
       },
       error: () => {
         this.toast.error('Failed to load reports');
         this.loading.set(false);
+        this.loadingMore.set(false);
       }
     });
   }
@@ -367,23 +277,24 @@ export class AdminReportsComponent implements OnInit {
     });
   }
 
-  onPageChange(event: PageEvent) {
-    this.currentPage.set(event.pageIndex);
-    this.currentPageSize.set(event.pageSize);
-    this.loadReports(event.pageIndex, event.pageSize);
+  loadMore() {
+    this.page++;
+    this.loadingMore.set(true);
+    this.loadReports(true);
   }
 
   applyFilters() {
-    this.currentPage.set(0);
-    this.loadReports(0);
+    this.page = 0;
+    this.reports.set([]);
+    this.loading.set(true);
+    this.loadReports();
   }
 
   clearFilters() {
     this.dateFrom.setValue('');
     this.dateTo.setValue('');
     this.userFilter.setValue('');
-    this.currentPage.set(0);
-    this.loadReports(0);
+    this.applyFilters();
   }
 
   viewFullReport(userId: number) {

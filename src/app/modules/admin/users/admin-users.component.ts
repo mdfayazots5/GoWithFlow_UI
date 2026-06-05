@@ -1,9 +1,9 @@
-﻿import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormControl, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AdminService, AdminUserListItem, AdminUserDetail } from '@core/services/admin.service';
 import { LucideAngularModule, Search, Eye, UserX, UserCheck, BarChart2, Flame, Users, X, UserPlus, Pencil, EyeOff, Camera } from 'lucide-angular';
-import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { AdminLoadMoreComponent } from '@shared/components/admin-load-more/admin-load-more.component';
 import { ToastService } from '@core/services/toast.service';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { Router } from '@angular/router';
@@ -15,14 +15,14 @@ import { Router } from '@angular/router';
     CommonModule,
     ReactiveFormsModule,
     LucideAngularModule,
-    MatPaginatorModule,
+    AdminLoadMoreComponent,
   ],
   template: `
     <!-- Add / Edit User Modal -->
     @if (showUserModal()) {
       <div class="fixed inset-0 z-50 flex items-center justify-center" (click)="closeUserModal()">
         <div class="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-        <div class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl mx-4" (click)="$event.stopPropagation()">
+        <div class="relative w-full max-w-md bg-white rounded-2xl shadow-2xl mx-4 max-h-[90vh] overflow-y-auto" (click)="$event.stopPropagation()">
 
           <!-- Modal Header -->
           <div class="flex items-center justify-between px-6 py-5 border-b border-gray-100">
@@ -164,224 +164,138 @@ import { Router } from '@angular/router';
     }
 
     <!-- Main Content -->
-    <div class="space-y-5">
+    <div class="max-w-lg mx-auto space-y-4">
 
       <!-- Page Header -->
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-2xl bg-gw-primary/10 flex items-center justify-center">
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-10 h-10 rounded-2xl bg-gw-primary/10 flex items-center justify-center shrink-0">
             <i-lucide [img]="UsersIcon" size="20" class="text-gw-primary"></i-lucide>
           </div>
-          <div>
-            <h1 class="text-lg font-black text-gw-text uppercase tracking-wide">Users</h1>
-            <p class="text-xs text-gw-text-muted font-medium">
+          <div class="min-w-0">
+            <h1 class="text-lg font-black text-gw-text tracking-tight leading-tight">Users</h1>
+            <p class="text-[11px] text-gw-text-muted font-semibold">
               {{ loading() ? 'Loading...' : totalUsers() + ' total users' }}
             </p>
           </div>
         </div>
         <button (click)="openAddModal()"
-          class="flex items-center gap-2 h-10 px-4 bg-gw-primary text-white font-black text-xs uppercase tracking-widest rounded-xl shadow-sm hover:opacity-90 transition-opacity">
+          class="flex items-center gap-2 h-10 px-4 bg-gw-primary text-white font-black text-[11px] uppercase tracking-widest rounded-xl shadow-sm hover:opacity-90 transition-opacity shrink-0">
           <i-lucide [img]="AddUserIcon" size="15"></i-lucide>
           Add User
         </button>
       </div>
 
-      <!-- Filters Bar -->
-      <div class="bg-white border border-gw-card-border rounded-2xl p-4 flex flex-wrap gap-3 items-center shadow-sm">
-        <!-- Search -->
-        <div class="relative flex-1 min-w-[180px]">
-          <i-lucide [img]="SearchIcon" size="16" class="absolute left-3 top-1/2 -translate-y-1/2 text-gw-text-muted pointer-events-none"></i-lucide>
-          <input
-            [formControl]="searchControl"
-            type="text"
-            placeholder="Search name or mobile..."
-            class="w-full h-11 bg-gw-bg border border-transparent rounded-xl pl-9 pr-4 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary focus:bg-white outline-none transition-all"
-          >
-        </div>
+      <!-- Search -->
+      <div class="relative">
+        <i-lucide [img]="SearchIcon" size="16" class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gw-text-muted pointer-events-none"></i-lucide>
+        <input [formControl]="searchControl" type="text" placeholder="Search name or mobile..."
+          class="w-full h-11 bg-white border border-gw-card-border rounded-2xl pl-10 pr-4 text-sm font-medium text-gw-text placeholder:text-gw-text-muted focus:border-gw-primary outline-none transition-all shadow-sm">
+      </div>
 
-        <!-- Age Group -->
-        <div class="relative">
-          <select
-            [formControl]="ageFilterControl"
-            class="h-11 bg-gw-bg border border-transparent rounded-xl pl-3 pr-8 text-sm font-medium text-gw-text focus:border-gw-primary focus:bg-white outline-none transition-all appearance-none cursor-pointer"
-          >
-            <option value="">All Ages</option>
-            <option value="Child (6-12)">Child (6–12)</option>
-            <option value="Teen (13-17)">Teen (13–17)</option>
-            <option value="Adult (18+)">Adult (18+)</option>
-          </select>
-          <span class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-gw-text-muted">&#8964;</span>
-        </div>
-
-        <!-- Active Only Toggle -->
-        <button
-          (click)="toggleActiveOnly()"
-          class="flex items-center gap-2 h-10 px-4 rounded-xl border transition-all text-sm font-bold"
-          [class]="activeOnly()
-            ? 'bg-gw-primary/10 border-gw-primary text-gw-primary'
-            : 'bg-gw-bg border-transparent text-gw-text-muted hover:border-gw-card-border'"
-        >
-          <div class="w-8 h-4 rounded-full relative transition-colors" [class]="activeOnly() ? 'bg-gw-primary' : 'bg-gray-300'">
-            <div class="absolute top-0.5 w-3 h-3 bg-white rounded-full shadow-sm transition-all" [class]="activeOnly() ? 'left-4' : 'left-0.5'"></div>
-          </div>
+      <!-- Active-only filter pill -->
+      <div class="flex gap-2">
+        <button (click)="setActiveOnly(false)"
+          class="h-8 px-4 rounded-full text-[11px] font-black uppercase tracking-widest transition-all border"
+          [class]="!activeOnly() ? 'bg-gw-primary text-white border-gw-primary' : 'bg-white text-gw-text-muted border-gw-card-border'">
+          All
+        </button>
+        <button (click)="setActiveOnly(true)"
+          class="h-8 px-4 rounded-full text-[11px] font-black uppercase tracking-widest transition-all border"
+          [class]="activeOnly() ? 'bg-gw-primary text-white border-gw-primary' : 'bg-white text-gw-text-muted border-gw-card-border'">
           Active only
         </button>
       </div>
 
-      <!-- Table Card -->
-      <div class="bg-white border border-gw-card-border rounded-2xl shadow-sm overflow-hidden">
-
-        <!-- Loading State -->
-        @if (loading()) {
-          <div class="flex flex-col items-center justify-center py-16 gap-3">
-            <div class="w-8 h-8 border-2 border-gw-primary border-t-transparent rounded-full animate-spin"></div>
-            <p class="text-sm font-medium text-gw-text-muted">Loading users...</p>
-          </div>
+      <!-- Loading Skeletons -->
+      @if (loading()) {
+        @for (i of [1,2,3,4,5]; track i) {
+          <div class="h-[72px] bg-white rounded-2xl border border-gw-card-border animate-pulse"></div>
         }
+      }
 
-        <!-- Empty State -->
-        @else if (users().length === 0) {
-          <div class="flex flex-col items-center justify-center py-16 gap-4">
-            <div class="w-16 h-16 rounded-2xl bg-gw-bg flex items-center justify-center">
-              <i-lucide [img]="UsersIcon" size="28" class="text-gw-text-muted"></i-lucide>
-            </div>
-            <div class="text-center">
-              <p class="font-black text-gw-text">No users found</p>
-              <p class="text-sm text-gw-text-muted mt-1">Try adjusting your search or filters</p>
-            </div>
-            <button (click)="clearFilters()" class="text-sm font-bold text-gw-primary hover:underline">Clear filters</button>
+      <!-- Empty State -->
+      @else if (users().length === 0) {
+        <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm
+                    flex flex-col items-center justify-center py-16 gap-3 text-center">
+          <div class="w-12 h-12 rounded-2xl bg-gw-bg flex items-center justify-center">
+            <i-lucide [img]="UsersIcon" size="22" class="text-gw-text-muted"></i-lucide>
           </div>
-        }
+          <p class="text-sm font-bold text-gw-text">No users found</p>
+          <p class="text-xs text-gw-text-muted">Try adjusting your search or filters</p>
+          <button (click)="clearFilters()" class="text-xs font-bold text-gw-primary hover:underline mt-1">Clear filters</button>
+        </div>
+      }
 
-        <!-- Table -->
-        @else {
-          <div class="overflow-x-auto">
-            <table class="w-full">
-              <thead>
-                <tr class="border-b border-gw-card-border">
-                  <th class="px-5 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted">User</th>
-                  <th class="px-4 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden md:table-cell">Age Group</th>
-                  <th class="px-4 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden sm:table-cell">Activity</th>
-                  <th class="px-4 py-3.5 text-left text-[11px] font-black uppercase tracking-widest text-gw-text-muted hidden lg:table-cell">Last Active</th>
-                  <th class="px-4 py-3.5 text-center text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Status</th>
-                  <th class="px-4 py-3.5 text-right text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                @for (row of users(); track row.id) {
-                  <tr class="border-b border-gw-card-border/50 hover:bg-gw-bg/40 transition-colors group">
-                    <!-- User -->
-                    <td class="px-5 py-4">
-                      <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-xl bg-gw-primary/10 flex items-center justify-center text-xs font-black text-gw-primary flex-shrink-0 overflow-hidden">
-                          @if (row.avatar) {
-                            <img [src]="row.avatar" class="w-full h-full object-cover"
-                              (error)="$any($event.target).style.display='none'" [alt]="row.name">
-                          } @else {
-                            {{ initials(row.name) }}
-                          }
-                        </div>
-                        <div class="min-w-0">
-                          <p class="text-sm font-bold text-gw-text truncate">{{ row.name }}</p>
-                          <p class="text-[11px] text-gw-text-muted font-medium">{{ row.mobileNumber }}</p>
-                        </div>
-                      </div>
-                    </td>
+      <!-- User List -->
+      @else {
+        <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
+          <div class="divide-y divide-gw-bg">
+            @for (row of users(); track row.id) {
+              <div class="flex items-center gap-3 px-4 py-3.5 hover:bg-gw-bg/50 transition-colors">
 
-                    <!-- Age Group -->
-                    <td class="px-4 py-4 hidden md:table-cell">
-                      <span class="text-xs font-bold text-gw-text-muted bg-gw-bg px-2.5 py-1 rounded-lg">{{ row.ageGroup }}</span>
-                    </td>
+                <!-- Avatar -->
+                <div class="w-10 h-10 rounded-xl bg-gw-primary/10 flex items-center justify-center text-xs font-black text-gw-primary shrink-0 overflow-hidden">
+                  @if (row.avatar) {
+                    <img [src]="row.avatar" class="w-full h-full object-cover"
+                      (error)="$any($event.target).style.display='none'" [alt]="row.name">
+                  } @else {
+                    {{ initials(row.name) }}
+                  }
+                </div>
 
-                    <!-- Activity (sessions + streak) -->
-                    <td class="px-4 py-4 hidden sm:table-cell">
-                      <div class="flex items-center gap-4">
-                        <div class="flex items-center gap-1.5">
-                          <i-lucide [img]="SessionsIcon" size="13" class="text-gw-accent flex-shrink-0"></i-lucide>
-                          <span class="text-xs font-black text-gw-text">{{ row.sessions }}</span>
-                          <span class="text-[11px] text-gw-text-muted">sessions</span>
-                        </div>
-                        <div class="flex items-center gap-1.5">
-                          <i-lucide [img]="FlameIcon" size="13" class="text-orange-400 flex-shrink-0"></i-lucide>
-                          <span class="text-xs font-black text-gw-text">{{ row.streak }}</span>
-                          <span class="text-[11px] text-gw-text-muted">streak</span>
-                        </div>
-                      </div>
-                    </td>
+                <!-- Meta -->
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-bold text-gw-text truncate leading-tight">{{ row.name }}</p>
+                  <div class="flex items-center gap-2 mt-1 flex-wrap">
+                    <span class="text-[11px] font-semibold text-gw-text-muted">{{ row.mobileNumber }}</span>
+                    <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-gw-text-muted">
+                      <i-lucide [img]="SessionsIcon" size="11" class="text-gw-accent"></i-lucide>{{ row.sessions }}
+                    </span>
+                    <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-gw-text-muted">
+                      <i-lucide [img]="FlameIcon" size="11" class="text-orange-400"></i-lucide>{{ row.streak }}
+                    </span>
+                  </div>
+                </div>
 
-                    <!-- Last Active -->
-                    <td class="px-4 py-4 hidden lg:table-cell">
-                      <span class="text-xs font-medium text-gw-text-muted">
-                        {{ row.lastActive ? (row.lastActive | date:'d MMM y') : '—' }}
-                      </span>
-                    </td>
+                <!-- Status + actions -->
+                <div class="flex flex-col items-end gap-1.5 shrink-0">
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wide"
+                    [class]="row.status === 'ACTIVE' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600'">
+                    <span class="w-1.5 h-1.5 rounded-full" [class]="row.status === 'ACTIVE' ? 'bg-green-500' : 'bg-red-400'"></span>
+                    {{ row.status }}
+                  </span>
+                  <div class="flex items-center gap-0.5">
+                    <button (click)="openDetail(row)" title="View profile"
+                      class="w-9 h-9 flex items-center justify-center rounded-lg text-gw-primary hover:bg-gw-primary/10 transition-colors">
+                      <i-lucide [img]="ViewIcon" size="15"></i-lucide>
+                    </button>
+                    <button (click)="openEditModal(row)" title="Edit user"
+                      class="w-9 h-9 flex items-center justify-center rounded-lg text-gw-text-muted hover:text-gw-primary hover:bg-gw-primary/10 transition-colors">
+                      <i-lucide [img]="EditIcon" size="15"></i-lucide>
+                    </button>
+                    <button (click)="toggleStatus(row)" [title]="row.status === 'ACTIVE' ? 'Deactivate' : 'Activate'"
+                      class="w-9 h-9 flex items-center justify-center rounded-lg transition-colors"
+                      [class]="row.status === 'ACTIVE' ? 'text-gw-text-muted hover:text-red-500 hover:bg-red-50' : 'text-gw-text-muted hover:text-green-600 hover:bg-green-50'">
+                      <i-lucide [img]="row.status === 'ACTIVE' ? DeactivateIcon : ActivateIcon" size="15"></i-lucide>
+                    </button>
+                  </div>
+                </div>
 
-                    <!-- Status Badge -->
-                    <td class="px-4 py-4 text-center">
-                      <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-black uppercase tracking-wide"
-                        [class]="row.status === 'ACTIVE'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-red-100 text-red-600'">
-                        <span class="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                          [class]="row.status === 'ACTIVE' ? 'bg-green-500' : 'bg-red-400'"></span>
-                        {{ row.status }}
-                      </span>
-                    </td>
-
-                    <!-- Actions -->
-                    <td class="px-4 py-4 text-right">
-                      <div class="flex items-center justify-end gap-1 opacity-60 group-hover:opacity-100 transition-opacity">
-                        <button
-                          (click)="openDetail(row)"
-                          title="View profile"
-                          class="w-10 h-10 flex items-center justify-center rounded-lg text-gw-primary hover:bg-gw-primary/10 transition-colors">
-                          <i-lucide [img]="ViewIcon" size="15"></i-lucide>
-                        </button>
-                        <button
-                          (click)="openEditModal(row)"
-                          title="Edit user"
-                          class="w-10 h-10 flex items-center justify-center rounded-lg text-gw-text-muted hover:text-gw-primary hover:bg-gw-primary/10 transition-colors">
-                          <i-lucide [img]="EditIcon" size="15"></i-lucide>
-                        </button>
-                        <button
-                          (click)="toggleStatus(row)"
-                          [title]="row.status === 'ACTIVE' ? 'Deactivate' : 'Activate'"
-                          class="w-10 h-10 flex items-center justify-center rounded-lg transition-colors"
-                          [class]="row.status === 'ACTIVE'
-                            ? 'text-gw-text-muted hover:text-red-500 hover:bg-red-50'
-                            : 'text-gw-text-muted hover:text-green-600 hover:bg-green-50'">
-                          <i-lucide [img]="row.status === 'ACTIVE' ? DeactivateIcon : ActivateIcon" size="15"></i-lucide>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
+              </div>
+            }
           </div>
+        </div>
 
-          <!-- Pagination -->
-          <div class="flex items-center justify-between px-5 py-3.5 border-t border-gw-card-border bg-gw-bg/30">
-            <p class="text-xs font-medium text-gw-text-muted">
-              Showing {{ currentPage() * currentPageSize() + 1 }}–{{ pageEnd() }} of {{ totalUsers() }}
-            </p>
-            <mat-paginator
-              [length]="totalUsers()"
-              [pageSize]="currentPageSize()"
-              [pageSizeOptions]="[10, 25, 50]"
-              (page)="onPageChange($event)"
-              class="!bg-transparent"
-            ></mat-paginator>
-          </div>
-        }
-      </div>
+        <!-- Standardized pager -->
+        <app-admin-load-more
+          [loading]="loadingMore()" [hasMore]="hasMore()"
+          [loaded]="users().length" [total]="totalUsers()"
+          (more)="loadMore()"></app-admin-load-more>
+      }
     </div>
   `,
-  styles: [`
-    :host { display: block; }
-    .mat-mdc-paginator { background: transparent; }
-    .mat-mdc-paginator-container { padding: 0; min-height: unset; }
-  `]
+  styles: [`:host { display: block; }`]
 })
 export class AdminUsersComponent implements OnInit {
   private adminService = inject(AdminService);
@@ -405,9 +319,11 @@ export class AdminUsersComponent implements OnInit {
   users       = signal<AdminUserListItem[]>([]);
   totalUsers  = signal(0);
   loading     = signal(false);
+  loadingMore = signal(false);
   activeOnly  = signal(false);
-  currentPage    = signal(0);
-  currentPageSize = signal(10);
+
+  private page     = 0;
+  private pageSize = 15;
 
   showUserModal    = signal(false);
   userSubmitting   = signal(false);
@@ -429,11 +345,10 @@ export class AdminUsersComponent implements OnInit {
     password:              new FormControl(''),
   });
 
-  searchControl    = new FormControl('');
-  ageFilterControl = new FormControl('');
+  searchControl = new FormControl('');
 
-  pageEnd() {
-    return Math.min((this.currentPage() + 1) * this.currentPageSize(), this.totalUsers());
+  hasMore() {
+    return this.users().length < this.totalUsers();
   }
 
   ngOnInit() {
@@ -442,50 +357,54 @@ export class AdminUsersComponent implements OnInit {
     this.searchControl.valueChanges.pipe(
       debounceTime(400),
       distinctUntilChanged()
-    ).subscribe(() => { this.currentPage.set(0); this.loadUsers(); });
-
-    this.ageFilterControl.valueChanges.subscribe(() => { this.currentPage.set(0); this.loadUsers(); });
+    ).subscribe(() => this.refresh());
   }
 
-  loadUsers(page: number = this.currentPage(), size: number = this.currentPageSize()) {
-    this.loading.set(true);
+  loadUsers(append = false) {
     this.adminService.getUsers({
       search:     this.searchControl.value,
-      ageGroup:   this.ageFilterControl.value,
       activeOnly: this.activeOnly(),
-      page,
-      size
+      page:       this.page,
+      size:       this.pageSize
     }).subscribe({
       next: res => {
-        this.users.set(res.items || []);
+        const incoming = res.items || [];
+        this.users.update(prev => append ? [...prev, ...incoming] : incoming);
         this.totalUsers.set(res.total || res.totalCount || 0);
         this.loading.set(false);
+        this.loadingMore.set(false);
       },
       error: () => {
         this.toast.error('Failed to load users');
         this.loading.set(false);
+        this.loadingMore.set(false);
       }
     });
   }
 
-  onPageChange(event: PageEvent) {
-    this.currentPage.set(event.pageIndex);
-    this.currentPageSize.set(event.pageSize);
-    this.loadUsers(event.pageIndex, event.pageSize);
+  private refresh() {
+    this.page = 0;
+    this.users.set([]);
+    this.loading.set(true);
+    this.loadUsers();
   }
 
-  toggleActiveOnly() {
-    this.activeOnly.update(v => !v);
-    this.currentPage.set(0);
-    this.loadUsers(0);
+  loadMore() {
+    this.page++;
+    this.loadingMore.set(true);
+    this.loadUsers(true);
+  }
+
+  setActiveOnly(value: boolean) {
+    if (this.activeOnly() === value) return;
+    this.activeOnly.set(value);
+    this.refresh();
   }
 
   clearFilters() {
     this.searchControl.setValue('');
-    this.ageFilterControl.setValue('');
     this.activeOnly.set(false);
-    this.currentPage.set(0);
-    this.loadUsers(0);
+    this.refresh();
   }
 
   openDetail(user: AdminUserListItem) {
@@ -577,7 +496,7 @@ export class AdminUsersComponent implements OnInit {
           const newAvatarUrl: string | null = res?.data ?? null;
           this.toast.success('User updated successfully');
           this.closeUserModal();
-          this.loadUsers();
+          this.refresh();
           if (newAvatarUrl) {
             this.users.update(list =>
               list.map(u => u.id === userId ? { ...u, avatar: newAvatarUrl } : u)
@@ -596,7 +515,7 @@ export class AdminUsersComponent implements OnInit {
         next: () => {
           this.toast.success('User created successfully');
           this.closeUserModal();
-          this.loadUsers();
+          this.refresh();
         },
         error: (err) => {
           const msg = err?.error?.errors?.[0] || 'Failed to create user';
@@ -613,7 +532,7 @@ export class AdminUsersComponent implements OnInit {
     this.adminService.updateUserStatus({ userId: Number(user.id), isActive: goingActive }).subscribe({
       next: () => {
         this.toast.success(`User ${goingActive ? 'activated' : 'deactivated'}`);
-        this.loadUsers();
+        this.refresh();
       },
       error: () => this.toast.error('Failed to update user status')
     });
