@@ -34,10 +34,21 @@ export class WebsocketService {
       .withAutomaticReconnect()
       .build();
 
+    // Lifecycle diagnostics — helps confirm whether "SignalR not working" is a real
+    // connection problem vs. a missing event. After an auto-reconnect the backend runs
+    // OnConnectedAsync again (sessionId stays in the URL query), so group membership is
+    // restored automatically; the lobby's 3s poll re-syncs any events missed while down.
+    this.connection.onreconnecting(err =>
+      console.warn(`[WS] ${hubPath} reconnecting`, err?.message ?? ''));
+    this.connection.onreconnected(id =>
+      console.log(`[WS] ${hubPath} reconnected`, { connectionId: id }));
+    this.connection.onclose(err =>
+      console.warn(`[WS] ${hubPath} closed`, err?.message ?? '(clean)'));
+
     this.connectionStartPromise = this.connection.start()
-      .then(() => console.log('SignalR connected'))
+      .then(() => console.log(`[WS] ${hubPath} connected`, { sessionId }))
       .catch(err => {
-        console.error('SignalR Error: ', err);
+        console.error(`[WS] ${hubPath} connect failed`, err);
         throw err;
       });
   }

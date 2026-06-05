@@ -114,6 +114,7 @@ export class LobbyComponent implements OnInit, OnDestroy {
         const userId = localStorage.getItem('gwf_userId') ?? '';
         this.wsService.connect(this.sessionId, userId, 'session');
         this.subscribeToLobbyEvents();
+        this.announceJoin(this.sessionId, userId);
         this.startSessionActivePoll();
       }
     });
@@ -128,23 +129,34 @@ export class LobbyComponent implements OnInit, OnDestroy {
     this.wsService.disconnect();
   }
 
-  // Polls every 3s so participants don't miss SESSION_STARTED if SignalR drops
+  /**
+   * Announce this client's presence to the session group via the JoinLobby hub method.
+   * This is what triggers the backend's MEMBER_JOINED broadcast so members already in
+   * the lobby (notably the HOST) refresh their roster. connect() only adds this
+   * connection to the group — it does NOT announce the join. Without this call the host
+   * never learns a guest joined and stays stuck at "1/2" even after the guest is ready.
+   */
+  private announceJoin(sessionId: string, userId: string) {
+    this.wsService.emit('JoinLobby', sessionId, userId)
+      .then(() => console.log('[Lobby] JoinLobby announced', { sessionId, userId }))
+      .catch(err => console.error('[Lobby] JoinLobby failed — roster fallback poll will cover it', err));
+  }
+
+  // Polls every 3s as a SignalR fallback. Two jobs:
+  //  1. Catch SESSION_STARTED if the realtime event is missed → navigate to the room.
+  //  2. Keep the lobby roster + readiness fresh even if MEMBER_JOINED/MEMBER_READY were
+  //     missed (e.g. host connected before the guest, or a dropped SignalR frame). This
+  //     is the self-healing safety net behind the JoinLobby fix.
   private startSessionActivePoll() {
     this.sessionActivePollHandle = setInterval(() => {
       if (this.hasLeft || !this.sessionId) {
         this.stopSessionActivePoll();
         return;
       }
-      this.sessionService.getLobbyState(this.sessionId).subscribe({
-        next: (state) => {
-          if (state.session?.status === 'ACTIVE' && !this.hasLeft) {
-            this.stopSessionActivePoll();
-            this.hasLeft = true;
-            this.navigateToLiveSession(this.sessionId);
-          }
-        },
-        error: () => { /* ignore poll errors */ }
-      });
+      // loadLobby() handles ACTIVE→navigate and COMPLETED/ABANDONED→dashboard internally,
+      // and otherwise refreshes the member list + readiness. Reusing it keeps one canonical
+      // refresh path and makes the roster converge within 3s regardless of SignalR health.
+      this.loadLobby(this.sessionId);
     }, 3000);
   }
 
@@ -159,6 +171,15 @@ export class LobbyComponent implements OnInit, OnDestroy {
     this.wsService.on('MEMBER_JOINED').subscribe(() => this.loadLobby(this.sessionId));
 
     this.wsService.on('MEMBER_READY').subscribe((data: any) => {
+      console.log('[Lobby] MEMBER_READY received', data);
+      const known = this.state()?.members?.some(m => String(m.userId) === String(data.userId));
+      if (!known) {
+        // Readiness arrived for a member not yet in our roster (MEMBER_JOINED missed or
+        // out of order). Pull the full lobby so the member appears AND shows ready —
+        // otherwise the update below would silently no-op and the count stays stale.
+        this.loadLobby(this.sessionId);
+        return;
+      }
       this.state.update(s => {
         if (!s) return s;
         const members = s.members.map(m =>
