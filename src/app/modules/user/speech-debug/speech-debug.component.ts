@@ -33,6 +33,11 @@ interface DeviceInfo {
   language: string;
   speechApiAvailable: boolean;
   online: boolean;
+  isSecureContext: boolean;
+  origin: string;
+  browserEngine: string;
+  speechSupported: boolean;
+  blockerReason: string | null;
 }
 
 // ─── Component ───────────────────────────────────────────────────────────────
@@ -373,7 +378,15 @@ export class SpeechDebugComponent implements OnInit, OnDestroy, AfterViewChecked
     this.addLog('INFO',  `Platform: ${this.deviceInfo.platform}`);
     this.addLog('INFO',  `Capacitor native: ${this.deviceInfo.isNative}`);
     this.addLog('INFO',  `Mobile UA: ${this.deviceInfo.isMobile}`);
+    this.addLog('INFO',  `Browser engine: ${this.deviceInfo.browserEngine}`);
+    this.addLog(this.deviceInfo.isSecureContext ? 'INFO' : 'ERROR',
+                `Secure context: ${this.deviceInfo.isSecureContext} (origin: ${this.deviceInfo.origin})`);
     this.addLog('INFO',  `Web Speech API: ${this.deviceInfo.speechApiAvailable}`);
+    this.addLog(this.deviceInfo.speechSupported ? 'INFO' : 'ERROR',
+                `Speech supported: ${this.deviceInfo.speechSupported}`);
+    if (this.deviceInfo.blockerReason) {
+      this.addLog('ERROR', `Blocker: ${this.deviceInfo.blockerReason}`);
+    }
     this.addLog('INFO',  `Online: ${this.deviceInfo.online}`);
     this.addLog('INFO',  `Screen: ${this.deviceInfo.screen} @ ${this.deviceInfo.pixelRatio}x`);
     this.addLog('INFO',  `UA: ${this.deviceInfo.ua}`);
@@ -508,6 +521,7 @@ export class SpeechDebugComponent implements OnInit, OnDestroy, AfterViewChecked
 
   private buildDeviceInfo(): DeviceInfo {
     const ua = typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown';
+    const cap = this.engine.getCapabilities();
     return {
       platform:            typeof navigator !== 'undefined' ? (navigator.platform || 'unknown') : 'unknown',
       isNative:            Capacitor.isNativePlatform(),
@@ -516,22 +530,32 @@ export class SpeechDebugComponent implements OnInit, OnDestroy, AfterViewChecked
       screen:              typeof screen !== 'undefined' ? `${screen.width}×${screen.height}` : 'unknown',
       pixelRatio:          typeof window !== 'undefined' ? window.devicePixelRatio : 1,
       language:            typeof navigator !== 'undefined' ? navigator.language : 'unknown',
-      speechApiAvailable:  typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window),
-      online:              typeof navigator !== 'undefined' ? navigator.onLine : true,
+      speechApiAvailable:  cap.hasSpeechApi,
+      online:              cap.online,
+      isSecureContext:     cap.isSecureContext,
+      origin:              cap.origin,
+      browserEngine:       cap.browserEngine,
+      speechSupported:     cap.speechSupported,
+      blockerReason:       cap.blockerReason,
     };
   }
 
   private buildDeviceRows(): { label: string; value: string }[] {
     const d = this.buildDeviceInfo();
     return [
-      { label: 'Platform',       value: d.platform },
-      { label: 'Native (Cap)',   value: String(d.isNative) },
-      { label: 'Mobile UA',      value: String(d.isMobile) },
-      { label: 'Web Speech API', value: String(d.speechApiAvailable) },
-      { label: 'Screen',         value: `${d.screen} @ ${d.pixelRatio}x` },
-      { label: 'Language',       value: d.language },
-      { label: 'Online',         value: String(d.online) },
-      { label: 'User Agent',     value: d.ua },
+      { label: 'Platform',        value: d.platform },
+      { label: 'Native (Cap)',    value: String(d.isNative) },
+      { label: 'Mobile UA',       value: String(d.isMobile) },
+      { label: 'Browser Engine',  value: d.browserEngine },
+      { label: 'Secure Context',  value: d.isSecureContext ? 'true ✓' : 'FALSE ✗ — Web Speech blocked' },
+      { label: 'Origin',          value: d.origin },
+      { label: 'Web Speech API',  value: String(d.speechApiAvailable) },
+      { label: 'Speech Supported',value: d.speechSupported ? 'true ✓' : 'false ✗' },
+      { label: 'Blocker',         value: d.blockerReason ?? 'none' },
+      { label: 'Screen',          value: `${d.screen} @ ${d.pixelRatio}x` },
+      { label: 'Language',        value: d.language },
+      { label: 'Online',          value: String(d.online) },
+      { label: 'User Agent',      value: d.ua },
     ];
   }
 }

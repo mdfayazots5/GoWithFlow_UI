@@ -1,5 +1,6 @@
 import angular from '@analogjs/vite-plugin-angular';
 import tailwindcss from '@tailwindcss/vite';
+import basicSsl from '@vitejs/plugin-basic-ssl';
 import path from 'path';
 import {defineConfig} from 'vite';
 
@@ -10,10 +11,20 @@ export default defineConfig(() => {
   const apiTarget = process.env['API_TARGET'] ?? 'https://gowithflow-api.onrender.com';
   const isLocalTarget = apiTarget.includes('localhost');
 
+  // HTTPS on the dev server is REQUIRED for mobile/tablet browser testing.
+  // The Web Speech API and getUserMedia only work in a *secure context*; a LAN IP
+  // over plain HTTP (e.g. http://10.x.x.x:4200) is NOT secure, so speech recognition
+  // silently fails in mobile Chrome/Edge even though the API surface exists.
+  // basic-ssl serves a self-signed cert → https://<LAN-IP>:4200 is a secure context
+  // (tap through the one-time "not private" warning on the device). Disable with
+  // HTTPS=false npm run dev for the rare case a plain-HTTP dev server is needed.
+  const useHttps = process.env['HTTPS'] !== 'false';
+
   return {
     plugins: [
       angular(),
-      tailwindcss()
+      tailwindcss(),
+      ...(useHttps ? [basicSsl()] : [])
     ],
     resolve: {
       mainFields: ['module'],

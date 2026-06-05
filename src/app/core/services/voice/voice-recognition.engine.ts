@@ -34,6 +34,32 @@ export interface WordResult {
   isMissing: boolean;
 }
 
+export type BrowserEngine = 'chrome' | 'edge' | 'firefox' | 'samsung' | 'safari' | 'other';
+
+/**
+ * Runtime capability snapshot for the voice pipeline. Drives the pre-flight guard
+ * (clear, actionable errors instead of a silent failure) and the Speech Debug page.
+ */
+export interface VoiceCapabilities {
+  isCapacitorNative: boolean;   // running inside the installed app (on-device recognizer)
+  isSecureContext: boolean;     // window.isSecureContext — Web Speech API hard requirement
+  hasSpeechApi: boolean;        // SpeechRecognition / webkitSpeechRecognition present
+  browserEngine: BrowserEngine; // best-effort UA classification
+  origin: string;               // window.location.origin (shown in the secure-context error)
+  online: boolean;              // navigator.onLine — cloud STT needs the network
+  isMobile: boolean;
+  isIOS: boolean;
+  /**
+   * Best-effort verdict on whether speech recognition can actually run here.
+   * Native: always true. Web: needs a secure context AND the API. Engines that
+   * expose the API but have no working speech backend on mobile (Edge, Firefox)
+   * are flagged unreliable so the UI can recommend Chrome / the app up front.
+   */
+  speechSupported: boolean;
+  /** Human-readable reason when speechSupported is false (null otherwise). */
+  blockerReason: string | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class VoiceRecognitionEngine implements OnDestroy {
 
@@ -75,6 +101,7 @@ export class VoiceRecognitionEngine implements OnDestroy {
   // isMobile: true for any touch device — iOS, Android, iPadOS
   private isIOS = false;
   private _isMobile = false;
+  private _engine: BrowserEngine = 'other';
 
   /** Exposed so SpeakerScreenComponent can skip auto-start on touch devices. */
   get isMobileDevice(): boolean { return this._isMobile; }
@@ -179,16 +206,82 @@ export class VoiceRecognitionEngine implements OnDestroy {
     const isIPadDesktopUA = navigator.maxTouchPoints > 1 && /Macintosh/.test(ua);
     this.isIOS    = /iPad|iPhone|iPod/.test(ua) || isIPadDesktopUA;
     this._isMobile = this.isIOS || /Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+    this._engine  = this.detectEngine(ua);
 
     console.debug('[VRE] Device detection', {
       isIOS: this.isIOS,
       isMobile: this._isMobile,
+      engine: this._engine,
+      isSecureContext: typeof window !== 'undefined' ? window.isSecureContext : 'n/a',
+      origin: typeof window !== 'undefined' ? window.location.origin : 'n/a',
       ua: ua.substring(0, 80)
     });
 
     this.vad.onSilenceDetected(() => this.handleSilenceDetected());
     this.vad.volumeLevel$.pipe(takeUntil(this.destroy$)).subscribe(v => this.volumeLevel$.next(v));
     this.vad.waveformData$.pipe(takeUntil(this.destroy$)).subscribe(d => this.waveformData$.next(d));
+  }
+
+  // ─── CAPABILITY DETECTION ─────────────────────────────────────────────────
+  // Classify the browser engine from the UA. Used only for diagnostics + to warn
+  // the user up front on engines that expose the Web Speech API but have no working
+  // speech backend on mobile (Edge, Firefox). Order matters: Samsung/Edge/Firefox
+  // UAs also contain "Chrome"/"Safari", so they must be tested first.
+  private detectEngine(ua: string): BrowserEngine {
+    if (/SamsungBrowser/i.test(ua)) return 'samsung';
+    if (/Edg(A|iOS|)\//i.test(ua))  return 'edge';      // EdgA = Edge Android, EdgiOS = Edge iOS
+    if (/Firefox\/|FxiOS\//i.test(ua)) return 'firefox';
+    if (/CriOS\//i.test(ua))        return 'chrome';    // Chrome on iOS (WebKit shell)
+    if (/Chrome\//i.test(ua))       return 'chrome';
+    if (/Safari\//i.test(ua))       return 'safari';
+    return 'other';
+  }
+
+  /**
+   * Snapshot of what the voice pipeline can do in the current runtime. Cheap to
+   * call — recomputed each time so `isSecureContext`/`online` are always current.
+   */
+  getCapabilities(): VoiceCapabilities {
+    const hasSpeechApi = typeof window !== 'undefined' &&
+      (!!(window as any).SpeechRecognition || !!(window as any).webkitSpeechRecognition);
+    const isSecure = typeof window !== 'undefined' ? window.isSecureContext : false;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const online = typeof navigator !== 'undefined' ? navigator.onLine : true;
+
+    const blockerReason = this.isCapacitorNative
+      ? null
+      : this.webSpeechBlocker(isSecure, hasSpeechApi, origin);
+
+    // Engines that ship the API but commonly have no speech service on mobile.
+    // Not a hard block (we still let them try), but flagged so the UI can advise.
+    const unreliableMobileEngine = this._isMobile && (this._engine === 'edge' || this._engine === 'firefox');
+
+    return {
+      isCapacitorNative: this.isCapacitorNative,
+      isSecureContext: isSecure,
+      hasSpeechApi,
+      browserEngine: this._engine,
+      origin,
+      online,
+      isMobile: this._isMobile,
+      isIOS: this.isIOS,
+      speechSupported: this.isCapacitorNative || (!blockerReason && !unreliableMobileEngine),
+      blockerReason
+    };
+  }
+
+  /**
+   * Hard blockers for the Web Speech path. Returns an actionable message, or null
+   * if the path can at least be attempted. Native callers never hit this.
+   */
+  private webSpeechBlocker(isSecure: boolean, hasSpeechApi: boolean, origin: string): string | null {
+    if (!isSecure) {
+      return `Speech recognition needs a secure (HTTPS) connection. This page is open over an insecure address (${origin || 'http://…'}). Open it via https://, or install the GoWithFlow app for voice support.`;
+    }
+    if (!hasSpeechApi) {
+      return `Speech recognition isn't supported in this browser. Please use Google Chrome, or install the GoWithFlow app.`;
+    }
+    return null;
   }
 
   // ─── MAIN ENTRY POINT ───────────────────────────────────────────────────────
@@ -230,6 +323,24 @@ export class VoiceRecognitionEngine implements OnDestroy {
     // its own permission request inside startNativeSession().
     if (this.isCapacitorNative) {
       return this.startNativeSession(expectedText);
+    }
+
+    // ── WEB PATH PRE-FLIGHT GUARD ──────────────────────────────────────────────
+    // Surface the real reason (insecure context / no API) up front with an
+    // actionable message, instead of letting recognition fail later with a generic
+    // "Speech recognition error". This is the #1 cause of "works in the app but not
+    // in the mobile browser": a LAN IP over plain HTTP is not a secure context.
+    const cap = this.getCapabilities();
+    console.debug('[VRE] Web capability snapshot', cap);
+    if (cap.blockerReason) {
+      console.warn('[VRE] Web speech blocked', { reason: cap.blockerReason, origin: cap.origin, secure: cap.isSecureContext, hasApi: cap.hasSpeechApi });
+      this.state$.next('error');
+      throw new Error(cap.blockerReason);
+    }
+    if (!cap.speechSupported) {
+      // Has the API + secure, but a known-unreliable mobile engine (Edge/Firefox).
+      // We still attempt — but warn so the failure path can advise switching browsers.
+      console.warn('[VRE] Unreliable mobile engine for Web Speech', { engine: cap.browserEngine });
     }
 
     const permitted = await this.requestMicPermission();
@@ -737,8 +848,20 @@ export class VoiceRecognitionEngine implements OnDestroy {
 
     // ── EVENT: no speech match ───────────────────────────────────────────────
     this.recognition.onnomatch = () => {
+      console.debug('[VRE] onnomatch — recognizer could not match any speech');
       this.interimTranscript$.next('');
     };
+
+    // ── EVENTS: audio/speech lifecycle (diagnostics) ─────────────────────────
+    // These confirm the mic actually opened and the user's voice reached the
+    // recognizer. On an insecure context or a backend-less engine, onaudiostart
+    // never fires — the gap between 'onstart' and 'onaudiostart' in the logs is
+    // the tell-tale signature of a blocked Web Speech path.
+    this.recognition.onstart       = () => console.debug('[VRE] onstart — speech service started', { lang: this.recognition?.lang });
+    this.recognition.onaudiostart  = () => console.debug('[VRE] onaudiostart — microphone audio capture began');
+    this.recognition.onspeechstart = () => console.debug('[VRE] onspeechstart — speech detected');
+    this.recognition.onspeechend   = () => console.debug('[VRE] onspeechend — speech ended');
+    this.recognition.onaudioend    = () => console.debug('[VRE] onaudioend — microphone audio capture ended');
 
     // ── EVENT: error handling ────────────────────────────────────────────────
     this.recognition.onerror = (event: any) => {
@@ -750,6 +873,20 @@ export class VoiceRecognitionEngine implements OnDestroy {
         this.state$.next('error');
         this.vad.stop();
         reject(new Error('Microphone permission denied. Please allow microphone access in your browser settings and try again.'));
+        return;
+      }
+
+      // 'service-not-allowed' = the browser has the Web Speech API surface but no
+      // working speech backend (classic Edge/Firefox-on-Android case), or the OS
+      // dictation service is disabled. This is NOT retryable — surface a clear,
+      // browser-specific recommendation rather than spinning through generic retries.
+      if (event.error === 'service-not-allowed') {
+        this.state$.next('error');
+        this.vad.stop();
+        const engineHint = (this._engine === 'edge' || this._engine === 'firefox')
+          ? ` ${this._engine === 'edge' ? 'Edge' : 'Firefox'} on mobile does not provide a speech service.`
+          : '';
+        reject(new Error(`Speech recognition isn't available in this browser.${engineHint} Please use Google Chrome, or install the GoWithFlow app.`));
         return;
       }
 
@@ -784,7 +921,14 @@ export class VoiceRecognitionEngine implements OnDestroy {
       } else {
         this.state$.next('error');
         this.vad.stop();
-        reject(new Error(`Speech recognition error: ${event.error}`));
+        // A terminal 'network' error after retries is, on mobile, usually a browser
+        // with no speech backend (Edge/Firefox) rather than a real connectivity drop —
+        // point the user at a supported path instead of an opaque error code.
+        if (event.error === 'network' && this._isMobile && (this._engine === 'edge' || this._engine === 'firefox')) {
+          reject(new Error(`Speech recognition isn't available in ${this._engine === 'edge' ? 'Edge' : 'Firefox'} on mobile. Please use Google Chrome, or install the GoWithFlow app.`));
+        } else {
+          reject(new Error(`Speech recognition error: ${event.error}`));
+        }
       }
     };
 
