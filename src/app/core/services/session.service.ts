@@ -107,7 +107,8 @@ export class SessionService {
             slotIndex: m.slotIndex,
             slotName: m.slotName ?? ''
           } as LobbyMember)),
-          canStart: d.canStart ?? false
+          canStart: d.canStart ?? false,
+          recordingEnabled: d.recordingEnabled === true
         } as LobbyState;
       })
     );
@@ -123,6 +124,11 @@ export class SessionService {
 
   endSession(sessionId: string): Observable<boolean> {
     return this.http.post<boolean>(`${this.baseUrl}/${sessionId}/end`, {});
+  }
+
+  // Phase 16: host persists the "Record Session" flag on the session (host-only).
+  setRecordingEnabled(sessionId: string, enabled: boolean): Observable<any> {
+    return this.http.patch<any>(`${this.baseUrl}/${sessionId}/recording`, { enabled });
   }
 
   leaveSession(sessionId: string): Observable<boolean> {

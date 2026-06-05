@@ -100,8 +100,18 @@ export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDe
     this.words.set(this.turnState.utterance.englishText.split(' '));
 
     if (isTurnChange) {
-      // Configure audio capture for this turn
-      this.voiceEngine.enableAudioCapture(this.audioArchiveSvc.getConsent());
+      // Clean up any standalone facilitator recorder left over from a previous turn.
+      this.voiceEngine.stopStandaloneCapture();
+
+      // Configure audio capture for this turn. Capture when the host enabled session recording
+      // (all participants) OR the user opted into the personal archive.
+      this.voiceEngine.enableAudioCapture(this.audioArchiveSvc.shouldCapture());
+
+      // Facilitator "Read Aloud" turns have no recognition recorder — capture them standalone
+      // so the consolidated session recording includes the facilitator's prompts.
+      if (this.turnState.isFacilitatorTurn && this.audioArchiveSvc.shouldCapture()) {
+        this.voiceEngine.startStandaloneCapture();
+      }
 
       this.resetPhase();
       this.tryRestoreFromStorage();
@@ -219,11 +229,11 @@ export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDe
     // Save to backend non-blocking (backend uses UPSERT — no 400 on re-record)
     this.liveSessionService.saveVoiceAnalysis(this.turnState.sessionId, analysis).subscribe();
 
-    // Upload audio clip if user opted in to audio archiving
-    if (this.audioArchiveSvc.getConsent() && this.voiceEngine.lastAudioBlob) {
+    // Upload audio clip for the session recording (host enabled) or personal archive (opted in).
+    if (this.audioArchiveSvc.shouldCapture() && this.voiceEngine.lastAudioBlob) {
       this.audioArchiveSvc.uploadClip(
         this.voiceEngine.lastAudioBlob,
-        this.turnState.sessionId,
+        Number(this.turnState.sessionId),
         this.turnState.turnIndex
       ).subscribe(); // best-effort, non-blocking
       this.voiceEngine.lastAudioBlob = null;
@@ -294,6 +304,17 @@ export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDe
     this._cancelAutoSubmitTimer();
     if (this.isSubmitting()) return;
     this.isSubmitting.set(true);
+
+    // Facilitator read-aloud turns are captured standalone — stop + upload the clip (best-effort)
+    // so it joins the consolidated session recording.
+    if (this.turnState.isFacilitatorTurn && this.audioArchiveSvc.shouldCapture()) {
+      const sessionId = Number(this.turnState.sessionId);
+      const turnIndex = this.turnState.turnIndex;
+      this.voiceEngine.stopStandaloneCapture().then(blob => {
+        if (blob) this.audioArchiveSvc.uploadClip(blob, sessionId, turnIndex).subscribe();
+      });
+    }
+
     const score = this.sessionResult?.overallScore || 0;
     const currentUserId = localStorage.getItem('gwf_userId') || '';
 

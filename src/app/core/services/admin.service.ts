@@ -242,9 +242,11 @@ export class AdminService {
     );
   }
 
-  getSessionRecordings(sessionId: number | string): Observable<any[]> {
+  // Phase 16: one consolidated recording per session (was a list of per-turn clips).
+  // Returns the single SessionRecordingDto, or null if no recording exists.
+  getSessionRecording(sessionId: number | string): Observable<any | null> {
     return this.http.get<any>(`${this.baseUrl}/sessions/${sessionId}/recordings`).pipe(
-      map(res => res.data ?? [])
+      map(res => res.data ?? null)
     );
   }
 

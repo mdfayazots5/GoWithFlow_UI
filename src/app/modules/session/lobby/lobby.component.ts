@@ -214,6 +214,14 @@ export class LobbyComponent implements OnInit, OnDestroy {
         this.isReady.set(myMember.ready);
         this.isHost.set(myMember.isHost);
       }
+
+      // Phase 16: propagate the host's session-level recording decision to every participant
+      // so all clients capture + upload their turn audio for the consolidated recording.
+      this.audioArchiveSvc.setSessionRecordingEnabled(state.recordingEnabled);
+      if (!this.isHost()) {
+        // Guests reflect the host's choice in the passive "being recorded" notice.
+        this.audioConsentEnabled.set(state.recordingEnabled);
+      }
     });
   }
 
@@ -240,6 +248,20 @@ export class LobbyComponent implements OnInit, OnDestroy {
     const newValue = !this.audioConsentEnabled();
     this.audioConsentEnabled.set(newValue);
     this.audioArchiveSvc.setConsent(newValue);
+    this.audioArchiveSvc.setSessionRecordingEnabled(newValue);
+
+    // Phase 16: host toggle also persists the session-level recording flag on the backend,
+    // so the server knows to consolidate this session's audio into one recording on completion.
+    if (this.isHost() && this.sessionId) {
+      this.sessionService.setRecordingEnabled(this.sessionId, newValue).subscribe({
+        error: () => {
+          // Revert UI + local consent if the server rejected the change.
+          this.audioConsentEnabled.set(!newValue);
+          this.audioArchiveSvc.setConsent(!newValue);
+          this.toast.error('Could not update session recording. Please try again.');
+        }
+      });
+    }
   }
 
   toggleReady() {

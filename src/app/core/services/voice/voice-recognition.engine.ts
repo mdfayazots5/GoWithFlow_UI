@@ -104,6 +104,45 @@ export class VoiceRecognitionEngine implements OnDestroy {
     if (!enabled) this.lastAudioBlob = null;
   }
 
+  // ─── Standalone capture (turns with no speech recognition, e.g. facilitator read-aloud) ──────
+  private standaloneStream: MediaStream | null = null;
+
+  /**
+   * Start a standalone MediaRecorder for a turn that has no recognition phase (facilitator
+   * "Read Aloud"). Best-effort: no-op on Capacitor native (getUserMedia blocked) or if a
+   * recorder is already running. Pairs with {@link stopStandaloneCapture}.
+   */
+  async startStandaloneCapture(): Promise<void> {
+    if (this.isCapacitorNative) return;   // getUserMedia unavailable on native
+    if (this.mediaRecorder) return;       // a recognition recorder is already capturing
+    this.lastAudioBlob = null;
+    this.audioChunks = [];
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      this.standaloneStream = stream;
+      this.mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      this.mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) this.audioChunks.push(e.data); };
+      this.mediaRecorder.start(100);
+    } catch { /* capture is best-effort */ }
+  }
+
+  /** Stop the standalone recorder and resolve with the captured blob (or null). */
+  stopStandaloneCapture(): Promise<Blob | null> {
+    const recorder = this.mediaRecorder;
+    if (!recorder || !this.standaloneStream) return Promise.resolve(null);
+    return new Promise<Blob | null>((resolve) => {
+      recorder.onstop = () => {
+        const blob = this.audioChunks.length ? new Blob(this.audioChunks, { type: 'audio/webm' }) : null;
+        this.standaloneStream?.getTracks().forEach(t => t.stop());
+        this.standaloneStream = null;
+        this.mediaRecorder = null;
+        this.lastAudioBlob = blob;
+        resolve(blob);
+      };
+      try { recorder.stop(); } catch { resolve(null); }
+    });
+  }
+
   // Set once we have triggered the native model load for this app run.
   private _prewarmed = false;
 

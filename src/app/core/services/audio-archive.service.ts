@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '@env/environment';
@@ -11,6 +11,20 @@ const CONSENT_KEY = 'gwf_audio_archive_consent';
 export class AudioArchiveService {
   private http    = inject(HttpClient);
   private baseUrl = `${environment.apiBaseUrl}/users`;
+
+  // Phase 16: session-level flag (host enabled "Record Session"). When true, EVERY participant
+  // captures + uploads their turn clips so the server can build one consolidated recording —
+  // independent of the per-user personal-archive consent below. Set from the lobby state.
+  readonly sessionRecordingEnabled = signal(false);
+
+  setSessionRecordingEnabled(value: boolean): void {
+    this.sessionRecordingEnabled.set(value);
+  }
+
+  /** Capture this session's audio if the host enabled recording OR the user opted into personal archive. */
+  shouldCapture(): boolean {
+    return this.sessionRecordingEnabled() || this.getConsent();
+  }
 
   // ── Consent preference (per-user in localStorage) ──────────────
   getConsent(): boolean {

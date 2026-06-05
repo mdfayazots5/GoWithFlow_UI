@@ -80,6 +80,7 @@ export interface LobbyState {
   session: Session;
   members: LobbyMember[];
   canStart: boolean;
+  recordingEnabled: boolean;
 }
 
 export interface LobbyMember {

@@ -1,4 +1,4 @@
-﻿import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AdminService } from '@core/services/admin.service';
@@ -6,7 +6,7 @@ import { ToastService } from '@core/services/toast.service';
 import {
   LucideAngularModule,
   ChevronLeft, Activity, User, Users, Calendar, Clock, TrendingUp, AlertTriangle,
-  Headphones, Play, Pause,
+  Headphones, Play, Pause, Download, Loader, AudioLines, AlertCircle, Mic,
 } from 'lucide-angular';
 
 @Component({
@@ -55,7 +55,7 @@ import {
       @if (session()) {
         <div class="grid lg:grid-cols-3 gap-6">
 
-          <!-- Left: Session Info + Recordings -->
+          <!-- Left: Session Info + Recording Player -->
           <div class="lg:col-span-2 space-y-6">
 
             <!-- Session Info -->
@@ -133,45 +133,155 @@ import {
               </div>
             </div>
 
-            <!-- Recordings -->
+            <!-- ── Session Recording (music-player style) ───────────────────── -->
             <div class="bg-white border border-gw-card-border rounded-2xl shadow-sm overflow-hidden">
-              <div class="px-5 py-4 border-b border-gw-card-border">
-                <h3 class="text-sm font-black text-gw-text uppercase tracking-wider">Recordings</h3>
+              <div class="px-5 py-4 border-b border-gw-card-border flex items-center justify-between">
+                <h3 class="text-sm font-black text-gw-text uppercase tracking-wider">Session Recording</h3>
+                @if (rec(); as r) {
+                  <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider"
+                    [class]="recStatusClass(r.status)">
+                    <span class="w-1.5 h-1.5 rounded-full" [class]="recDotClass(r.status)"></span>
+                    {{ recStatusLabel(r.status) }}
+                  </span>
+                }
               </div>
 
-              @if (recordingsLoading()) {
-                <div class="flex items-center justify-center py-10 gap-2 text-gw-text-muted">
+              <!-- Loading -->
+              @if (recLoading()) {
+                <div class="flex items-center justify-center py-12 gap-2 text-gw-text-muted">
                   <div class="w-5 h-5 border-2 border-gw-primary border-t-transparent rounded-full animate-spin"></div>
-                  <span class="text-sm font-medium">Loading recordings...</span>
+                  <span class="text-sm font-medium">Loading recording…</span>
                 </div>
-              } @else if (recordings().length === 0) {
-                <div class="flex items-center justify-center gap-2 py-10 text-gw-text-muted">
-                  <i-lucide [img]="RecordingsIcon" size="16"></i-lucide>
-                  <span class="text-sm font-medium italic">No audio recordings for this session.</span>
+              }
+
+              <!-- No recording -->
+              @else if (!rec()) {
+                <div class="flex flex-col items-center justify-center gap-3 py-12 px-6 text-center">
+                  <div class="w-14 h-14 rounded-2xl bg-gw-bg flex items-center justify-center">
+                    <i-lucide [img]="RecordingsIcon" size="24" class="text-gw-text-muted"></i-lucide>
+                  </div>
+                  <p class="text-sm font-bold text-gw-text">No recording for this session</p>
+                  <p class="text-xs text-gw-text-muted max-w-xs">Recording was not enabled by the host, or no audio was captured.</p>
                 </div>
-              } @else {
-                <div class="p-5 grid sm:grid-cols-2 gap-3">
-                  @for (clip of recordings(); track clip.archiveId) {
-                    <div class="bg-gw-bg rounded-xl p-4 space-y-3">
-                      <div class="flex items-center justify-between gap-3">
-                        <div class="min-w-0">
-                          <p class="text-sm font-black text-gw-text truncate">{{ clip.userName }}</p>
-                          <p class="text-[11px] text-gw-text-muted mt-0.5">Turn {{ clip.turnIndex }}</p>
-                        </div>
-                        <button
-                          (click)="togglePlay(clip)"
-                          class="w-9 h-9 flex items-center justify-center rounded-xl bg-gw-primary/10 text-gw-primary hover:bg-gw-primary/20 transition-colors flex-shrink-0">
-                          <i-lucide [img]="playingClipId() === clip.archiveId ? PauseIcon : PlayIcon" size="16"></i-lucide>
-                        </button>
+              }
+
+              <!-- Ready → full player -->
+              @else if (isReady() && rec()!.audioUrl) {
+                <div class="p-5">
+                  <!-- Hero -->
+                  <div class="rounded-2xl p-5 bg-gradient-to-br from-gw-primary to-indigo-600 text-white relative overflow-hidden">
+                    <div class="flex items-center gap-4">
+                      <!-- Album art / equalizer -->
+                      <div class="w-16 h-16 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center flex-shrink-0">
+                        @if (isPlaying()) {
+                          <div class="flex items-end gap-1 h-7">
+                            <span class="w-1 bg-white rounded-full eq-bar" style="animation-delay:0ms"></span>
+                            <span class="w-1 bg-white rounded-full eq-bar" style="animation-delay:150ms"></span>
+                            <span class="w-1 bg-white rounded-full eq-bar" style="animation-delay:300ms"></span>
+                            <span class="w-1 bg-white rounded-full eq-bar" style="animation-delay:450ms"></span>
+                          </div>
+                        } @else {
+                          <i-lucide [img]="WaveIcon" size="26" class="text-white"></i-lucide>
+                        }
                       </div>
-                      @if (playingClipId() === clip.archiveId) {
-                        <audio [src]="clip.audioUrl" controls autoplay
-                          (ended)="playingClipId.set(null)"
-                          class="w-full h-8 rounded-lg">
-                        </audio>
-                      }
+                      <div class="min-w-0 flex-1">
+                        <p class="text-base font-black truncate">{{ session()!.sessionName }}</p>
+                        <p class="text-xs text-white/70 mt-0.5">Full session · {{ rec()!.segmentCount || 0 }} turns · {{ (rec()!.format || 'm4a') | uppercase }}</p>
+                        <div class="flex items-center gap-3 mt-2 text-[11px] text-white/80">
+                          <span class="inline-flex items-center gap-1">
+                            <i-lucide [img]="ClockIcon" size="12"></i-lucide>{{ formatTime(displayDuration()) }}
+                          </span>
+                          <span class="inline-flex items-center gap-1">
+                            <i-lucide [img]="CalendarIcon" size="12"></i-lucide>{{ rec()!.createdAt | date:'d MMM y' }}
+                          </span>
+                        </div>
+                      </div>
                     </div>
+
+                    <!-- Scrubber -->
+                    <div class="mt-5">
+                      <input type="range" min="0" step="0.1"
+                        [max]="displayDuration() || 0"
+                        [value]="currentTime()"
+                        (input)="seek(audioEl, $event)"
+                        class="gw-scrubber w-full"
+                        [style.--gw-pct.%]="progressPct()" />
+                      <div class="flex items-center justify-between mt-1.5 text-[11px] font-bold text-white/80 tabular-nums">
+                        <span>{{ formatTime(currentTime()) }}</span>
+                        <span>{{ formatTime(displayDuration()) }}</span>
+                      </div>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="flex items-center justify-center gap-6 mt-3">
+                      <button (click)="skip(audioEl, -10)" aria-label="Back 10 seconds"
+                        class="text-white/80 hover:text-white transition-colors text-xs font-black w-11 h-11 flex items-center justify-center">−10s</button>
+                      <button (click)="togglePlay(audioEl)"
+                        [attr.aria-label]="isPlaying() ? 'Pause' : 'Play'"
+                        class="w-16 h-16 rounded-full bg-white text-gw-primary flex items-center justify-center shadow-lg active:scale-95 transition-transform">
+                        <i-lucide [img]="isPlaying() ? PauseIcon : PlayIcon" size="28" [class]="isPlaying() ? '' : 'ml-0.5'"></i-lucide>
+                      </button>
+                      <button (click)="skip(audioEl, 10)" aria-label="Forward 10 seconds"
+                        class="text-white/80 hover:text-white transition-colors text-xs font-black w-11 h-11 flex items-center justify-center">+10s</button>
+                    </div>
+
+                    <audio #audioEl [src]="rec()!.audioUrl" preload="metadata"
+                      (loadedmetadata)="onMeta(audioEl)"
+                      (timeupdate)="onTime(audioEl)"
+                      (play)="isPlaying.set(true)"
+                      (pause)="isPlaying.set(false)"
+                      (ended)="onEnded()"
+                      class="hidden"></audio>
+                  </div>
+
+                  <!-- Participants + download -->
+                  <div class="mt-4 flex flex-wrap items-center gap-2">
+                    @for (p of rec()!.participants ?? []; track p.userId) {
+                      <span class="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-1 bg-gw-bg rounded-full">
+                        <span class="w-5 h-5 rounded-full bg-gw-primary/15 text-gw-primary text-[10px] font-black flex items-center justify-center">
+                          {{ initials(p.name) }}
+                        </span>
+                        <span class="text-xs font-bold text-gw-text">{{ p.name }}</span>
+                        <span class="text-[10px] text-gw-text-muted">· {{ p.turns }}</span>
+                      </span>
+                    }
+                    <a [href]="rec()!.audioUrl" target="_blank" rel="noopener" download
+                      class="ml-auto inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gw-primary/10 text-gw-primary text-xs font-black hover:bg-gw-primary/20 transition-colors">
+                      <i-lucide [img]="DownloadIcon" size="14"></i-lucide> Download
+                    </a>
+                  </div>
+                </div>
+              }
+
+              <!-- Processing / pending -->
+              @else if (isProcessing()) {
+                <div class="flex flex-col items-center justify-center gap-3 py-12 px-6 text-center">
+                  <div class="w-14 h-14 rounded-2xl bg-gw-primary/10 flex items-center justify-center">
+                    <i-lucide [img]="LoaderIcon" size="24" class="text-gw-primary animate-spin"></i-lucide>
+                  </div>
+                  <p class="text-sm font-bold text-gw-text">Preparing the recording…</p>
+                  <p class="text-xs text-gw-text-muted max-w-xs">We're merging this session's audio into one file. This usually takes a moment — refresh to check.</p>
+                  <button (click)="reload()"
+                    class="mt-1 px-4 py-2 rounded-xl bg-gw-primary text-white text-xs font-black active:scale-95 transition-transform">
+                    Refresh
+                  </button>
+                </div>
+              }
+
+              <!-- Failed -->
+              @else {
+                <div class="flex flex-col items-center justify-center gap-3 py-12 px-6 text-center">
+                  <div class="w-14 h-14 rounded-2xl bg-red-50 flex items-center justify-center">
+                    <i-lucide [img]="AlertCircleIcon" size="24" class="text-red-500"></i-lucide>
+                  </div>
+                  <p class="text-sm font-bold text-gw-text">Recording couldn't be processed</p>
+                  @if (rec()!.failureReason) {
+                    <p class="text-xs text-gw-text-muted max-w-sm">{{ rec()!.failureReason }}</p>
                   }
+                  <button (click)="reload()"
+                    class="mt-1 px-4 py-2 rounded-xl bg-gw-bg text-gw-text text-xs font-black active:scale-95 transition-transform">
+                    Try again
+                  </button>
                 </div>
               }
             </div>
@@ -208,8 +318,10 @@ import {
                   </span>
                 </div>
                 <div class="flex items-center justify-between p-3 bg-gw-bg rounded-xl">
-                  <span class="text-xs font-bold text-gw-text-muted uppercase tracking-wider">Recordings</span>
-                  <span class="text-sm font-black text-gw-text">{{ recordings().length }}</span>
+                  <span class="text-xs font-bold text-gw-text-muted uppercase tracking-wider">Recording</span>
+                  <span class="text-sm font-black" [class]="rec() ? 'text-gw-text' : 'text-gw-text-muted'">
+                    {{ rec() ? recStatusLabel(rec()!.status) : 'None' }}
+                  </span>
                 </div>
               </div>
             </div>
@@ -218,7 +330,46 @@ import {
       }
     </div>
   `,
-  styles: [`:host { display: block; }`]
+  styles: [`
+    :host { display: block; }
+
+    /* Equalizer bars (playing state) */
+    .eq-bar {
+      height: 30%;
+      animation: gw-eq 0.9s ease-in-out infinite;
+    }
+    @keyframes gw-eq {
+      0%, 100% { height: 25%; }
+      50%      { height: 100%; }
+    }
+
+    /* Music-player scrubber */
+    .gw-scrubber {
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      border-radius: 9999px;
+      background: linear-gradient(to right,
+        #ffffff var(--gw-pct, 0%),
+        rgba(255,255,255,0.28) var(--gw-pct, 0%));
+      cursor: pointer;
+    }
+    .gw-scrubber::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px; height: 16px;
+      border-radius: 9999px;
+      background: #ffffff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+    .gw-scrubber::-moz-range-thumb {
+      width: 16px; height: 16px;
+      border: none;
+      border-radius: 9999px;
+      background: #ffffff;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+    }
+  `]
 })
 export class AdminSessionDetailComponent implements OnInit {
   private route        = inject(ActivatedRoute);
@@ -226,47 +377,148 @@ export class AdminSessionDetailComponent implements OnInit {
   private adminService = inject(AdminService);
   private toast        = inject(ToastService);
 
-  readonly BackIcon      = ChevronLeft;
-  readonly SessionIcon   = Activity;
-  readonly UserIcon      = User;
-  readonly UsersIcon     = Users;
-  readonly CalendarIcon  = Calendar;
-  readonly ClockIcon     = Clock;
-  readonly ScoreIcon     = TrendingUp;
-  readonly MistakeIcon   = AlertTriangle;
+  readonly BackIcon       = ChevronLeft;
+  readonly SessionIcon    = Activity;
+  readonly UserIcon       = User;
+  readonly UsersIcon      = Users;
+  readonly CalendarIcon   = Calendar;
+  readonly ClockIcon      = Clock;
+  readonly ScoreIcon      = TrendingUp;
+  readonly MistakeIcon    = AlertTriangle;
   readonly RecordingsIcon = Headphones;
-  readonly PlayIcon      = Play;
-  readonly PauseIcon     = Pause;
+  readonly PlayIcon       = Play;
+  readonly PauseIcon      = Pause;
+  readonly DownloadIcon   = Download;
+  readonly LoaderIcon     = Loader;
+  readonly WaveIcon       = AudioLines;
+  readonly AlertCircleIcon = AlertCircle;
+  readonly MicIcon        = Mic;
 
-  session          = signal<any>(null);
-  recordings       = signal<any[]>([]);
-  recordingsLoading = signal(false);
-  playingClipId    = signal<number | null>(null);
+  session    = signal<any>(null);
+  rec        = signal<any | null>(null);
+  recLoading = signal(false);
+
+  // Player state
+  isPlaying   = signal(false);
+  currentTime = signal(0);
+  duration    = signal(0);
+
+  private sessionId: string | number | null = null;
+
+  // Prefer real <audio> duration; fall back to the server-reported durationSecs.
+  displayDuration = computed(() => this.duration() || Number(this.rec()?.durationSecs) || 0);
+  progressPct     = computed(() => {
+    const d = this.displayDuration();
+    return d > 0 ? Math.min(100, (this.currentTime() / d) * 100) : 0;
+  });
+
+  isReady      = computed(() => (this.rec()?.status ?? '').toUpperCase() === 'READY');
+  isProcessing = computed(() => ['PENDING_MERGE', 'PROCESSING', 'CAPTURING'].includes((this.rec()?.status ?? '').toUpperCase()));
 
   ngOnInit() {
     const state = history.state;
     if (state?.session) {
       this.session.set(state.session);
-      this.loadRecordings(state.session.sessionId);
+      this.sessionId = state.session.sessionId;
+      this.loadRecording(state.session.sessionId);
     } else {
       this.route.params.subscribe(params => {
-        if (params['id']) this.loadRecordings(params['id']);
+        if (params['id']) { this.sessionId = params['id']; this.loadRecording(params['id']); }
       });
     }
   }
 
-  loadRecordings(sessionId: string | number) {
-    this.recordingsLoading.set(true);
-    this.adminService.getSessionRecordings(sessionId).subscribe({
-      next: clips => { this.recordings.set(clips); this.recordingsLoading.set(false); },
-      error: () => this.recordingsLoading.set(false)
+  loadRecording(sessionId: string | number) {
+    this.recLoading.set(true);
+    this.resetPlayer();
+    this.adminService.getSessionRecording(sessionId).subscribe({
+      next: r => { this.rec.set(r); this.recLoading.set(false); },
+      error: () => this.recLoading.set(false)
     });
   }
 
-  togglePlay(clip: any) {
-    this.playingClipId.set(this.playingClipId() === clip.archiveId ? null : clip.archiveId);
+  reload() {
+    if (this.sessionId != null) this.loadRecording(this.sessionId);
   }
 
+  // ── Player controls ────────────────────────────────────────────────
+  togglePlay(audio: HTMLAudioElement) {
+    if (audio.paused) { audio.play().catch(() => this.toast.error('Unable to play this recording.')); }
+    else { audio.pause(); }
+  }
+
+  skip(audio: HTMLAudioElement, secs: number) {
+    audio.currentTime = Math.max(0, Math.min(audio.duration || 0, audio.currentTime + secs));
+  }
+
+  seek(audio: HTMLAudioElement, event: Event) {
+    const value = Number((event.target as HTMLInputElement).value);
+    audio.currentTime = value;
+    this.currentTime.set(value);
+  }
+
+  onMeta(audio: HTMLAudioElement) {
+    if (isFinite(audio.duration)) this.duration.set(audio.duration);
+  }
+
+  onTime(audio: HTMLAudioElement) {
+    this.currentTime.set(audio.currentTime);
+  }
+
+  onEnded() {
+    this.isPlaying.set(false);
+    this.currentTime.set(0);
+  }
+
+  private resetPlayer() {
+    this.isPlaying.set(false);
+    this.currentTime.set(0);
+    this.duration.set(0);
+  }
+
+  // ── Formatting helpers ─────────────────────────────────────────────
+  formatTime(totalSeconds: number): string {
+    const s = Math.max(0, Math.floor(totalSeconds || 0));
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return `${m}:${r.toString().padStart(2, '0')}`;
+  }
+
+  initials(name: string): string {
+    if (!name) return '?';
+    const parts = name.trim().split(/\s+/);
+    return ((parts[0]?.[0] ?? '') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+  }
+
+  // ── Recording status styling ───────────────────────────────────────
+  recStatusLabel(status: string): string {
+    switch ((status ?? '').toUpperCase()) {
+      case 'READY':         return 'Ready';
+      case 'PROCESSING':    return 'Processing';
+      case 'PENDING_MERGE': return 'Processing';
+      case 'CAPTURING':     return 'Recording';
+      case 'FAILED':        return 'Failed';
+      default:              return status ?? '—';
+    }
+  }
+
+  recStatusClass(status: string): string {
+    switch ((status ?? '').toUpperCase()) {
+      case 'READY':  return 'bg-green-100 text-green-700';
+      case 'FAILED': return 'bg-red-100 text-red-600';
+      default:       return 'bg-orange-100 text-orange-600';
+    }
+  }
+
+  recDotClass(status: string): string {
+    switch ((status ?? '').toUpperCase()) {
+      case 'READY':  return 'bg-green-500';
+      case 'FAILED': return 'bg-red-400';
+      default:       return 'bg-orange-400 animate-pulse';
+    }
+  }
+
+  // ── Session status styling ─────────────────────────────────────────
   statusBgClass(status: string): string {
     switch (status?.toUpperCase()) {
       case 'COMPLETED':   return 'bg-green-100 text-green-700';
