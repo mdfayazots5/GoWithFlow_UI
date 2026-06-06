@@ -6,11 +6,12 @@ import { AuthService } from '@core/services/auth.service';
 import { WebsocketService } from '@core/services/websocket.service';
 import { SpeakerScreenComponent } from '../speaker-screen/speaker-screen.component';
 import { ListenerScreenComponent } from '../listener-screen/listener-screen.component';
-import { LucideAngularModule, LogOut, Clock, Activity, RefreshCw, Settings, X, AlertTriangle, Users } from 'lucide-angular';
+import { LucideAngularModule, LogOut, Clock, Activity, RefreshCw, Settings, X, AlertTriangle, Users, Mic, Headphones } from 'lucide-angular';
 import { TurnState, SessionSummary } from '@core/models/voice.model';
 import { catchError, of } from 'rxjs';
 import { SessionPreferencesService } from '@core/services/session-preferences.service';
 import { VoiceBroadcastService } from '@core/services/voice-broadcast.service';
+import { SessionCapabilitiesService } from '@core/services/session-capabilities.service';
 
 type TurnShiftEvent = {
   newActiveMemberId: string | number;
@@ -98,12 +99,24 @@ type PresenceToast = {
         </div>
       }
 
-      <!-- Settings Panel: collapsible, capped at 40vh so main content always visible -->
+      <!-- Settings: bottom-sheet overlay — floats above content instead of pushing it -->
       @if (showSettings()) {
-        <div class="flex-shrink-0 border-b border-white/5 bg-[#121221]/95 backdrop-blur-xl overflow-y-auto animate-in slide-in-from-top-2 duration-200"
-             style="max-height: min(40vh, 260px)">
-          <div class="max-w-[480px] mx-auto px-4 py-3 space-y-2.5">
-            <p class="text-[11px] font-black uppercase tracking-[0.3em] text-white/30 italic">Session Preferences</p>
+        <div class="fixed inset-0 z-[60] flex flex-col justify-end" (click)="showSettings.set(false)">
+          <div class="absolute inset-0 bg-black/55 backdrop-blur-sm animate-in fade-in duration-200"></div>
+          <div class="relative w-full max-w-[520px] mx-auto bg-[#121221] border-t border-white/10 rounded-t-3xl shadow-2xl overflow-y-auto animate-in slide-in-from-bottom-4 duration-250"
+               style="max-height: min(70vh, 460px); padding-bottom: max(20px, env(safe-area-inset-bottom, 20px))"
+               (click)="$event.stopPropagation()">
+            <!-- Grabber -->
+            <div class="sticky top-0 pt-3 pb-2 flex justify-center bg-[#121221]">
+              <span class="w-10 h-1 rounded-full bg-white/15"></span>
+            </div>
+          <div class="px-4 pb-3 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <p class="text-[11px] font-black uppercase tracking-[0.3em] text-white/30 italic">Session Preferences</p>
+              <button (click)="showSettings.set(false)" class="w-9 h-9 -mr-1.5 flex items-center justify-center text-white/30 hover:text-white/70 transition-colors rounded-lg" aria-label="Close settings">
+                <i-lucide [img]="CloseIcon" size="16"></i-lucide>
+              </button>
+            </div>
             <div class="grid grid-cols-1 gap-2">
 
               <!-- Auto-Start Mic -->
@@ -140,7 +153,8 @@ type PresenceToast = {
                 </button>
               </div>
 
-              <!-- Hear Speaker's Voice -->
+              <!-- Hear Speaker's Voice — only on platforms that can actually receive peer audio (not native APK) -->
+              @if (capabilities.canBroadcastVoice) {
               <div class="flex items-center justify-between py-2.5 px-3.5 bg-white/[0.04] rounded-xl border border-white/[0.08]">
                 <div class="min-w-0 mr-3">
                   <p class="text-[11px] font-black text-white/80 italic">Hear Speaker's Voice</p>
@@ -156,15 +170,35 @@ type PresenceToast = {
                     [style.transform]="getToggleThumbTransform(sessionPrefs.prefs.listenVoiceBroadcast)"></span>
                 </button>
               </div>
+              }
 
             </div>
+          </div>
           </div>
         </div>
       }
 
-      <!-- Main Content: scrollable, safe-area aware -->
+      <!-- Main Content: the single scroll region (3-zone grid: header / this stage / docked actions inside) -->
       <div class="flex-1 min-h-0 overflow-y-auto">
-        <div class="max-w-[480px] mx-auto px-4 pt-3" style="padding-bottom: max(24px, env(safe-area-inset-bottom, 24px))">
+        <div class="w-full max-w-[480px] md:max-w-[680px] lg:max-w-[760px] mx-auto px-4 md:px-6 pt-3 md:pt-5" style="padding-bottom: max(24px, env(safe-area-inset-bottom, 24px))">
+
+          <!-- First-run orientation hint (dismissible, once per device) -->
+          @if (showOrientation() && !isLoading() && !loadError()) {
+            <div class="mb-3 flex items-start gap-3 px-4 py-3 rounded-2xl bg-gw-primary/10 border border-gw-primary/25 animate-in slide-in-from-top-2 duration-300">
+              <div class="w-8 h-8 rounded-xl bg-gw-primary/20 flex items-center justify-center text-gw-primary flex-shrink-0">
+                <i-lucide [img]="isSpeaker() ? MicIcon : HeadphonesIcon" size="15"></i-lucide>
+              </div>
+              <div class="min-w-0 flex-1">
+                <p class="text-[13px] font-bold text-white/85 leading-snug">
+                  {{ isSpeaker() ? "It's your turn — read the line aloud. Your mic may start automatically." : "Listen to the speaker. You'll be prompted automatically when it's your turn." }}
+                </p>
+              </div>
+              <button (click)="dismissOrientation()" class="w-8 h-8 -mr-1 -mt-1 flex items-center justify-center text-white/40 hover:text-white/80 transition-colors rounded-lg flex-shrink-0" aria-label="Dismiss tip">
+                <i-lucide [img]="CloseIcon" size="15"></i-lucide>
+              </button>
+            </div>
+          }
+
           @if (isLoading()) {
             <div class="flex flex-col items-center gap-3">
               <div class="w-10 h-10 border-4 border-gw-primary border-t-transparent rounded-full animate-spin"></div>
@@ -199,6 +233,31 @@ type PresenceToast = {
           }
         </div>
       </div>
+
+      <!-- Leave confirmation — in-app sheet (replaces native confirm()) -->
+      @if (showLeaveConfirm()) {
+        <div class="fixed inset-0 z-[70] flex items-center justify-center p-5" (click)="showLeaveConfirm.set(false)">
+          <div class="absolute inset-0 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"></div>
+          <div class="relative w-full max-w-[360px] bg-[#161628] border border-white/10 rounded-3xl p-6 shadow-2xl animate-in zoom-in-95 duration-200"
+               (click)="$event.stopPropagation()">
+            <div class="w-12 h-12 rounded-2xl bg-gw-error/15 flex items-center justify-center text-gw-error mb-4">
+              <i-lucide [img]="LeaveIcon" size="22"></i-lucide>
+            </div>
+            <h3 class="text-base font-bold text-white mb-1.5">Leave this session?</h3>
+            <p class="text-[13px] text-white/45 leading-snug mb-5">You can rejoin while the session is still live, but you'll miss any turns in between.</p>
+            <div class="flex gap-3">
+              <button (click)="showLeaveConfirm.set(false)" type="button"
+                class="flex-1 h-12 rounded-xl border border-white/15 text-[13px] font-bold text-white/70 hover:bg-white/5 active:scale-95 transition-all">
+                Stay
+              </button>
+              <button (click)="doLeave()" type="button"
+                class="flex-1 h-12 rounded-xl bg-gw-error text-white text-[13px] font-bold hover:opacity-90 active:scale-95 transition-all">
+                Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      }
 
       <!-- ── Presence Toasts (fixed, bottom-right, non-blocking) ── -->
       <div class="fixed bottom-5 right-4 flex flex-col gap-2 z-50 pointer-events-none"
@@ -247,6 +306,7 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private ws = inject(WebsocketService);
   readonly sessionPrefs = inject(SessionPreferencesService);
+  readonly capabilities = inject(SessionCapabilitiesService);
   private voiceBroadcast = inject(VoiceBroadcastService);
 
   readonly ActivityIcon = Activity;
@@ -257,6 +317,8 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
   readonly CloseIcon = X;
   readonly AlertIcon = AlertTriangle;
   readonly UsersIcon = Users;
+  readonly MicIcon = Mic;
+  readonly HeadphonesIcon = Headphones;
 
   // ── Core session state ──
   turnState = signal<TurnState | null>(null);
@@ -268,6 +330,9 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
   showReReadBanner = signal(false);
   listenerTagFlash = signal<string | null>(null);
   showSettings = signal(false);
+  showLeaveConfirm = signal(false);
+  showOrientation = signal(false);
+  private readonly ORIENTATION_KEY = 'gwf_session_room_seen';
 
   // ── Presence feature state ──
   presenceToasts = signal<PresenceToast[]>([]);
@@ -284,6 +349,13 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
   private timerInterval: any;
 
   ngOnInit() {
+    // First-run orientation hint — shown once per device until dismissed.
+    try {
+      this.showOrientation.set(localStorage.getItem(this.ORIENTATION_KEY) !== 'true');
+    } catch {
+      this.showOrientation.set(false);
+    }
+
     this.route.params.subscribe(params => {
       const sessionId = params['sessionId'];
       if (sessionId) {
@@ -291,6 +363,11 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
         this.startTimer(sessionId);
       }
     });
+  }
+
+  dismissOrientation() {
+    this.showOrientation.set(false);
+    try { localStorage.setItem(this.ORIENTATION_KEY, 'true'); } catch { /* non-fatal */ }
   }
 
   ngOnDestroy() {
@@ -539,11 +616,14 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
   }
 
   confirmLeave() {
-    if (confirm('Are you sure you want to leave the live session?')) {
-      const sessionId = this.route.snapshot.params['sessionId'];
-      if (sessionId) sessionStorage.removeItem(`gwf_session_start_${sessionId}`);
-      const navigate = () => this.router.navigate(['/user/dashboard']);
-      this.liveSessionService.leaveSession(sessionId).subscribe({ next: navigate, error: navigate });
-    }
+    this.showLeaveConfirm.set(true);
+  }
+
+  doLeave() {
+    this.showLeaveConfirm.set(false);
+    const sessionId = this.route.snapshot.params['sessionId'];
+    if (sessionId) sessionStorage.removeItem(`gwf_session_start_${sessionId}`);
+    const navigate = () => this.router.navigate(['/user/dashboard']);
+    this.liveSessionService.leaveSession(sessionId).subscribe({ next: navigate, error: navigate });
   }
 }

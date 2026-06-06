@@ -10,11 +10,12 @@ import { SessionService } from '@core/services/session.service';
 import { ToastService } from '@core/services/toast.service';
 import { UserInvitation } from '@core/models/session.model';
 import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.component';
+import { SkeletonListComponent } from '@shared/ui/skeleton';
 
 @Component({
   selector: 'app-my-invitations',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, UserAvatarComponent],
+  imports: [CommonModule, LucideAngularModule, UserAvatarComponent, SkeletonListComponent],
   template: `
     <div class="min-h-screen bg-gw-bg">
       <div class="max-w-lg mx-auto px-4 pt-4 gwf-page-bottom space-y-4 animate-in fade-in duration-500">
@@ -27,9 +28,7 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
         </div>
 
         @if (loading()) {
-          <div class="flex justify-center py-10">
-            <i-lucide [img]="LoaderIcon" size="24" class="animate-spin text-gw-primary"></i-lucide>
-          </div>
+          <app-skeleton-list [rows]="3"></app-skeleton-list>
         } @else if (invitations().length === 0) {
           <div class="flex flex-col items-center gap-3 py-16 text-center">
             <i-lucide [img]="InboxIcon" size="32" class="text-gw-text-muted opacity-40"></i-lucide>

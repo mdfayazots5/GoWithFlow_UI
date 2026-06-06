@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { UserService } from '@core/services/user.service';
 import { LucideAngularModule, TrendingUp, TrendingDown, Minus, Target, AlertCircle, BarChart2, BookOpen, Volume2 } from 'lucide-angular';
 import { catchError, of } from 'rxjs';
+import { SkeletonCardComponent, SkeletonListComponent } from '@shared/ui/skeleton';
 
 interface InterviewSessionTimeline {
   sessionId: number;
@@ -44,7 +45,7 @@ interface InterviewPerformanceDashboard {
 @Component({
   selector: 'app-interview-performance',
   standalone: true,
-  imports: [CommonModule, DecimalPipe, LucideAngularModule, RouterLink],
+  imports: [CommonModule, DecimalPipe, LucideAngularModule, RouterLink, SkeletonCardComponent, SkeletonListComponent],
   template: `
     <div class="min-h-screen bg-gw-bg">
       <div class="max-w-lg mx-auto px-4 pt-2 gwf-page-bottom space-y-4 animate-in fade-in duration-500">
@@ -56,9 +57,9 @@ interface InterviewPerformanceDashboard {
       </div>
 
       @if (isLoading()) {
-        <div class="flex flex-col items-center justify-center py-20 gap-4">
-          <div class="w-10 h-10 border-4 border-gw-primary border-t-transparent rounded-full animate-spin"></div>
-          <p class="text-sm font-black uppercase tracking-widest italic text-gw-text-muted">Loading interview data...</p>
+        <div class="space-y-4">
+          <app-skeleton-card [avatar]="false" [bodyLines]="3"></app-skeleton-card>
+          <app-skeleton-list [rows]="4" [avatar]="false"></app-skeleton-list>
         </div>
       }
 

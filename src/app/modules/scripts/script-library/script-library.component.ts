@@ -14,11 +14,12 @@ import { ToastService } from '@core/services/toast.service';
 import { ScriptService } from '@core/services/script.service';
 import { Script } from '@core/models/script.model';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { SkeletonListComponent } from '@shared/ui/skeleton';
 
 @Component({
   selector: 'app-script-library',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, MatBottomSheetModule, RouterLink],
+  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, MatBottomSheetModule, RouterLink, SkeletonListComponent],
   template: `
     <div class="min-h-screen bg-gw-bg">
       <div class="max-w-lg mx-auto px-4 pt-2 gwf-page-bottom space-y-4 animate-in fade-in duration-500">
@@ -95,9 +96,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
 
         <!-- ── Loading Skeletons ────────────────────────────────── -->
         @if (isLoading()) {
-          @for (i of [1,2,3,4,5]; track i) {
-            <div class="h-[88px] bg-white rounded-2xl border border-gw-card-border animate-pulse"></div>
-          }
+          <app-skeleton-list [rows]="6"></app-skeleton-list>
         }
 
         <!-- ── Empty State ──────────────────────────────────────── -->

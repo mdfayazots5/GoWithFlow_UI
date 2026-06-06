@@ -7,11 +7,12 @@ import { MatTableModule } from '@angular/material/table';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { ToastService } from '@core/services/toast.service';
 import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.component';
+import { SkeletonComponent, SkeletonTableComponent, SkeletonCardComponent } from '@shared/ui/skeleton';
 
 @Component({
   selector: 'app-user-detail-report',
   standalone: true,
-  imports: [CommonModule, RouterLink, LucideAngularModule, MatTableModule, ReactiveFormsModule, UserAvatarComponent],
+  imports: [CommonModule, RouterLink, LucideAngularModule, MatTableModule, ReactiveFormsModule, UserAvatarComponent, SkeletonComponent, SkeletonTableComponent, SkeletonCardComponent],
   template: `
     <div class="space-y-6 pb-12">
 
@@ -22,7 +23,13 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
           <i-lucide [img]="BackIcon" size="18"></i-lucide>
         </a>
         @if (loading()) {
-          <div class="w-7 h-7 border-2 border-gw-primary border-t-transparent rounded-full animate-spin"></div>
+          <div class="flex items-center gap-4">
+            <app-skeleton width="48px" height="48px" rounded="full" [block]="false"></app-skeleton>
+            <div class="flex flex-col gap-2">
+              <app-skeleton width="160px" height="18px" rounded="sm"></app-skeleton>
+              <app-skeleton width="220px" height="12px" rounded="sm"></app-skeleton>
+            </div>
+          </div>
         } @else if (header()) {
           <div class="flex items-center gap-4">
             <app-user-avatar [name]="header()!.fullName" [avatarUrl]="header()!.avatarUrl" size="md"></app-user-avatar>
@@ -45,6 +52,19 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
           </div>
         }
       </div>
+
+      @if (loading()) {
+        <div class="grid lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 space-y-6">
+            <app-skeleton-table [rows]="5" [columns]="5"></app-skeleton-table>
+            <app-skeleton-table [rows]="4" [columns]="3"></app-skeleton-table>
+          </div>
+          <div class="space-y-6">
+            <app-skeleton-card [avatar]="false" [bodyLines]="4"></app-skeleton-card>
+            <app-skeleton-card [avatar]="false" [bodyLines]="3"></app-skeleton-card>
+          </div>
+        </div>
+      }
 
       @if (!loading() && !header()) {
         <div class="flex flex-col items-center justify-center py-20 gap-4">
@@ -220,7 +240,7 @@ export class UserDetailReportComponent implements OnInit {
   readonly SaveIcon    = Save;
   readonly ReportIcon  = FileText;
 
-  loading  = signal(false);
+  loading  = signal(true);
   rawReport = signal<any>(null);
 
   header          = computed(() => this.rawReport()?.userHeader ?? null);

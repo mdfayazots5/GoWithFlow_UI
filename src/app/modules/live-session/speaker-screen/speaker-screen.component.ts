@@ -18,7 +18,20 @@ import { Capacitor } from '@capacitor/core';
   standalone: true,
   imports: [CommonModule, LucideAngularModule, VoiceRecorderComponent, VoiceFeedbackComponent],
   templateUrl: './speaker-screen.component.html',
-  styles: [`:host { display: block; }`]
+  styles: [`
+    :host { display: block; }
+    /* Pinned action dock: stays at the bottom of the scroll viewport so the primary
+       action is always reachable while feedback content scrolls behind it. */
+    .action-dock {
+      position: sticky;
+      bottom: 0;
+      z-index: 10;
+      margin-left: -1rem;
+      margin-right: -1rem;
+      padding: 0.75rem 1rem max(0.75rem, env(safe-area-inset-bottom, 0.75rem));
+      background: linear-gradient(to top, #1A1A2E 62%, rgba(26,26,46,0.85) 85%, transparent);
+    }
+  `]
 })
 export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDestroy {
 

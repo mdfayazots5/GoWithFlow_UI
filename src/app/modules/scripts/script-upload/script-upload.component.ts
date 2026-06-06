@@ -16,7 +16,7 @@ import { RouterLink } from '@angular/router';
     <div class="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-500 pb-20">
       <!-- Header -->
       <div class="flex items-center justify-between">
-        <h2 class="text-3xl font-black text-gw-text italic tracking-tight">UPOLAD NEW SCRIPT</h2>
+        <h2 class="text-3xl font-black text-gw-text italic tracking-tight">UPLOAD NEW SCRIPT</h2>
         <div class="flex gap-2">
           @for (s of [1, 2, 3]; track s) {
             <div 

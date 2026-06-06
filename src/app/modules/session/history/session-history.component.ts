@@ -9,6 +9,7 @@ import {
 } from 'lucide-angular';
 import { SessionService } from '@core/services/session.service';
 import { RouterLink } from '@angular/router';
+import { SkeletonListComponent } from '@shared/ui/skeleton';
 
 const MODE_ICON: Record<string, any> = {
   'Grammar Drill':     MessageSquare,
@@ -43,7 +44,7 @@ type Filter = typeof FILTERS[number];
 @Component({
   selector: 'app-session-history',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, RouterLink],
+  imports: [CommonModule, LucideAngularModule, RouterLink, SkeletonListComponent],
   template: `
     <div class="min-h-screen bg-gw-bg">
       <div class="max-w-lg mx-auto px-4 pt-2 gwf-page-bottom space-y-4 animate-in fade-in duration-500">
@@ -79,9 +80,7 @@ type Filter = typeof FILTERS[number];
 
         <!-- ── Loading Skeletons ────────────────────────────────── -->
         @if (loading()) {
-          @for (i of [1,2,3,4,5]; track i) {
-            <div class="h-[76px] bg-white rounded-2xl border border-gw-card-border animate-pulse"></div>
-          }
+          <app-skeleton-list [rows]="6"></app-skeleton-list>
         }
 
         <!-- ── Empty State ──────────────────────────────────────── -->

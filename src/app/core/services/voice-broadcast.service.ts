@@ -1,12 +1,13 @@
 import { Injectable, signal, inject } from '@angular/core';
-import { Capacitor } from '@capacitor/core';
 import { WebsocketService } from './websocket.service';
 import { SessionPreferencesService } from './session-preferences.service';
+import { SessionCapabilitiesService } from './session-capabilities.service';
 
 @Injectable({ providedIn: 'root' })
 export class VoiceBroadcastService {
   private ws = inject(WebsocketService);
   private prefs = inject(SessionPreferencesService);
+  private capabilities = inject(SessionCapabilitiesService);
 
   private sessionId = '';
   private myUserId = '';
@@ -42,8 +43,8 @@ export class VoiceBroadcastService {
     // WebView's getUserMedia (this WebRTC capture) and the recognizer's capture: the
     // two contend and the recognizer intermittently receives no audio → "No speech
     // detected". Scoring is the core feature, so live broadcast is skipped on native.
-    if (Capacitor.isNativePlatform()) {
-      console.debug('[VoiceBroadcast] Native platform — skipping mic broadcast so the speech recognizer keeps exclusive mic access');
+    if (!this.capabilities.canBroadcastVoice) {
+      console.debug('[VoiceBroadcast] Voice broadcast unsupported on this platform — skipping mic broadcast so the speech recognizer keeps exclusive mic access');
       return;
     }
 
@@ -94,6 +95,7 @@ export class VoiceBroadcastService {
   // ── Listener ─────────────────────────────────────────────────────────────
 
   async handleBroadcastStarted(speakerId: string): Promise<void> {
+    if (!this.capabilities.canBroadcastVoice) return;
     if (speakerId === this.myUserId) return;
     if (!this.prefs.prefs.listenVoiceBroadcast) return;
     await this.ws.emit('RequestVoiceStream', this.sessionId, this.myUserId).catch(() => {});

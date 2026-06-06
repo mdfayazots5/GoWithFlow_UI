@@ -9,11 +9,12 @@ import {
 } from 'lucide-angular';
 import { AdminService } from '@core/services/admin.service';
 import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.component';
+import { SkeletonListComponent } from '@shared/ui/skeleton';
 
 @Component({
   selector: 'app-admin-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, LucideAngularModule, UserAvatarComponent],
+  imports: [CommonModule, RouterLink, LucideAngularModule, UserAvatarComponent, SkeletonListComponent],
   template: `
 
     <div class="space-y-5">
@@ -123,10 +124,7 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
 
           <!-- Loading -->
           @if (loading()) {
-            <div class="flex flex-col items-center justify-center py-14 gap-3">
-              <div class="w-7 h-7 border-2 border-gw-primary border-t-transparent rounded-full animate-spin"></div>
-              <p class="text-sm font-medium text-gw-text-muted">Loading activity...</p>
-            </div>
+            <app-skeleton-list [rows]="5" [bare]="true"></app-skeleton-list>
           }
 
           <!-- Empty -->
@@ -232,9 +230,7 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
 
           <!-- Loading -->
           @if (loading()) {
-            <div class="flex flex-col items-center justify-center py-14 gap-3">
-              <div class="w-7 h-7 border-2 border-gw-primary border-t-transparent rounded-full animate-spin"></div>
-            </div>
+            <app-skeleton-list [rows]="5" [bare]="true" [avatar]="false"></app-skeleton-list>
           }
 
           <!-- Empty -->

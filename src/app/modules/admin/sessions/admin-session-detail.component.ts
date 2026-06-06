@@ -8,11 +8,12 @@ import {
   ChevronLeft, Activity, User, Users, Calendar, Clock, TrendingUp, AlertTriangle,
   Headphones, Play, Pause, Download, Loader, AudioLines, AlertCircle, Mic,
 } from 'lucide-angular';
+import { SkeletonComponent, SkeletonCardComponent } from '@shared/ui/skeleton';
 
 @Component({
   selector: 'app-admin-session-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, LucideAngularModule],
+  imports: [CommonModule, RouterLink, LucideAngularModule, SkeletonComponent, SkeletonCardComponent],
   template: `
     <div class="space-y-6 pb-12">
 
@@ -37,12 +38,30 @@ import {
               </span>
             </div>
           </div>
-        } @else {
-          <div class="w-7 h-7 border-2 border-gw-primary border-t-transparent rounded-full animate-spin"></div>
+        } @else if (sessionLoading()) {
+          <div class="flex items-center gap-4">
+            <app-skeleton width="48px" height="48px" rounded="2xl" [block]="false"></app-skeleton>
+            <div class="flex flex-col gap-2">
+              <app-skeleton width="180px" height="20px" rounded="sm"></app-skeleton>
+              <app-skeleton width="90px" height="12px" rounded="sm"></app-skeleton>
+            </div>
+          </div>
         }
       </div>
 
-      @if (!session()) {
+      @if (sessionLoading()) {
+        <div class="grid lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 space-y-6">
+            <app-skeleton-card [avatar]="false" [bodyLines]="4"></app-skeleton-card>
+            <app-skeleton-card [avatar]="true" [bodyLines]="3"></app-skeleton-card>
+          </div>
+          <div class="space-y-6">
+            <app-skeleton-card [avatar]="false" [bodyLines]="5"></app-skeleton-card>
+          </div>
+        </div>
+      }
+
+      @if (!session() && !sessionLoading()) {
         <div class="flex flex-col items-center justify-center py-20 gap-4">
           <div class="w-16 h-16 rounded-2xl bg-gw-bg flex items-center justify-center">
             <i-lucide [img]="SessionIcon" size="28" class="text-gw-text-muted"></i-lucide>
@@ -148,9 +167,8 @@ import {
 
               <!-- Loading -->
               @if (recLoading()) {
-                <div class="flex items-center justify-center py-12 gap-2 text-gw-text-muted">
-                  <div class="w-5 h-5 border-2 border-gw-primary border-t-transparent rounded-full animate-spin"></div>
-                  <span class="text-sm font-medium">Loading recording…</span>
+                <div class="p-5">
+                  <app-skeleton-card [avatar]="true" [bodyLines]="3"></app-skeleton-card>
                 </div>
               }
 
@@ -400,9 +418,10 @@ export class AdminSessionDetailComponent implements OnInit {
   readonly AlertCircleIcon = AlertCircle;
   readonly MicIcon        = Mic;
 
-  session    = signal<any>(null);
-  rec        = signal<any | null>(null);
-  recLoading = signal(false);
+  session        = signal<any>(null);
+  sessionLoading = signal(false);
+  rec            = signal<any | null>(null);
+  recLoading     = signal(false);
 
   // Player state
   isPlaying   = signal(false);
@@ -432,9 +451,22 @@ export class AdminSessionDetailComponent implements OnInit {
       this.loadRecording(state.session.sessionId);
     } else {
       this.route.params.subscribe(params => {
-        if (params['id']) { this.sessionId = params['id']; this.loadRecording(params['id']); }
+        if (params['id']) {
+          this.sessionId = params['id'];
+          this.loadSession(params['id']);
+          this.loadRecording(params['id']);
+        }
       });
     }
+  }
+
+  // Direct navigation / refresh: no router state, so fetch the session summary by id.
+  loadSession(sessionId: string | number) {
+    this.sessionLoading.set(true);
+    this.adminService.getSession(sessionId).subscribe({
+      next: s => { this.session.set(s); this.sessionLoading.set(false); },
+      error: () => this.sessionLoading.set(false)
+    });
   }
 
   loadRecording(sessionId: string | number) {

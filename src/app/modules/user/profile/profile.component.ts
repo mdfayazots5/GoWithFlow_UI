@@ -13,14 +13,27 @@ import { AuthService } from '@core/services/auth.service';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ToastService } from '@core/services/toast.service';
 import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.component';
+import { LoadingStateComponent } from '@shared/ui/loading-state/loading-state.component';
+import { SkeletonCardComponent, SkeletonStatGridComponent } from '@shared/ui/skeleton';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, ReactiveFormsModule, UserAvatarComponent],
+  imports: [CommonModule, LucideAngularModule, ReactiveFormsModule, UserAvatarComponent, LoadingStateComponent, SkeletonCardComponent, SkeletonStatGridComponent],
   template: `
     <div class="min-h-screen bg-gw-bg">
       <div class="max-w-lg mx-auto space-y-4 gwf-page-bottom px-4 pt-2 animate-in fade-in duration-500">
+
+        <app-loading-state [loading]="!profile()" [retryable]="false">
+          <ng-container skeleton>
+            <div class="space-y-4">
+              <app-skeleton-card [avatar]="true" [bodyLines]="2"></app-skeleton-card>
+              <app-skeleton-stat-grid [cols]="2" [count]="4"></app-skeleton-stat-grid>
+              <app-skeleton-card [avatar]="false" [bodyLines]="3"></app-skeleton-card>
+            </div>
+          </ng-container>
+
+          <div class="space-y-4">
 
         <!-- ── Profile Hero ─────────────────────────────────────────── -->
         <div class="bg-white rounded-3xl border border-gw-card-border shadow-sm overflow-hidden">
@@ -197,6 +210,9 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
             </div>
           </div>
         }
+
+          </div>
+        </app-loading-state>
 
         <!-- ── Sign Out ──────────────────────────────────────────────── -->
         <button (click)="logout()"

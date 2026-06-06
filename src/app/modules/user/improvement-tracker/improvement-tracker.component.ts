@@ -7,11 +7,13 @@ import { ImprovementData } from '@core/models/user.model';
 import { LucideAngularModule, TrendingUp, TrendingDown, Minus, Award, Clock, Target, Flame, ChevronRight, Zap, Info, Calendar, BookOpen, Star } from 'lucide-angular';
 import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
+import { LoadingStateComponent } from '@shared/ui/loading-state/loading-state.component';
+import { SkeletonStatGridComponent, SkeletonCardComponent } from '@shared/ui/skeleton';
 
 @Component({
   selector: 'app-improvement-tracker',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, RouterLink],
+  imports: [CommonModule, LucideAngularModule, RouterLink, LoadingStateComponent, SkeletonStatGridComponent, SkeletonCardComponent],
   template: `
     <div class="min-h-screen bg-gw-bg">
       <div class="max-w-lg mx-auto px-4 pt-2 gwf-page-bottom space-y-4 animate-in fade-in duration-500">
@@ -21,6 +23,17 @@ import { catchError, of } from 'rxjs';
         <h1 class="text-xl font-black text-gw-text tracking-tight">Progress Journey</h1>
         <p class="text-[11px] font-semibold text-gw-text-muted mt-0.5">Your path to English fluency</p>
       </div>
+
+      <app-loading-state [loading]="loading()" [error]="error()" (retry)="loadData()">
+        <ng-container skeleton>
+          <div class="space-y-4">
+            <app-skeleton-stat-grid [cols]="2" [count]="4"></app-skeleton-stat-grid>
+            <app-skeleton-card [avatar]="false"></app-skeleton-card>
+            <app-skeleton-card [avatar]="false"></app-skeleton-card>
+          </div>
+        </ng-container>
+
+        <div class="space-y-4">
 
       <!-- Stats Grid -->
       <div class="grid grid-cols-2 gap-3 mt-0">
@@ -292,6 +305,9 @@ import { catchError, of } from 'rxjs';
         }
       </div>
 
+        </div>
+      </app-loading-state>
+
       </div>
     </div>
   `,
@@ -316,6 +332,8 @@ export class ImprovementTrackerComponent implements OnInit {
   badges           = signal<any[]>([]);
   grammarWithTrend = signal<any[]>([]);
   trackerStats: any[] = [];
+  loading          = signal(true);
+  error            = signal(false);
 
   ngOnInit() {
     this.loadData();
@@ -329,19 +347,28 @@ export class ImprovementTrackerComponent implements OnInit {
   }
 
   loadData() {
-    this.userService.getImprovementData().subscribe(res => {
-      this.data.set(res);
-      // Only populate grammarWithTrend from base data if trend call is still pending
-      if (this.grammarWithTrend().length === 0 && res.grammarProgress?.length > 0) {
-        this.grammarWithTrend.set(res.grammarProgress);
+    this.loading.set(true);
+    this.error.set(false);
+    this.userService.getImprovementData().subscribe({
+      next: res => {
+        this.data.set(res);
+        // Only populate grammarWithTrend from base data if trend call is still pending
+        if (this.grammarWithTrend().length === 0 && res.grammarProgress?.length > 0) {
+          this.grammarWithTrend.set(res.grammarProgress);
+        }
+        this.trackerStats = [
+          { label: 'Sessions',  value: res.statsHeader.sessionsCompleted,           icon: Award,     bg: '#EEF2FF', color: '#3D5A99' },
+          { label: 'Avg Score', value: res.statsHeader.avgScoreThisWeek + '%',       icon: TrendingUp, bg: '#ECFDF5', color: '#2E7D32' },
+          { label: 'Resolved',  value: res.statsHeader.mistakesResolved,             icon: Target,    bg: '#FFF7ED', color: '#E07B39' },
+          { label: 'Streak',    value: res.statsHeader.currentStreak + ' days',      icon: Flame,     bg: '#FFFBEB', color: '#F59E0B' }
+        ];
+        this.badges.set(res.badgesEarned);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.error.set(true);
+        this.loading.set(false);
       }
-      this.trackerStats = [
-        { label: 'Sessions',  value: res.statsHeader.sessionsCompleted,           icon: Award,     bg: '#EEF2FF', color: '#3D5A99' },
-        { label: 'Avg Score', value: res.statsHeader.avgScoreThisWeek + '%',       icon: TrendingUp, bg: '#ECFDF5', color: '#2E7D32' },
-        { label: 'Resolved',  value: res.statsHeader.mistakesResolved,             icon: Target,    bg: '#FFF7ED', color: '#E07B39' },
-        { label: 'Streak',    value: res.statsHeader.currentStreak + ' days',      icon: Flame,     bg: '#FFFBEB', color: '#F59E0B' }
-      ];
-      this.badges.set(res.badgesEarned);
     });
   }
 

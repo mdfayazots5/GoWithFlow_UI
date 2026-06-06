@@ -67,7 +67,8 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
           }
         </div>
 
-        <!-- Sound Wave (compact) -->
+        <!-- Sound Wave (compact) — only while real peer audio is streaming (web only; never on native APK) -->
+        @if (voiceBroadcast.isReceivingAudio()) {
         <div class="flex items-end gap-0.5 h-5">
           <div class="w-1 rounded-full bg-[#3D5A99]/70 wave-bar" style="animation-delay:0ms"></div>
           <div class="w-1 rounded-full bg-[#3D5A99]/70 wave-bar" style="animation-delay:160ms"></div>
@@ -77,6 +78,7 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
           <div class="w-1 rounded-full bg-[#3D5A99]/60 wave-bar" style="animation-delay:400ms"></div>
           <div class="w-1 rounded-full bg-[#3D5A99]/70 wave-bar" style="animation-delay:50ms"></div>
         </div>
+        }
       </div>
 
       <!-- Utterance Card -->
@@ -100,9 +102,9 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
         </div>
       }
 
-      <!-- Quick Feedback — suppressed on facilitator turns (Interviewer/Tutor/Coach) -->
+      <!-- Quick Feedback — docked at the bottom; suppressed on facilitator turns (Interviewer/Tutor/Coach) -->
       @if (!turnState.isFacilitatorTurn) {
-        <div class="space-y-2">
+        <div class="action-dock space-y-2">
           <p class="text-[11px] font-black uppercase tracking-[0.2em] text-white/30 italic text-center">Give Quick Feedback</p>
           <div class="grid grid-cols-2 gap-2">
             @for (action of feedbackActions; track action.label) {
@@ -127,18 +129,22 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
         </div>
       }
 
-      <!-- Your Turn Is Next -->
-      <div class="flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r from-[#3D5A99]/20 to-transparent border border-[#3D5A99]/25">
-        <span class="w-1.5 h-1.5 rounded-full bg-[#3D5A99] animate-pulse flex-shrink-0"></span>
-        <span class="text-[11px] font-black uppercase tracking-widest text-white/35 italic">Waiting...</span>
-        <div class="flex-1"></div>
-        <span class="text-[11px] font-black uppercase tracking-widest text-[#3D5A99] italic">Your Turn Is Next →</span>
-      </div>
 
     </div>
   `,
   styles: [`
     :host { display: block; }
+
+    /* Pinned feedback dock — stays reachable while the stage scrolls behind it. */
+    .action-dock {
+      position: sticky;
+      bottom: 0;
+      z-index: 10;
+      margin-left: -1rem;
+      margin-right: -1rem;
+      padding: 0.75rem 1rem max(0.75rem, env(safe-area-inset-bottom, 0.75rem));
+      background: linear-gradient(to top, #1A1A2E 62%, rgba(26,26,46,0.85) 85%, transparent);
+    }
 
     @keyframes ring-out {
       0%   { transform: scale(0.85); opacity: 0.6; }

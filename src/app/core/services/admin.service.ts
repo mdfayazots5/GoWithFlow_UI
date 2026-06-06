@@ -242,6 +242,15 @@ export class AdminService {
     );
   }
 
+  // Single session summary by id — backs the admin session-detail page on direct
+  // navigation / refresh (when no router state was passed from the list). Returns the
+  // same shape as a getSessionHistory() row, or null if not found.
+  getSession(sessionId: number | string): Observable<any | null> {
+    return this.http.get<any>(`${this.baseUrl}/sessions/${sessionId}`).pipe(
+      map(res => res.data ?? null)
+    );
+  }
+
   // Phase 16: one consolidated recording per session (was a list of per-turn clips).
   // Returns the single SessionRecordingDto, or null if no recording exists.
   getSessionRecording(sessionId: number | string): Observable<any | null> {

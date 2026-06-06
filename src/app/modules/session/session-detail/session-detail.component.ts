@@ -8,11 +8,13 @@ import { SessionDetail } from '@core/models/session.model';
 import { LucideAngularModule, Calendar, Clock, Award, Target, Zap, RotateCcw, BookOpen, ArrowRight, Info } from 'lucide-angular';
 import { ToastService } from '@core/services/toast.service';
 import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.component';
+import { LoadingStateComponent } from '@shared/ui/loading-state/loading-state.component';
+import { SkeletonCardComponent, SkeletonListComponent } from '@shared/ui/skeleton';
 
 @Component({
   selector: 'app-session-detail',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, RouterLink, UserAvatarComponent],
+  imports: [CommonModule, LucideAngularModule, RouterLink, UserAvatarComponent, LoadingStateComponent, SkeletonCardComponent, SkeletonListComponent],
   template: `
     <div class="min-h-screen bg-gw-bg">
       <div class="max-w-lg mx-auto px-4 pt-2 gwf-page-bottom space-y-4 animate-in fade-in duration-500">
@@ -26,6 +28,16 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
           {{ detail()?.createdDate | date:'fullDate' }}
         </p>
       </div>
+
+      <app-loading-state [loading]="loading()" [error]="error()" (retry)="reload()">
+        <ng-container skeleton>
+          <div class="space-y-4">
+            <app-skeleton-card [avatar]="false" [bodyLines]="4"></app-skeleton-card>
+            <app-skeleton-list [rows]="3" [avatar]="false"></app-skeleton-list>
+          </div>
+        </ng-container>
+
+        <div class="space-y-4">
 
       <!-- Performance Overview -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -173,6 +185,8 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
          </div>
       </div>
 
+        </div>
+      </app-loading-state>
 
       </div>
     </div>
@@ -198,16 +212,37 @@ export class SessionDetailComponent implements OnInit {
   readonly InfoIcon = Info;
 
   detail = signal<SessionDetail | null>(null);
+  loading = signal(true);
+  error = signal(false);
+  private currentId: string | null = null;
 
   ngOnInit() {
     this.route.params.subscribe(params => {
       const id = params['sessionId'];
       if (id) {
-        this.userService.getSessionDetail(id).subscribe(res => {
-          this.detail.set(res);
-        });
+        this.currentId = id;
+        this.load(id);
       }
     });
+  }
+
+  private load(id: string) {
+    this.loading.set(true);
+    this.error.set(false);
+    this.userService.getSessionDetail(id).subscribe({
+      next: res => {
+        this.detail.set(res);
+        this.loading.set(false);
+      },
+      error: () => {
+        this.error.set(true);
+        this.loading.set(false);
+      }
+    });
+  }
+
+  reload() {
+    if (this.currentId) this.load(this.currentId);
   }
 
   practiceMistake() {

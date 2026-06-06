@@ -7,11 +7,12 @@ import { Router } from '@angular/router';
 import { ToastService } from '@core/services/toast.service';
 import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.component';
 import { AdminLoadMoreComponent } from '@shared/components/admin-load-more/admin-load-more.component';
+import { SkeletonListComponent } from '@shared/ui/skeleton';
 
 @Component({
   selector: 'app-admin-reports',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, UserAvatarComponent, AdminLoadMoreComponent],
+  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, UserAvatarComponent, AdminLoadMoreComponent, SkeletonListComponent],
   template: `
     <div class="max-w-lg mx-auto space-y-4">
 
@@ -109,9 +110,7 @@ import { AdminLoadMoreComponent } from '@shared/components/admin-load-more/admin
 
       <!-- Loading Skeletons -->
       @if (loading()) {
-        @for (i of [1,2,3,4,5]; track i) {
-          <div class="h-[68px] bg-white rounded-2xl border border-gw-card-border animate-pulse"></div>
-        }
+        <app-skeleton-list [rows]="6"></app-skeleton-list>
       }
 
       <!-- Empty State -->
@@ -195,7 +194,7 @@ export class AdminReportsComponent implements OnInit {
   readonly CalendarIcon = Calendar;
 
   reports         = signal<any[]>([]);
-  loading         = signal(false);
+  loading         = signal(true);
   loadingMore     = signal(false);
   totalCount      = signal(0);
   userList        = signal<{ id: string; name: string }[]>([]);
