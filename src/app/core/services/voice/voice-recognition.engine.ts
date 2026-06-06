@@ -121,6 +121,15 @@ export class VoiceRecognitionEngine implements OnDestroy {
   // fires isFinal=true — common on Android Chrome with continuous=true).
   private _accumulatedInterim = '';
 
+  // Monotonic session generation. Bumped on every startSession() and stopSession().
+  // startSession() captures its generation and re-checks it after each await — if a
+  // newer session (or a stopSession) has superseded it, the stale continuation aborts
+  // instead of starting an orphaned recognizer. This is what prevents the singleton
+  // engine from getting stuck in 'requesting' when auto-start races a manual mic tap.
+  private _sessionGen = 0;
+  /** Thrown by startSession() when a newer session/stop superseded it mid-await. Callers swallow it. */
+  static readonly SUPERSEDED = 'SESSION_SUPERSEDED';
+
   // ─── Audio Archive Support ──────────────────────────────────────────────────
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: BlobPart[] = [];
@@ -346,6 +355,11 @@ export class VoiceRecognitionEngine implements OnDestroy {
       this.stopSession();
     }
 
+    // This session's generation. Any later startSession()/stopSession() bumps _sessionGen,
+    // marking this run stale so it aborts at the next checkpoint rather than orphaning a
+    // recognizer and leaving state stuck on 'requesting'.
+    const gen = ++this._sessionGen;
+
     this.state$.next('requesting');
     this.retryCount = 0;
     this._hasSpoken = false;
@@ -400,6 +414,9 @@ export class VoiceRecognitionEngine implements OnDestroy {
     }
 
     const permitted = await this.requestMicPermission();
+    // A newer session (or a stop) ran while we awaited the permission prompt — abort this
+    // stale run without touching state. The superseding session owns state$ now.
+    if (gen !== this._sessionGen) throw new Error(VoiceRecognitionEngine.SUPERSEDED);
     if (!permitted) {
       this.state$.next('error');
       throw new Error('Microphone permission denied. Please allow microphone access and try again.');
@@ -411,6 +428,7 @@ export class VoiceRecognitionEngine implements OnDestroy {
     // On mobile, continuous=false lets the browser handle end-of-speech natively.
     if (!this._isMobile) {
       await this.vad.start();
+      if (gen !== this._sessionGen) { this.vad.stop(); throw new Error(VoiceRecognitionEngine.SUPERSEDED); }
     }
 
     if (this.captureAudio) {
@@ -427,6 +445,9 @@ export class VoiceRecognitionEngine implements OnDestroy {
       } catch { /* audio capture is best-effort */ }
     }
 
+    // Final checkpoint before opening the recognizer — covers the captureAudio getUserMedia await.
+    if (gen !== this._sessionGen) throw new Error(VoiceRecognitionEngine.SUPERSEDED);
+
     return new Promise((resolve, reject) => {
       this.startRecognition(expectedText, resolve, reject);
     });
@@ -434,6 +455,7 @@ export class VoiceRecognitionEngine implements OnDestroy {
 
   stopSession(): void {
     this._intentionalStop = true;
+    this._sessionGen++;   // invalidate any in-flight startSession continuation
     this.cleanupSilenceTimeout();
 
     if (this.isCapacitorNative) {

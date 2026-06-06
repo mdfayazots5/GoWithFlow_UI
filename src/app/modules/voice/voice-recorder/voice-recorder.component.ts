@@ -54,12 +54,20 @@ export class VoiceRecorderComponent implements OnInit, OnDestroy {
   }
 
   async startRecording(): Promise<void> {
+    // Re-entrancy guard: a session is already starting/running. Without this, auto-start
+    // (defaultVoiceStarter) racing a manual mic tap launches two concurrent sessions on the
+    // shared singleton engine, orphaning a recognizer and wedging state on 'requesting'.
+    if (this.state === 'requesting' || this.state === 'listening' || this.state === 'processing') {
+      return;
+    }
     this.errorMessage = '';
     this.recordingStarted.emit();
     try {
       const result = await this.engine.startSession(this.expectedText);
       this.recordingComplete.emit(result);
     } catch (err: any) {
+      // Superseded by a newer session/stop — silently ignore; the active session owns the UI.
+      if (err?.message === VoiceRecognitionEngine.SUPERSEDED) return;
       this.errorMessage = err?.message || 'Recording failed. Please try again.';
       this.errorOccurred.emit(this.errorMessage);
     }
