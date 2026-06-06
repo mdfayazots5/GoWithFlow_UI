@@ -26,6 +26,7 @@
     "@capacitor/app": "^8.1.0",
     "@capacitor/core": "^8.4.0",
     "@microsoft/signalr": "^10.0.0",
+    "capacitor-voice-recorder": "^7.0.6",
     "lucide-angular": "^0.474.0",
     "material-icons": "^1.13.14",
     "rxjs": "^7.8.2",

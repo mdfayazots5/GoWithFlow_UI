@@ -9,32 +9,60 @@
       <p class="brand-tagline">Speak. Together. Grow.</p>
     </div>
 
-    <!-- Form card — white elevated container -->
+    <!-- Form card — elevated container -->
     <div class="login-card">
+
+      <div class="card-head">
+        <h2 class="card-title">Welcome back</h2>
+        <p class="card-subtitle">Sign in to continue your practice</p>
+      </div>
+
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
 
         <div class="field-group">
-          <label class="field-label">Mobile Number</label>
-          <input
-            type="tel"
-            formControlName="mobileNumber"
-            class="field-input"
-            placeholder="10-digit mobile number"
-            maxlength="10"
-          >
+          <label class="field-label" for="mobileNumber">Mobile Number</label>
+          <div class="field-control">
+            <i-lucide [img]="PhoneIcon" size="18" class="field-icon"></i-lucide>
+            <input
+              id="mobileNumber"
+              type="tel"
+              inputmode="numeric"
+              autocomplete="tel"
+              enterkeyhint="next"
+              formControlName="mobileNumber"
+              class="field-input has-icon"
+              placeholder="10-digit mobile number"
+              maxlength="10"
+            >
+          </div>
           <span *ngIf="loginForm.get('mobileNumber')?.touched && loginForm.get('mobileNumber')?.invalid" class="field-error">
             Enter a valid 10-digit mobile number
           </span>
         </div>
 
         <div class="field-group">
-          <label class="field-label">Password</label>
-          <input
-            type="password"
-            formControlName="password"
-            class="field-input"
-            placeholder="Enter your password"
-          >
+          <label class="field-label" for="password">Password</label>
+          <div class="field-control">
+            <i-lucide [img]="LockIcon" size="18" class="field-icon"></i-lucide>
+            <input
+              id="password"
+              [type]="showPassword() ? 'text' : 'password'"
+              autocomplete="current-password"
+              enterkeyhint="go"
+              formControlName="password"
+              class="field-input has-icon has-action"
+              placeholder="Enter your password"
+            >
+            <button
+              type="button"
+              class="field-action"
+              (click)="togglePassword()"
+              [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+              [title]="showPassword() ? 'Hide password' : 'Show password'"
+            >
+              <i-lucide [img]="showPassword() ? EyeOffIcon : EyeIcon" size="18"></i-lucide>
+            </button>
+          </div>
           <span *ngIf="loginForm.get('password')?.touched && loginForm.get('password')?.invalid" class="field-error">
             Password is required
           </span>
@@ -51,6 +79,12 @@
 
       </form>
     </div>
+
+    <!-- Footer link -->
+    <p class="login-footer">
+      New to GoWithFlow?
+      <a routerLink="/auth/register" class="footer-link">Create an account</a>
+    </p>
 
   </div>
 </div>

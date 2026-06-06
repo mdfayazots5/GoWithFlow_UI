@@ -7,11 +7,12 @@ import { Mistake, MistakeSummary } from '@core/models/mistake.model';
 import { LucideAngularModule, AlertCircle, CheckCircle, Clock, ChevronRight, TrendingUp, Mic2, Filter, Info } from 'lucide-angular';
 import { Router, RouterLink } from '@angular/router';
 import { ToastService } from '@core/services/toast.service';
+import { SkeletonListComponent } from '@shared/ui/skeleton';
 
 @Component({
   selector: 'app-my-mistakes',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, RouterLink],
+  imports: [CommonModule, LucideAngularModule, RouterLink, SkeletonListComponent],
   template: `
     <div class="min-h-screen bg-gw-bg">
       <div class="max-w-lg mx-auto px-4 pt-2 gwf-page-bottom space-y-4 animate-in fade-in duration-500">
@@ -60,9 +61,7 @@ import { ToastService } from '@core/services/toast.service';
 
           <!-- Mistake List -->
           @if (isLoading()) {
-            @for (i of [1,2,3]; track i) {
-              <div class="h-28 bg-gw-bg/60 border-b border-gw-bg animate-pulse"></div>
-            }
+            <app-skeleton-list [rows]="3" [bare]="true" [avatar]="false"></app-skeleton-list>
           } @else if (mistakes().length === 0) {
             <div class="flex flex-col items-center justify-center py-14 gap-3 text-center">
               <div class="w-12 h-12 rounded-2xl bg-gw-bg flex items-center justify-center">
@@ -132,7 +131,7 @@ import { ToastService } from '@core/services/toast.service';
                       <p class="text-lg font-black text-gw-text">{{ mistake.occurredCount }}x</p>
                     </div>
                     <button
-                      (click)="startPractice(+mistake.sessionId)"
+                      (click)="startPractice(+mistake.sessionId, false)"
                       class="w-12 h-12 rounded-xl bg-gw-primary/10 text-gw-primary
                              flex items-center justify-center
                              hover:bg-gw-primary hover:text-white transition-all"
@@ -146,10 +145,10 @@ import { ToastService } from '@core/services/toast.service';
           }
         </div>
 
-        <!-- Practice All CTA -->
+        <!-- Practice All CTA — practices ALL pending mistakes across every session -->
         <button
-          (click)="startPractice(+mistakes()[0].sessionId)"
-          [disabled]="isPracticing() || mistakes().length === 0"
+          (click)="practiceAll()"
+          [disabled]="isPracticing() || (summary()?.pendingMistakes ?? 0) === 0"
           class="w-full h-14 bg-gw-primary text-white font-black uppercase tracking-widest
                  rounded-2xl shadow-lg shadow-gw-primary/20 flex items-center justify-center gap-3
                  hover:opacity-90 active:scale-[0.98] transition-all
@@ -229,14 +228,28 @@ export class MyMistakesComponent implements OnInit {
     });
   }
 
-  startPractice(sessionId: number = 0) {
+  /** "Practice All Mistakes" — every unresolved mistake across all sessions. */
+  practiceAll() {
+    this.startPractice(0, true);
+  }
+
+  /**
+   * @param sessionId  Anchor session (the row's session for single-session practice; 0 for all).
+   * @param includeAllSessions  true = pull every unresolved mistake across all sessions.
+   */
+  startPractice(sessionId: number = 0, includeAllSessions = false) {
+    if (this.isPracticing()) return;
     this.isPracticing.set(true);
-    this.repracticeService.generateRepracticeSession(sessionId).subscribe({
+    const safeSessionId = Number.isFinite(sessionId) ? sessionId : 0;
+    this.repracticeService.generateRepracticeSession(safeSessionId, includeAllSessions).subscribe({
       next: (res) => {
         this.isPracticing.set(false);
         this.router.navigate(['/repractice', res.repracticeSessionId]);
       },
-      error: () => this.isPracticing.set(false)
+      error: () => {
+        this.isPracticing.set(false);
+        this.toast.show('Could not start practice. Please try again.', 'error');
+      }
     });
   }
 }

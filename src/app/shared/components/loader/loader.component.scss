@@ -1,35 +1,73 @@
 :host { display: block; }
 
-.loader-overlay {
+.gwf-loader {
   position: fixed;
   inset: 0;
-  background: rgba(255, 255, 255, 0.8);
+  z-index: 9998;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9998;
-  backdrop-filter: blur(2px);
-  animation: fadeIn 0.2s ease;
+  background: radial-gradient(120% 120% at 50% 0%, #ffffff 0%, #F4F6F9 100%);
+  animation: gwf-loader-fade 0.2s ease;
 }
 
-.loader-spinner {
+.gwf-loader__brand {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 18px;
 }
 
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid var(--gwf-card-border);
-  border-top-color: var(--gwf-primary);
+/* Animated brand ring with an orbiting accent dot */
+.gwf-loader__ring {
+  position: relative;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  animation: spin 0.7s linear infinite;
+  border: 3px solid var(--gwf-primary-light, #F0EBFA);
+  border-top-color: var(--gwf-primary, #5C35A8);
+  animation: gwf-loader-spin 0.85s linear infinite;
 }
 
-.loader-message {
-  font-size: 14px;
-  color: var(--gwf-text-muted);
+.gwf-loader__dot {
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  margin-left: -4px;
+  border-radius: 50%;
+  background: var(--gwf-accent, #E07B39);
+  box-shadow: 0 0 10px rgba(224, 123, 57, 0.6);
+}
+
+.gwf-loader__wordmark {
+  font-family: 'DM Sans', Inter, sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--gwf-primary, #5C35A8);
+
+  span { color: var(--gwf-accent, #E07B39); }
+}
+
+.gwf-loader__msg {
   margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--gwf-text-muted, #6B7280);
+}
+
+@keyframes gwf-loader-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes gwf-loader-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gwf-loader__ring { animation-duration: 1.6s; }
 }

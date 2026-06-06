@@ -153,8 +153,10 @@ export class CorrectionRoundComponent implements OnInit {
   resolvedCount   = signal(0);
   improvement     = signal(0);
 
-  // ─── Tracks consecutive scores > 80 per utterance for local resolved detection ──
-  private _consecutivePass = 0;
+  // ─── Resolution is authoritative server-side (2 consecutive scores > 80). We track which
+  //     utterance ids the backend has reported as resolved so the live counter is accurate and
+  //     never double-counts across retries. No fragile local "consecutive pass" guessing. ──
+  private _resolvedIds = new Set<number>();
 
   ngOnInit() {
     this.route.params.subscribe(params => {
@@ -164,14 +166,26 @@ export class CorrectionRoundComponent implements OnInit {
   }
 
   loadSession(id: string) {
+    console.log('[Repractice] loading session', { repracticeSessionId: id });
     this.isLoading.set(true);
     this.repracticeService.getRepracticeSession(id).subscribe({
       next: session => {
+        console.log('[Repractice] session loaded', {
+          repracticeSessionId: session.id,
+          utterances: session.utterances.length,
+          status: session.status
+        });
         this.session.set(session);
+        // Seed the resolved set + counter from any already-resolved utterances (e.g. a resumed round).
+        this._resolvedIds = new Set(
+          session.utterances.filter(u => u.isResolved).map(u => Number(u.id))
+        );
+        this.resolvedCount.set(this._resolvedIds.size);
         this.currentUtterance.set(session.utterances[0] ?? null);
         this.isLoading.set(false);
       },
       error: () => {
+        console.error('[Repractice] session load failed', { repracticeSessionId: id });
         this.toast.show('Could not load practice session.', 'error');
         this.isLoading.set(false);
       }
@@ -184,32 +198,33 @@ export class CorrectionRoundComponent implements OnInit {
     const utterance = this.currentUtterance();
     if (!utterance) return;
 
+    const utteranceId = Number(utterance.id);
+    console.log('[Repractice] practiceAdvanced', {
+      index: this.currentIndex(),
+      utteranceId,
+      score: event.score,
+      skipped: event.skipped
+    });
+
     if (!event.skipped) {
-      // Record the attempt on the backend — non-blocking, best-effort
+      // Record the attempt. Progression does NOT block on this (matches the Room speaker flow,
+      // which advances the turn immediately). The response is the source of truth for resolution.
       this.repracticeService.updateAttempt({
-        repracticeUtteranceId: Number(utterance.id),
+        repracticeUtteranceId: utteranceId,
         score: event.score
       }).subscribe({
-        next: () => {
-          // Backend resolves after 2 consecutive scores > 80
-          if (event.score > 80) {
-            this._consecutivePass++;
-            if (this._consecutivePass >= 2) {
-              this.resolvedCount.update(c => c + 1);
-              this._consecutivePass = 0;
-            }
-          } else {
-            this._consecutivePass = 0;
+        next: (res) => {
+          console.log('[Repractice] attempt recorded', res);
+          if (res?.isResolved && !this._resolvedIds.has(res.repracticeUtteranceId)) {
+            this._resolvedIds.add(res.repracticeUtteranceId);
+            this.resolvedCount.set(this._resolvedIds.size);
           }
         },
-        error: () => {
-          // Non-fatal — local state already advanced
-          this._consecutivePass = 0;
+        error: (err) => {
+          // Non-fatal — the user already advanced; resolution will be reconciled at completion.
+          console.error('[Repractice] attempt update failed', { utteranceId, err });
         }
       });
-    } else {
-      // Skip resets the consecutive-pass streak for this utterance
-      this._consecutivePass = 0;
     }
 
     this.advanceToNext();
@@ -222,10 +237,11 @@ export class CorrectionRoundComponent implements OnInit {
     const nextIndex = this.currentIndex() + 1;
 
     if (nextIndex < session.utterances.length) {
-      this._consecutivePass = 0; // reset streak for the new utterance
+      console.log('[Repractice] advancing', { from: this.currentIndex(), to: nextIndex, total: session.utterances.length });
       this.currentIndex.set(nextIndex);
       this.currentUtterance.set(session.utterances[nextIndex]);
     } else {
+      console.log('[Repractice] last utterance reached — finishing', { total: session.utterances.length });
       this.finishSession();
     }
   }
@@ -236,15 +252,17 @@ export class CorrectionRoundComponent implements OnInit {
 
     this.repracticeService.completeRepracticeSession(session.id).subscribe({
       next: res => {
+        console.log('[Repractice] session complete', res);
         this.improvement.set(res?.improvementPercent ?? 0);
-        // Use backend-resolved count if available; fall back to locally tracked count
-        if ((res as any)?.resolvedCount != null) {
-          this.resolvedCount.set((res as any).resolvedCount);
+        // Backend-resolved count is authoritative for the completion dashboard.
+        if (res?.resolvedCount != null) {
+          this.resolvedCount.set(res.resolvedCount);
         }
         this.isComplete.set(true);
       },
-      error: () => {
+      error: (err) => {
         // Still show completion even if the API call fails
+        console.error('[Repractice] completion API failed — showing dashboard anyway', err);
         this.isComplete.set(true);
       }
     });
@@ -253,12 +271,12 @@ export class CorrectionRoundComponent implements OnInit {
   restartRound(): void {
     const session = this.session();
     if (!session) return;
-    this._consecutivePass = 0;
+    console.log('[Repractice] restarting round', { repracticeSessionId: session.id });
+    // Reload from the backend so resolved/score state reflects the previous round, then re-seed.
     this.isComplete.set(false);
     this.currentIndex.set(0);
-    this.resolvedCount.set(0);
     this.improvement.set(0);
-    this.currentUtterance.set(session.utterances[0] ?? null);
+    this.loadSession(session.id);
   }
 
   range(n: number): number[] {

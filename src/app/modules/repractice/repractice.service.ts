@@ -5,6 +5,15 @@ import { environment } from '@env/environment';
 import { RepracticeSession } from '@core/models/mistake.model';
 import { PagedResult } from '@core/models/script.model';
 
+/** Authoritative server-side result of recording a repractice attempt. */
+export interface AttemptResult {
+  repracticeUtteranceId: number;
+  isResolved: boolean;
+  attemptCount: number;
+  bestScore: number;
+  lastScore: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -12,8 +21,20 @@ export class RepracticeService {
   private http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiBaseUrl}/repractice`;
 
-  generateRepracticeSession(sourceSessionId: number): Observable<{ repracticeSessionId: number }> {
-    return this.http.post<{ data: { repracticeSessionId: number } }>(`${this.baseUrl}/generate`, { sourceSessionId }).pipe(map(r => r.data));
+  /**
+   * Generates a repractice round.
+   * @param sourceSessionId  Anchor session. Ignored for mistake selection when includeAllSessions is true.
+   * @param includeAllSessions  "Practice All Mistakes" — pulls every unresolved mistake across all sessions.
+   */
+  generateRepracticeSession(sourceSessionId: number, includeAllSessions = false): Observable<{ repracticeSessionId: number }> {
+    const body = { sourceSessionId: sourceSessionId || 0, includeAllSessions };
+    console.log('[Repractice] generate request', body);
+    return this.http.post<{ data: { repracticeSessionId: number } }>(`${this.baseUrl}/generate`, body).pipe(
+      map(r => {
+        console.log('[Repractice] generate response', r.data);
+        return r.data;
+      })
+    );
   }
 
   getRepracticeSession(id: string): Observable<RepracticeSession> {
@@ -47,8 +68,8 @@ export class RepracticeService {
     return this.http.get<PagedResult<RepracticeSession>>(`${this.baseUrl}/history?page=${page}&size=${size}`);
   }
 
-  updateAttempt(payload: { repracticeUtteranceId: number; score: number }): Observable<boolean> {
-    return this.http.patch<{ data: boolean }>(`${this.baseUrl}/attempt`, payload).pipe(map(r => r.data));
+  updateAttempt(payload: { repracticeUtteranceId: number; score: number }): Observable<AttemptResult> {
+    return this.http.patch<{ data: AttemptResult }>(`${this.baseUrl}/attempt`, payload).pipe(map(r => r.data));
   }
 
   completeRepracticeSession(id: string): Observable<{ improvementPercent: number; resolvedCount: number }> {

@@ -4,6 +4,7 @@ import { FormControl, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { AdminService, AdminUserListItem, AdminUserDetail } from '@core/services/admin.service';
 import { LucideAngularModule, Search, Eye, UserX, UserCheck, BarChart2, Flame, Users, X, UserPlus, Pencil, EyeOff, Camera } from 'lucide-angular';
 import { AdminLoadMoreComponent } from '@shared/components/admin-load-more/admin-load-more.component';
+import { SkeletonListComponent } from '@shared/ui/skeleton';
 import { ToastService } from '@core/services/toast.service';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { Router } from '@angular/router';
@@ -16,6 +17,7 @@ import { Router } from '@angular/router';
     ReactiveFormsModule,
     LucideAngularModule,
     AdminLoadMoreComponent,
+    SkeletonListComponent,
   ],
   template: `
     <!-- Add / Edit User Modal -->
@@ -207,11 +209,9 @@ import { Router } from '@angular/router';
         </button>
       </div>
 
-      <!-- Loading Skeletons -->
+      <!-- Loading Skeletons — shared list skeleton mirrors the real row geometry -->
       @if (loading()) {
-        @for (i of [1,2,3,4,5]; track i) {
-          <div class="h-[72px] bg-white rounded-2xl border border-gw-card-border animate-pulse"></div>
-        }
+        <app-skeleton-list [rows]="6" [header]="false" [trailing]="true"></app-skeleton-list>
       }
 
       <!-- Empty State -->
@@ -318,7 +318,8 @@ export class AdminUsersComponent implements OnInit {
 
   users       = signal<AdminUserListItem[]>([]);
   totalUsers  = signal(0);
-  loading     = signal(false);
+  // Start true so the FIRST load shows the skeleton, not a flash of the "No users" empty state.
+  loading     = signal(true);
   loadingMore = signal(false);
   activeOnly  = signal(false);
 

@@ -329,6 +329,16 @@ body {
   }
 }
 
+/* 13b. Skeleton shimmer — shared by all skeleton placeholders (@shared/ui/skeleton).
+   Tokens let dark surfaces (focus mode) override the base/sheen if needed. */
+:root {
+  --gwf-skeleton-base:  #E7EAF1;
+  --gwf-skeleton-sheen: rgba(255, 255, 255, 0.65);
+}
+@keyframes gwf-shimmer {
+  100% { transform: translateX(100%); }
+}
+
 /* 14. Mobile overrides */
 @media (max-width: 480px) {
   .gwf-card {

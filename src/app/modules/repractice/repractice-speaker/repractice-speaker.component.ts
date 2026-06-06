@@ -323,15 +323,22 @@ export class RepracticeSpeakerComponent implements OnChanges, AfterViewChecked, 
   // ─── RECORDING EVENTS ─────────────────────────────────────────────────────────
 
   onRecordingComplete(result: VoiceSessionResult): void {
+    console.log('[Repractice] recording complete', {
+      utteranceIndex: this.utteranceIndex,
+      utteranceId: this.utterance?.id,
+      score: result?.overallScore
+    });
     this.sessionResult = result;
     this.analysisPhase = 'feedback';
 
     if (this.sessionPrefs.prefs.autoSubmitOnStop) {
+      console.log('[Repractice] auto-submit scheduled', { utteranceIndex: this.utteranceIndex, delaySeconds: 3 });
       this._scheduleAutoSubmit(3);
     }
   }
 
   onVoiceError(message: string): void {
+    console.error('[Repractice] voice error', { utteranceIndex: this.utteranceIndex, message });
     this.toast.show(message, 'error');
   }
 
@@ -341,20 +348,29 @@ export class RepracticeSpeakerComponent implements OnChanges, AfterViewChecked, 
     this._cancelAutoSubmitTimer();
     if (this.isSubmitting()) return;
     this.isSubmitting.set(true);
-    this.practiceAdvanced.emit({
-      score: this.sessionResult?.overallScore ?? 0,
-      skipped: false
+    const score = this.sessionResult?.overallScore ?? 0;
+    console.log('[Repractice] done — emitting advance', {
+      utteranceIndex: this.utteranceIndex,
+      utteranceId: this.utterance?.id,
+      score,
+      isLast: this.isLastUtterance
     });
+    this.practiceAdvanced.emit({ score, skipped: false });
   }
 
   onSkip(): void {
     this._cancelAutoSubmitTimer();
     if (this.voiceRecorder) this.voiceRecorder.stopEarly();
+    console.log('[Repractice] skip — emitting advance', {
+      utteranceIndex: this.utteranceIndex,
+      utteranceId: this.utterance?.id
+    });
     this.practiceAdvanced.emit({ score: 0, skipped: true });
   }
 
   onRetryRecording(): void {
     this._cancelAutoSubmitTimer();
+    console.log('[Repractice] try again', { utteranceIndex: this.utteranceIndex, utteranceId: this.utterance?.id });
     this.sessionResult = null;
     this.analysisPhase = 'recording';
   }

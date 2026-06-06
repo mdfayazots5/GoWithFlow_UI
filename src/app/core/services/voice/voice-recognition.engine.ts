@@ -3,6 +3,7 @@ import { BehaviorSubject, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { Capacitor } from '@capacitor/core';
 import { SpeechRecognition as NativeSpeechRecognition } from '@capacitor-community/speech-recognition';
+import { VoiceRecorder } from 'capacitor-voice-recorder';
 import { AudioActivityDetector } from './audio-activity-detector';
 import { PronunciationScorer } from './pronunciation-scorer';
 import { TranscriptNormalizer } from './transcript-normalizer';
@@ -126,9 +127,58 @@ export class VoiceRecognitionEngine implements OnDestroy {
   private captureAudio = false;
   lastAudioBlob: Blob | null = null;
 
+  // Capacitor-native turn-audio capture (capacitor-voice-recorder). Web uses MediaRecorder
+  // above; native must use a plugin because WebView getUserMedia is blocked while the native
+  // SpeechRecognizer owns the mic. Capture is ALWAYS best-effort: it must never affect
+  // recognition, so on recognition turns we start it only after the recognizer is running and
+  // tolerate failure (e.g. devices that disallow concurrent same-app mic capture).
+  private nativeClipCapturing = false;
+
   enableAudioCapture(enabled: boolean): void {
     this.captureAudio = enabled;
     if (!enabled) this.lastAudioBlob = null;
+  }
+
+  /** Start the native recorder (best-effort). No-op off native or if already capturing. */
+  private async startNativeClipCapture(): Promise<void> {
+    if (!this.isCapacitorNative || this.nativeClipCapturing) return;
+    try {
+      const has = await VoiceRecorder.hasAudioRecordingPermission().catch(() => ({ value: false }));
+      if (!has.value) {
+        const req = await VoiceRecorder.requestAudioRecordingPermission().catch(() => ({ value: false }));
+        if (!req.value) return;
+      }
+      const res = await VoiceRecorder.startRecording();
+      this.nativeClipCapturing = res?.value === true;
+    } catch {
+      // Device may not permit recording concurrently with the active recognizer — fall back
+      // to no capture (same as the previous behaviour). Never throws into recognition.
+      this.nativeClipCapturing = false;
+    }
+  }
+
+  /** Stop the native recorder and resolve with the captured blob (or null). Sets lastAudioBlob. */
+  private async stopNativeClipCapture(): Promise<Blob | null> {
+    if (!this.nativeClipCapturing) return null;
+    this.nativeClipCapturing = false;
+    try {
+      const res = await VoiceRecorder.stopRecording();
+      const b64 = res?.value?.recordDataBase64;
+      const mime = res?.value?.mimeType || 'audio/aac';
+      if (!b64) return null;
+      const blob = this.base64ToBlob(b64, mime);
+      this.lastAudioBlob = blob;
+      return blob;
+    } catch {
+      return null;
+    }
+  }
+
+  private base64ToBlob(base64: string, mime: string): Blob {
+    const bin = atob(base64);
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new Blob([bytes], { type: mime });
   }
 
   // ─── Standalone capture (turns with no speech recognition, e.g. facilitator read-aloud) ──────
@@ -140,7 +190,12 @@ export class VoiceRecognitionEngine implements OnDestroy {
    * recorder is already running. Pairs with {@link stopStandaloneCapture}.
    */
   async startStandaloneCapture(): Promise<void> {
-    if (this.isCapacitorNative) return;   // getUserMedia unavailable on native
+    if (this.isCapacitorNative) {
+      // No recognizer runs on facilitator read-aloud turns, so the mic is free —
+      // native capture is reliable here (unlike the concurrent recognition path).
+      await this.startNativeClipCapture();
+      return;
+    }
     if (this.mediaRecorder) return;       // a recognition recorder is already capturing
     this.lastAudioBlob = null;
     this.audioChunks = [];
@@ -155,6 +210,7 @@ export class VoiceRecognitionEngine implements OnDestroy {
 
   /** Stop the standalone recorder and resolve with the captured blob (or null). */
   stopStandaloneCapture(): Promise<Blob | null> {
+    if (this.isCapacitorNative) return this.stopNativeClipCapture();
     const recorder = this.mediaRecorder;
     if (!recorder || !this.standaloneStream) return Promise.resolve(null);
     return new Promise<Blob | null>((resolve) => {
@@ -398,6 +454,7 @@ export class VoiceRecognitionEngine implements OnDestroy {
       try { this.mediaRecorder.stop(); } catch { /* ignore */ }
       this.mediaRecorder = null;
     }
+    if (this.nativeClipCapturing) void this.stopNativeClipCapture();
     this.vad.stop();
     this.state$.next('idle');
   }
@@ -510,7 +567,14 @@ export class VoiceRecognitionEngine implements OnDestroy {
         if (this.nativeSpeechListener) { this.nativeSpeechListener.remove(); this.nativeSpeechListener = null; }
         if (this.nativeStateListener)  { this.nativeStateListener.remove();  this.nativeStateListener = null; }
         this.interimTranscript$.next('');
-        fn();
+        // Stop + collect the best-effort native turn recording (sets lastAudioBlob) BEFORE
+        // resolving, so the speaker screen's upload sees the blob. No-op (no delay) when no
+        // capture was running, preserving the original non-capture timing exactly.
+        if (this.nativeClipCapturing) {
+          void this.stopNativeClipCapture().finally(() => fn());
+        } else {
+          fn();
+        }
       };
 
       const finalizeWithTranscript = () => settle(() => {
@@ -533,6 +597,10 @@ export class VoiceRecognitionEngine implements OnDestroy {
         langConfirmed = true;
         if (lang) { try { localStorage.setItem(this._langCacheKey, lang); } catch { /* ignore */ } }
         console.debug('[VRE] Native language confirmed', { lang: lang ?? '(device default)' });
+        // Recognition now owns the mic — attempt the best-effort turn recording alongside it.
+        // Started here (not before start) so the recognizer always wins the mic; failure to
+        // capture (e.g. concurrent-capture not permitted) never affects recognition/scoring.
+        if (this.captureAudio) void this.startNativeClipCapture();
       };
 
       // The recognizer ended (onEndOfSpeech / swallowed timeout) with no usable

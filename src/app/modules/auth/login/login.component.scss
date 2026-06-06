@@ -1,12 +1,17 @@
 // ── Page shell ────────────────────────────────────────────────────────────────
+// Fills the full-bleed content area (shell adds no padding for /auth routes).
 
 .login-page {
-  min-height: 100dvh;
+  min-height: 100%;
   background: linear-gradient(160deg, #0D1526 0%, #1A2B4A 50%, #0D1526 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: clamp(24px, 5vh, 40px) 20px;
+  // Safe-area aware so content never hides behind notches / home indicator.
+  padding:
+    max(clamp(20px, 4vh, 36px), env(safe-area-inset-top, 0px))
+    clamp(20px, 6vw, 28px)
+    max(clamp(20px, 4vh, 36px), env(safe-area-inset-bottom, 0px));
   box-sizing: border-box;
 }
 
@@ -15,7 +20,7 @@
   flex-direction: column;
   align-items: center;
   width: min(100%, 400px);
-  gap: clamp(28px, 4vh, 40px);
+  gap: clamp(24px, 4vh, 36px);
 }
 
 // ── Brand ─────────────────────────────────────────────────────────────────────
@@ -24,18 +29,18 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .logo-icon {
-  width: 64px;
-  height: 64px;
-  background: #5C35A8;
-  border-radius: 20px;
+  width: 60px;
+  height: 60px;
+  background: var(--gwf-primary);
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 800;
   color: #FFFFFF;
   box-shadow:
@@ -44,7 +49,7 @@
 }
 
 .brand-name {
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 800;
   color: #FFFFFF;
   margin: 0;
@@ -64,11 +69,29 @@
   width: 100%;
   background: #161F38;
   border: 1px solid #25324F;
-  border-radius: 24px;
-  padding: clamp(24px, 5vw, 36px);
+  border-radius: 22px;
+  padding: clamp(22px, 5vw, 32px);
   box-shadow:
     0 12px 32px rgba(0, 0, 0, 0.35),
     0 32px 56px rgba(0, 0, 0, 0.3);
+}
+
+.card-head {
+  margin-bottom: 22px;
+}
+
+.card-title {
+  font-size: 19px;
+  font-weight: 800;
+  color: #EAEDF5;
+  margin: 0 0 4px;
+  letter-spacing: -0.2px;
+}
+
+.card-subtitle {
+  font-size: 13px;
+  color: #94A1BD;
+  margin: 0;
 }
 
 // ── Form ──────────────────────────────────────────────────────────────────────
@@ -76,7 +99,7 @@
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 16px;
 }
 
 .field-group {
@@ -93,7 +116,22 @@
   color: #94A1BD;
 }
 
+.field-control {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.field-icon {
+  position: absolute;
+  left: 14px;
+  color: #5A6A86;
+  pointer-events: none;
+  display: flex;
+}
+
 .field-input {
+  width: 100%;
   height: 52px;
   border: 1.5px solid #25324F;
   border-radius: 12px;
@@ -106,6 +144,9 @@
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 
+  &.has-icon { padding-left: 44px; }
+  &.has-action { padding-right: 48px; }
+
   &::placeholder {
     color: #5A6A86;
   }
@@ -115,6 +156,28 @@
     background: #1B2742;
     box-shadow: 0 0 0 3px rgba(142, 111, 212, 0.18);
   }
+
+  // Keep the icon in sync with the focused field.
+  &:focus ~ .field-icon { color: #8E6FD4; }
+}
+
+.field-action {
+  position: absolute;
+  right: 6px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 9px;
+  color: #5A6A86;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s ease;
+
+  &:active { color: #8E6FD4; }
 }
 
 .field-error {
@@ -139,7 +202,7 @@
 .btn-login {
   width: 100%;
   height: 54px;
-  background: #5C35A8;
+  background: var(--gwf-primary);
   color: #FFFFFF;
   border: none;
   border-radius: 14px;
@@ -151,7 +214,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: 4px;
+  margin-top: 6px;
   box-shadow: 0 4px 20px rgba(92, 53, 168, 0.45);
   transition: opacity 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
   -webkit-tap-highlight-color: transparent;
@@ -177,20 +240,48 @@
   animation: spin 0.7s linear infinite;
 }
 
-// ── Mobile ────────────────────────────────────────────────────────────────────
+// ── Footer ────────────────────────────────────────────────────────────────────
+
+.login-footer {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.5);
+  text-align: center;
+}
+
+.footer-link {
+  color: #B79CF0;
+  font-weight: 700;
+  text-decoration: none;
+  margin-left: 4px;
+
+  &:active { text-decoration: underline; }
+}
+
+// ── Responsive ──────────────────────────────────────────────────────────────────
 
 @media (max-width: 480px) {
   .login-card {
-    border-radius: 20px;
+    border-radius: 18px;
   }
 }
 
-@media (max-height: 700px) {
+// Short viewports: anchor to top and tighten so the form never forces a scroll.
+@media (max-height: 720px) {
   .login-page {
     align-items: flex-start;
   }
 
   .login-wrapper {
-    gap: 20px;
+    gap: 18px;
+  }
+
+  .card-head {
+    margin-bottom: 16px;
+  }
+
+  .login-form {
+    gap: 13px;
   }
 }

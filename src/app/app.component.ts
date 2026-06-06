@@ -6,6 +6,7 @@ import { HeaderComponent } from '@shared/components/header/header.component';
 import { BottomNavComponent } from '@shared/components/bottom-nav/bottom-nav.component';
 import { ToastComponent } from '@shared/components/toast/toast.component';
 import { LoaderComponent } from '@shared/components/loader/loader.component';
+import { TopProgressBarComponent } from '@shared/components/top-progress-bar/top-progress-bar.component';
 import { filter } from 'rxjs';
 import { AuthService } from '@core/services/auth.service';
 import { UserStateService } from '@core/services/user-state.service';
@@ -22,9 +23,11 @@ import { TabReuseStrategy } from '@core/strategies/tab-reuse.strategy';
     HeaderComponent,
     BottomNavComponent,
     ToastComponent,
-    LoaderComponent
+    LoaderComponent,
+    TopProgressBarComponent
   ],
   template: `
+    <app-top-progress-bar></app-top-progress-bar>
     <div class="app-shell">
 
       <!-- Admin routes: full-screen, no shell chrome -->
@@ -38,7 +41,9 @@ import { TabReuseStrategy } from '@core/strategies/tab-reuse.strategy';
           <app-header></app-header>
         }
 
-        <div #contentArea class="user-content-area" [class.no-bottom-pad]="!showBottomNav()">
+        <div #contentArea class="user-content-area"
+             [class.no-bottom-pad]="!showBottomNav()"
+             [class.flush]="isFullBleed()">
           <router-outlet></router-outlet>
         </div>
 
@@ -75,6 +80,14 @@ import { TabReuseStrategy } from '@core/strategies/tab-reuse.strategy';
     .user-content-area.no-bottom-pad {
       padding-bottom: 16px;
     }
+
+    /* Full-bleed routes (auth / live-session / repractice) own their entire
+       layout and background. Zero shell padding so no light frame shows around
+       their full-screen surface and no extra height is added (prevents the
+       100dvh page from overflowing into an unwanted scroll). */
+    .user-content-area.flush {
+      padding: 0;
+    }
   `]
 })
 export class AppComponent {
@@ -87,6 +100,9 @@ export class AppComponent {
   @ViewChild('contentArea') private contentArea?: ElementRef<HTMLDivElement>;
 
   currentUrl = signal(this.router.url);
+
+  /* Self-contained full-screen routes: no header, no bottom nav, no shell padding. */
+  private readonly fullBleedRoutes = ['/auth', '/live-session', '/repractice'];
 
   constructor() {
     this.backButton.init();
@@ -110,16 +126,18 @@ export class AppComponent {
     return this.currentUrl().includes('/admin');
   }
 
+  isFullBleed(): boolean {
+    const url = this.currentUrl();
+    return this.fullBleedRoutes.some(path => url.includes(path));
+  }
+
   showHeader(): boolean {
     const url = this.currentUrl();
     if (!url || url === '/') return false;
-    const hideOn = ['/auth', '/live-session', '/repractice'];
-    return !hideOn.some(path => url.includes(path));
+    return !this.isFullBleed();
   }
 
   showBottomNav(): boolean {
-    const url = this.currentUrl();
-    const hideOn = ['/auth', '/live-session', '/repractice'];
-    return !hideOn.some(path => url.includes(path));
+    return !this.isFullBleed();
   }
 }

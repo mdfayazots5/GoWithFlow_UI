@@ -16,11 +16,12 @@ import { SessionService } from '@core/services/session.service';
 import { WebsocketService } from '@core/services/websocket.service';
 import { RouterLink } from '@angular/router';
 import { catchError, of, Subscription } from 'rxjs';
+import { SkeletonListComponent, SkeletonCardComponent } from '@shared/ui/skeleton';
 
 @Component({
   selector: 'app-user-dashboard',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, RouterLink],
+  imports: [CommonModule, LucideAngularModule, RouterLink, SkeletonListComponent, SkeletonCardComponent],
   template: `
     <div class="min-h-screen bg-gw-bg">
       <div class="max-w-lg mx-auto px-4 pt-2 gwf-page-bottom space-y-4 animate-in fade-in duration-500">
@@ -91,6 +92,15 @@ import { catchError, of, Subscription } from 'rxjs';
           </a>
 
         </div>
+
+        <!-- ── Data region: skeleton until the core dashboard payload is loaded ──
+             Greeting + quick actions above are static (no API) so they paint instantly;
+             everything below depends on API data, so it is gated to prevent blank-then-pop. -->
+        @if (showDashSkeleton()) {
+          <app-skeleton-card [avatar]="false" [bodyLines]="2"></app-skeleton-card>
+          <app-skeleton-list [rows]="3"></app-skeleton-list>
+          <app-skeleton-list [rows]="3"></app-skeleton-list>
+        } @else {
 
         <!-- ── Pending Invitations Banner ──────────────────────────── -->
         @if (pendingInvitationCount() > 0) {
@@ -467,6 +477,7 @@ import { catchError, of, Subscription } from 'rxjs';
             </div>
           }
         </div>
+        } <!-- /@else: core dashboard data loaded -->
 
       </div>
     </div>
@@ -488,6 +499,12 @@ export class UserDashboardComponent implements OnInit, OnDestroy {
 
   // ── Dashboard state from state service ──────────────────────
   dashboard = this.userState.dashboard;
+  dashboardLoading = this.userState.dashboardLoading;
+
+  /** Show the skeleton only while the core payload is actively loading and absent.
+   *  On error (loading=false, data=null) we fall through to content + built-in empty
+   *  states rather than hanging on an infinite skeleton. */
+  showDashSkeleton = computed(() => !this.dashboard() && this.dashboardLoading());
 
   // ── Weekly report ────────────────────────────────────────────
   weeklyReport  = signal<any>(null);

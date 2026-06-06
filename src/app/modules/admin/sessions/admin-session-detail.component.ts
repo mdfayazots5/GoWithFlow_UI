@@ -278,6 +278,12 @@ import {
                   @if (rec()!.failureReason) {
                     <p class="text-xs text-gw-text-muted max-w-sm">{{ rec()!.failureReason }}</p>
                   }
+                  @if (isNoSegmentsFailure()) {
+                    <p class="text-xs text-gw-text-muted max-w-sm italic">
+                      This usually isn't a server error — participants may have used an app version that
+                      couldn't capture audio.
+                    </p>
+                  }
                   <button (click)="reload()"
                     class="mt-1 px-4 py-2 rounded-xl bg-gw-bg text-gw-text text-xs font-black active:scale-95 transition-transform">
                     Try again
@@ -414,6 +420,9 @@ export class AdminSessionDetailComponent implements OnInit {
 
   isReady      = computed(() => (this.rec()?.status ?? '').toUpperCase() === 'READY');
   isProcessing = computed(() => ['PENDING_MERGE', 'PROCESSING', 'CAPTURING'].includes((this.rec()?.status ?? '').toUpperCase()));
+  // "No audio segments" failures are almost always a capture-platform limitation (e.g. an older
+  // app build that couldn't record), NOT a server/merge bug — surface a hint so admins don't misread it.
+  isNoSegmentsFailure = computed(() => (this.rec()?.failureReason ?? '').toLowerCase().includes('no audio segments'));
 
   ngOnInit() {
     const state = history.state;
