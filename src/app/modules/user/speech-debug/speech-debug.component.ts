@@ -12,6 +12,7 @@ import {
   VoiceSessionResult,
   RecordingState
 } from '@core/services/voice/voice-recognition.engine';
+import { AudioArchiveService } from '@core/services/audio-archive.service';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -149,6 +150,72 @@ interface DeviceInfo {
       }
     </div>
 
+    <!-- Native Capture Test -->
+    <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm px-4 py-3 space-y-3">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-black text-gw-primary uppercase tracking-widest">Audio Capture Test</span>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" [(ngModel)]="captureEnabled" [disabled]="isRunning()"
+                 class="w-4 h-4 accent-gw-primary">
+          <span class="text-[11px] font-black text-gw-text uppercase tracking-wide">Capture turn audio</span>
+        </label>
+      </div>
+      <p class="text-[11px] text-gw-text-muted leading-relaxed">
+        When ON, the next test records the turn clip alongside recognition (native plugin on the app).
+        After the test, the captured blob is shown below and can be played back and uploaded.
+      </p>
+
+      <!-- Blob status -->
+      @if (blobInfo()) {
+        <div class="bg-gw-bg rounded-xl px-3 py-2 space-y-1">
+          <div class="flex justify-between items-center">
+            <span class="text-[11px] font-black uppercase tracking-wide"
+                  [style.color]="blobInfo()!.size > 0 ? '#16A34A' : '#DC2626'">
+              {{ blobInfo()!.size > 0 ? '✓ Captured' : '✗ Empty / not captured' }}
+            </span>
+            <span class="text-[11px] font-bold text-gw-text">{{ blobInfo()!.kb }} KB</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-[11px] font-black text-gw-text-muted uppercase">Type</span>
+            <span class="text-[11px] font-semibold text-gw-text break-all text-right">{{ blobInfo()!.type || '(none)' }}</span>
+          </div>
+        </div>
+
+        @if (audioUrl()) {
+          <audio #player controls class="w-full h-9"></audio>
+          <button (click)="playBlob()" type="button"
+                  class="w-full py-2 rounded-xl font-black text-[11px] uppercase tracking-wide border border-gw-card-border text-gw-primary active:scale-95 transition-all">
+            ▶ Play captured clip
+          </button>
+        }
+
+        <!-- Upload to real backend -->
+        <div class="flex gap-2 items-center">
+          <input type="number" [(ngModel)]="uploadSessionId" [disabled]="isUploading()"
+                 placeholder="Session ID"
+                 class="flex-1 text-sm font-semibold text-gw-text bg-gw-bg rounded-xl px-3 py-2 border border-gw-card-border focus:outline-none focus:border-gw-primary disabled:opacity-50">
+          <input type="number" [(ngModel)]="uploadTurnIndex" [disabled]="isUploading()"
+                 placeholder="Turn"
+                 class="w-20 text-sm font-semibold text-gw-text bg-gw-bg rounded-xl px-3 py-2 border border-gw-card-border focus:outline-none focus:border-gw-primary disabled:opacity-50">
+        </div>
+        <button (click)="uploadBlob()"
+                [disabled]="isUploading() || !blobInfo() || blobInfo()!.size === 0 || !uploadSessionId"
+                class="w-full py-2.5 rounded-xl font-black text-[11px] uppercase tracking-wide text-white active:scale-95 transition-all disabled:opacity-40"
+                [style.background]="isUploading() ? '#9CA3AF' : '#3D5A99'">
+          {{ isUploading() ? 'Uploading…' : '↑ Upload clip to server' }}
+        </button>
+        @if (uploadStatus()) {
+          <div class="rounded-xl px-3 py-2"
+               [style.background]="uploadOk() ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)'">
+            <p class="text-[11px] font-semibold leading-relaxed"
+               [style.color]="uploadOk() ? '#16A34A' : '#DC2626'">{{ uploadStatus() }}</p>
+          </div>
+        }
+      } @else {
+        <p class="text-[11px] text-gw-text-muted text-center py-2 italic">Run a test with capture ON to inspect the clip</p>
+      }
+    </div>
+
     <!-- Log Panel -->
     <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
       <div class="flex items-center justify-between px-4 py-3 border-b border-gw-bg">
@@ -258,9 +325,22 @@ export class SpeechDebugComponent implements OnInit, OnDestroy, AfterViewChecked
 
   private engine = inject(VoiceRecognitionEngine);
   private router  = inject(Router);
+  private audioArchive = inject(AudioArchiveService);
   private destroy$ = new Subject<void>();
 
   @ViewChild('logPanel') logPanelRef?: ElementRef<HTMLDivElement>;
+  @ViewChild('player') playerRef?: ElementRef<HTMLAudioElement>;
+
+  // ── Capture-test state ─────────────────────────────────────────────────────
+  captureEnabled  = true;
+  uploadSessionId: number | null = null;
+  uploadTurnIndex = 0;
+  blobInfo    = signal<{ kb: number; size: number; type: string } | null>(null);
+  audioUrl    = signal<string | null>(null);
+  isUploading = signal(false);
+  uploadStatus = signal<string | null>(null);
+  uploadOk    = signal(false);
+  private lastObjectUrl: string | null = null;
 
   // ── Reactive state ───────────────────────────────────────────────────────
   currentState   = signal<RecordingState>('idle');
@@ -360,6 +440,7 @@ export class SpeechDebugComponent implements OnInit, OnDestroy, AfterViewChecked
 
   ngOnDestroy(): void {
     this.engine.stopSession();
+    if (this.lastObjectUrl) { URL.revokeObjectURL(this.lastObjectUrl); this.lastObjectUrl = null; }
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -373,6 +454,12 @@ export class SpeechDebugComponent implements OnInit, OnDestroy, AfterViewChecked
     this.sessionResult.set(null);
     this.isRunning.set(true);
     this.lastVoiceActive = false;
+
+    // Reset capture artefacts and arm the recorder for this run (the exact native
+    // concurrent-capture path that fails on the app). Off → recognition-only baseline.
+    this.resetCaptureArtifacts();
+    this.engine.enableAudioCapture(this.captureEnabled);
+    this.addLog('INFO', `Audio capture: ${this.captureEnabled ? 'ON' : 'OFF'}`);
 
     this.addLog('START', '══════ Speech Debug Session Started ══════');
     this.addLog('INFO',  `Platform: ${this.deviceInfo.platform}`);
@@ -417,6 +504,10 @@ export class SpeechDebugComponent implements OnInit, OnDestroy, AfterViewChecked
         .map(w => `${w.word}(${w.matched ? '✓' : '✗'}${w.score})`)
         .join(' ');
       this.addLog('SCORE', `Words: ${wordDetail.substring(0, 120)}`);
+
+      // Inspect the captured turn clip (the path that was returning zero segments on the app).
+      if (this.captureEnabled) this.inspectCapturedBlob();
+
       this.addLog('START', `══════ Session Complete (${elapsed}ms) ══════`);
 
     } catch (err: any) {
@@ -448,6 +539,67 @@ export class SpeechDebugComponent implements OnInit, OnDestroy, AfterViewChecked
 
   goBack(): void {
     this.router.navigate(['/user/dashboard']);
+  }
+
+  // ─── Capture test ──────────────────────────────────────────────────────────
+
+  /** Read engine.lastAudioBlob after a turn and surface size/type + a playable URL. */
+  private inspectCapturedBlob(): void {
+    const blob = this.engine.lastAudioBlob;
+    if (!blob) {
+      this.blobInfo.set({ kb: 0, size: 0, type: '' });
+      this.addLog('ERROR', 'No audio captured (lastAudioBlob is null) — recorder did not run or was blocked');
+      return;
+    }
+    const kb = Math.round((blob.size / 1024) * 10) / 10;
+    this.blobInfo.set({ kb, size: blob.size, type: blob.type });
+    const url = URL.createObjectURL(blob);
+    this.lastObjectUrl = url;
+    this.audioUrl.set(url);
+    this.addLog(blob.size > 0 ? 'INFO' : 'ERROR',
+      `Captured clip: ${kb} KB, type "${blob.type || 'unknown'}"${blob.size === 0 ? ' — EMPTY' : ''}`);
+  }
+
+  /** Play the captured clip through the audio element. */
+  playBlob(): void {
+    const el = this.playerRef?.nativeElement;
+    const url = this.audioUrl();
+    if (!el || !url) return;
+    if (el.src !== url) el.src = url;
+    el.play().catch(e => this.addLog('ERROR', `Playback failed: ${e?.message ?? e}`));
+  }
+
+  /** Upload the captured clip to the real audio-archive endpoint to prove the full save path. */
+  uploadBlob(): void {
+    const blob = this.engine.lastAudioBlob;
+    if (!blob || blob.size === 0 || !this.uploadSessionId) return;
+    this.isUploading.set(true);
+    this.uploadStatus.set(null);
+    this.addLog('API', `Uploading clip → session ${this.uploadSessionId}, turn ${this.uploadTurnIndex} (${Math.round(blob.size / 1024)} KB)`);
+    this.audioArchive.uploadClip(blob, this.uploadSessionId, this.uploadTurnIndex).subscribe({
+      next: (res: any) => {
+        this.isUploading.set(false);
+        this.uploadOk.set(true);
+        const id = res?.data?.archiveId ?? res?.archiveId ?? '(no id)';
+        this.uploadStatus.set(`Upload OK — archiveId ${id}. Check tblaudioarchive / R2 sessions/${this.uploadSessionId}/turns/.`);
+        this.addLog('SCORE', `Upload succeeded — archiveId ${id}`);
+      },
+      error: (err: any) => {
+        this.isUploading.set(false);
+        this.uploadOk.set(false);
+        const msg = err?.error?.message || err?.error?.errors?.[0] || err?.status + ' ' + (err?.statusText || 'error');
+        this.uploadStatus.set(`Upload failed: ${msg}`);
+        this.addLog('ERROR', `Upload failed: ${msg}`);
+      }
+    });
+  }
+
+  private resetCaptureArtifacts(): void {
+    this.blobInfo.set(null);
+    this.uploadStatus.set(null);
+    this.uploadOk.set(false);
+    if (this.lastObjectUrl) { URL.revokeObjectURL(this.lastObjectUrl); this.lastObjectUrl = null; }
+    this.audioUrl.set(null);
   }
 
   // ─── Helpers ─────────────────────────────────────────────────────────────

@@ -45,5 +45,9 @@ export const USER_ROUTES: Routes = [
   {
     path: 'invitations',
     loadComponent: () => import('./invitations/my-invitations.component').then(m => m.MyInvitationsComponent)
+  },
+  {
+    path: 'speech-debug',
+    loadComponent: () => import('./speech-debug/speech-debug.component').then(m => m.SpeechDebugComponent)
   }
 ];

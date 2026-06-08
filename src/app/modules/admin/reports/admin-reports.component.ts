@@ -306,13 +306,18 @@ export class AdminReportsComponent implements OnInit {
       dateTo:   this.dateTo.value   || undefined,
       userId:   this.userFilter.value || undefined,
     }).subscribe({
-      next: (blob: Blob) => {
-        const url = URL.createObjectURL(blob);
-        const a   = document.createElement('a');
-        a.href     = url;
+      next: (presignedUrl: string) => {
+        if (!presignedUrl) { this.toast.error('Export failed'); return; }
+        // Presigned R2 URL — download via a direct anchor navigation. Must NOT
+        // be fetched through HttpClient (the auth interceptor would add an
+        // Authorization header and break the AWS signature).
+        const a = document.createElement('a');
+        a.href = presignedUrl;
         a.download = `GoWithFlow_Reports_${new Date().toISOString().slice(0, 10)}.xlsx`;
+        a.rel = 'noopener';
+        document.body.appendChild(a);
         a.click();
-        URL.revokeObjectURL(url);
+        a.remove();
         this.toast.success('Export downloaded');
       },
       error: () => this.toast.error('Export failed')

@@ -281,9 +281,9 @@ import { SkeletonStatGridComponent, SkeletonCardComponent } from '@shared/ui/ske
                     <i-lucide [img]="ZapIcon" size="16" class="text-gw-text-muted group-hover:text-gw-primary transition-colors"></i-lucide>
                   </div>
                   <div>
-                    <p class="text-sm font-bold text-gw-text uppercase tracking-tight">Session #{{ item.sourceSessionId }}</p>
+                    <p class="text-sm font-bold text-gw-text tracking-tight">Mistake Repractice</p>
                     <p class="text-[11px] text-gw-text-muted mt-0.5">
-                      {{ item.generatedDate | date:'MMM d, yyyy' }} · {{ item.completedRounds }}/{{ item.totalMistakes }} rounds
+                      {{ item.generatedDate | date:'MMM d, yyyy' }} · {{ item.completedRounds }} of {{ item.totalMistakes }} mistakes practiced
                     </p>
                   </div>
                 </div>
@@ -296,7 +296,7 @@ import { SkeletonStatGridComponent, SkeletonCardComponent } from '@shared/ui/ske
                   <p class="text-[11px] font-semibold uppercase"
                      [class.text-gw-success]="item.improvementPercent > 0"
                      [class.text-gw-text-muted]="item.improvementPercent === 0">
-                    {{ item.status }}
+                    {{ statusLabel(item.status) }}
                   </p>
                 </div>
               </div>
@@ -370,6 +370,10 @@ export class ImprovementTrackerComponent implements OnInit {
         this.loading.set(false);
       }
     });
+  }
+
+  statusLabel(status: string): string {
+    return (status ?? '').replace(/_/g, ' ').trim();
   }
 
   scoreColor(score: number): string {

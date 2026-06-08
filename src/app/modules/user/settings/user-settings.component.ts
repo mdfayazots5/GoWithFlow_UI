@@ -1,5 +1,6 @@
 ﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { LucideAngularModule, User, Mail, Phone, Camera, Save, CheckCircle, Mic } from 'lucide-angular';
 import { UserService } from '@core/services/user.service';
@@ -135,6 +136,26 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
           </div>
         </div>
 
+        <!-- Diagnostics -->
+        <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
+          <div class="px-5 py-3.5 border-b border-gw-bg">
+            <p class="text-[11px] font-black text-gw-text-muted uppercase tracking-widest">Diagnostics</p>
+          </div>
+          <button type="button" (click)="openSpeechDebug()"
+                  class="w-full flex items-center justify-between px-5 py-4 gap-4 text-left active:bg-gw-bg transition-colors">
+            <div class="flex items-center gap-3 min-w-0">
+              <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style="background: rgba(61,90,153,0.08);">
+                <i-lucide [img]="MicIcon" size="15" style="color:#3D5A99;"></i-lucide>
+              </div>
+              <div class="min-w-0">
+                <p class="text-sm font-bold text-gw-text leading-tight">Speech &amp; Capture Test</p>
+                <p class="text-[11px] text-gw-text-muted mt-0.5 leading-snug">Test voice recognition + audio capture without a session</p>
+              </div>
+            </div>
+            <span class="text-gw-text-muted shrink-0">›</span>
+          </button>
+        </div>
+
       </div>
     </div>
   `,
@@ -162,8 +183,13 @@ export class UserSettingsComponent implements OnInit {
     private userService: UserService,
     private userState: UserStateService,
     private auth: AuthService,
-    private sessionPrefs: SessionPreferencesService
+    private sessionPrefs: SessionPreferencesService,
+    private router: Router
   ) {}
+
+  openSpeechDebug() {
+    this.router.navigate(['/user/speech-debug']);
+  }
 
   ngOnInit() {
     const user = this.auth.currentUser;

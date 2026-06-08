@@ -252,22 +252,46 @@ export class RepracticeSpeakerComponent implements OnChanges, AfterViewChecked, 
     this.showHint.set(false);
     this.isSubmitting.set(false);
 
+    // Configure the shared singleton engine exactly like a Session Room turn does. The
+    // engine's captureAudio flag is sticky across sessions; if a prior Session Room left
+    // it ON, repractice would otherwise open an extra getUserMedia + MediaRecorder stream
+    // alongside the VAD and recognition streams — three concurrent mic captures starve the
+    // Web Speech recognizer (onaudiostart fires but no onresult → "No speech detected").
+    // Repractice has no audio-archive requirement, so capture is explicitly OFF.
+    this.voiceEngine.enableAudioCapture(false);
+
     // Auto Start — safe on Capacitor native (no bell), blocked on mobile web.
     const isMobileWebOnly = this.voiceEngine.isMobileDevice && !Capacitor.isNativePlatform();
-    if (this.sessionPrefs.prefs.defaultVoiceStarter && !isMobileWebOnly) {
+    const autoStart = this.sessionPrefs.prefs.defaultVoiceStarter && !isMobileWebOnly;
+    if (autoStart) {
       this._pendingAutoStart = true;
+    } else {
+      // Manual mode: warm the native model now so the first mic tap is instant
+      // (parity with SpeakerScreenComponent). No-op on web.
+      this.voiceEngine.prewarm();
     }
+    console.log('[VDIAG][speaker] ngOnChanges new utterance', {
+      utteranceIndex: this.utteranceIndex,
+      utteranceId: this.utterance?.id,
+      defaultVoiceStarter: this.sessionPrefs.prefs.defaultVoiceStarter,
+      isMobileWebOnly,
+      pendingAutoStart: this._pendingAutoStart
+    });
   }
 
   ngAfterViewChecked(): void {
     if (this._pendingAutoStart && this.voiceRecorder && this.analysisPhase === 'recording') {
       this._pendingAutoStart = false;
+      console.log('[VDIAG][speaker] auto-start scheduled (300ms)', { utteranceIndex: this.utteranceIndex });
       this._autoStartTimer = setTimeout(() => {
         this._autoStartTimer = null;
         if (this.voiceRecorder && this.analysisPhase === 'recording') {
+          console.log('[VDIAG][speaker] auto-start FIRING -> voiceRecorder.startRecording()', { utteranceIndex: this.utteranceIndex });
           this.voiceRecorder.startRecording();
+        } else {
+          console.log('[VDIAG][speaker] auto-start aborted (no recorder or phase changed)', { utteranceIndex: this.utteranceIndex, phase: this.analysisPhase });
         }
-      }, 700);
+      }, 300);
     }
   }
 

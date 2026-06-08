@@ -40,32 +40,6 @@ interface ScriptAnalyticsItem {
         </a>
       </div>
 
-      <!-- Filter bar -->
-      <div class="flex items-center gap-3 flex-wrap">
-        <div class="flex items-center gap-2 bg-white border border-gw-card-border rounded-xl px-3 py-2">
-          <i-lucide [img]="FilterIcon" size="13" class="text-gw-text-muted"></i-lucide>
-          <select [(ngModel)]="selectedCategory" (ngModelChange)="loadData()"
-            class="text-[11px] font-bold uppercase tracking-wider text-gw-text bg-transparent outline-none cursor-pointer">
-            <option value="">All Categories</option>
-            @for (cat of categories; track cat) {
-              <option [value]="cat">{{ cat }}</option>
-            }
-          </select>
-        </div>
-        <div class="flex items-center gap-2 bg-white border border-gw-card-border rounded-xl px-3 py-2">
-          <span class="text-[11px] font-bold text-gw-text-muted uppercase tracking-wider">Sort by</span>
-          <select [(ngModel)]="sortField" (ngModelChange)="sortData()"
-            class="text-[11px] font-bold uppercase tracking-wider text-gw-text bg-transparent outline-none cursor-pointer">
-            <option value="sessions">Sessions</option>
-            <option value="completion">Completion Rate</option>
-            <option value="fluency">Avg Fluency</option>
-            <option value="mistakes">Avg Mistakes</option>
-            <option value="lastUsed">Last Used</option>
-          </select>
-        </div>
-        <p class="text-[11px] font-bold text-gw-text-muted italic">{{ filtered().length }} scripts</p>
-      </div>
-
       @if (isLoading()) {
         <div class="flex flex-col items-center justify-center py-20 gap-4">
           <div class="w-10 h-10 border-4 border-gw-primary border-t-transparent rounded-full animate-spin"></div>
@@ -73,8 +47,54 @@ interface ScriptAnalyticsItem {
       }
 
       @else {
-        <!-- Analytics table -->
-        <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
+        <!-- Summary cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="bg-white rounded-xl border border-gw-card-border p-4">
+            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Total Scripts</p>
+            <p class="text-2xl font-black text-gw-primary italic mt-1">{{ filteredByCategory().length }}</p>
+          </div>
+          <div class="bg-white rounded-xl border border-gw-card-border p-4">
+            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Avg Completion</p>
+            <p class="text-2xl font-black text-gw-success italic mt-1">{{ avgCompletion() | number:'1.0-0' }}%</p>
+          </div>
+          <div class="bg-white rounded-xl border border-gw-card-border p-4">
+            <p class="text-[11px] font-black uppercase tracking-widest text-amber-600 italic">Inactive Scripts</p>
+            <p class="text-2xl font-black text-amber-500 italic mt-1">{{ inactiveCount() }}</p>
+          </div>
+          <div class="bg-white rounded-xl border border-gw-card-border p-4">
+            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Avg Fluency</p>
+            <p class="text-2xl font-black text-gw-primary italic mt-1">{{ avgFluency() | number:'1.0-0' }}</p>
+          </div>
+        </div>
+
+        <!-- Filter / count bar -->
+        <div class="flex items-center gap-3 flex-wrap">
+          <div class="flex items-center gap-2 bg-white border border-gw-card-border rounded-xl px-3 py-2">
+            <i-lucide [img]="FilterIcon" size="13" class="text-gw-text-muted"></i-lucide>
+            <select [ngModel]="selectedCategory()" (ngModelChange)="selectedCategory.set($event)"
+              class="text-[11px] font-bold uppercase tracking-wider text-gw-text bg-transparent outline-none cursor-pointer">
+              <option value="">All Categories</option>
+              @for (cat of categories; track cat) {
+                <option [value]="cat">{{ cat }}</option>
+              }
+            </select>
+          </div>
+          <div class="flex items-center gap-2 bg-white border border-gw-card-border rounded-xl px-3 py-2">
+            <span class="text-[11px] font-bold text-gw-text-muted uppercase tracking-wider">Sort by</span>
+            <select [ngModel]="sortField()" (ngModelChange)="sortField.set($event)"
+              class="text-[11px] font-bold uppercase tracking-wider text-gw-text bg-transparent outline-none cursor-pointer">
+              <option value="sessions">Sessions</option>
+              <option value="completion">Completion Rate</option>
+              <option value="fluency">Avg Fluency</option>
+              <option value="mistakes">Avg Mistakes</option>
+              <option value="lastUsed">Last Used</option>
+            </select>
+          </div>
+          <p class="text-[11px] font-bold text-gw-text-muted italic">{{ filtered().length }} scripts</p>
+        </div>
+
+        <!-- Analytics table (desktop only — avoids horizontal scroll on mobile) -->
+        <div class="hidden md:block bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
           <div class="overflow-x-auto">
             <table class="w-full text-left">
               <thead class="bg-gw-bg border-b border-gw-card-border">
@@ -176,24 +196,97 @@ interface ScriptAnalyticsItem {
           }
         </div>
 
-        <!-- Summary cards -->
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div class="bg-white rounded-xl border border-gw-card-border p-4">
-            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Total Scripts</p>
-            <p class="text-2xl font-black text-gw-primary italic mt-1">{{ data().length }}</p>
-          </div>
-          <div class="bg-white rounded-xl border border-gw-card-border p-4">
-            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Avg Completion</p>
-            <p class="text-2xl font-black text-gw-success italic mt-1">{{ avgCompletion() | number:'1.0-0' }}%</p>
-          </div>
-          <div class="bg-white rounded-xl border border-gw-card-border p-4">
-            <p class="text-[11px] font-black uppercase tracking-widest text-amber-600 italic">Inactive Scripts</p>
-            <p class="text-2xl font-black text-amber-500 italic mt-1">{{ inactiveCount() }}</p>
-          </div>
-          <div class="bg-white rounded-xl border border-gw-card-border p-4">
-            <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Avg Fluency</p>
-            <p class="text-2xl font-black text-gw-primary italic mt-1">{{ avgFluency() | number:'1.0-0' }}</p>
-          </div>
+        <!-- Analytics cards (mobile only — stacked, no horizontal scroll) -->
+        <div class="md:hidden space-y-3">
+          @for (item of filtered(); track item.scriptId) {
+            <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm p-4 space-y-3"
+              [ngClass]="{'border-amber-200 bg-amber-50/30': item.isInactive}">
+
+              <!-- Card header -->
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex items-start gap-2 min-w-0">
+                  @if (item.isInactive) {
+                    <i-lucide [img]="AlertIcon" size="13" class="text-amber-500 mt-0.5 flex-shrink-0"></i-lucide>
+                  }
+                  <div class="min-w-0">
+                    <p class="text-sm font-black text-gw-text italic truncate">{{ item.scriptTitle }}</p>
+                    <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                      <span class="text-[11px] font-black uppercase tracking-wider text-gw-primary bg-gw-primary/10 px-1.5 py-0.5 rounded">{{ item.category }}</span>
+                      @if (item.isInactive) {
+                        <span class="text-[11px] font-black uppercase tracking-wider text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded">Inactive</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+                <a [routerLink]="['/admin/scripts']" [queryParams]="{ scriptId: item.scriptId }"
+                  class="w-8 h-8 rounded-lg bg-gw-bg flex items-center justify-center text-gw-text-muted hover:bg-gw-primary/10 hover:text-gw-primary transition-all flex-shrink-0">
+                  <i-lucide [img]="ChevronIcon" size="14"></i-lucide>
+                </a>
+              </div>
+
+              <!-- Metrics grid -->
+              <div class="grid grid-cols-2 gap-x-4 gap-y-2.5 pt-3 border-t border-gw-bg">
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[11px] font-bold uppercase tracking-wider text-gw-text-muted">Sessions</span>
+                  <span class="text-xs font-black text-gw-text">{{ item.totalSessionsStarted }}</span>
+                </div>
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[11px] font-bold uppercase tracking-wider text-gw-text-muted">Completion</span>
+                  <span class="text-xs font-black"
+                    [class.text-gw-success]="item.completionRate >= 80"
+                    [class.text-amber-500]="item.completionRate >= 50 && item.completionRate < 80"
+                    [class.text-gw-error]="item.completionRate < 50">
+                    {{ item.completionRate | number:'1.0-0' }}%
+                  </span>
+                </div>
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[11px] font-bold uppercase tracking-wider text-gw-text-muted">Avg Fluency</span>
+                  <span class="text-xs font-black"
+                    [class.text-gw-success]="item.avgFluencyScore >= 75"
+                    [class.text-amber-500]="item.avgFluencyScore >= 50 && item.avgFluencyScore < 75"
+                    [class.text-gw-text-muted]="item.avgFluencyScore === 0"
+                    [class.text-gw-error]="item.avgFluencyScore > 0 && item.avgFluencyScore < 50">
+                    {{ item.avgFluencyScore > 0 ? (item.avgFluencyScore | number:'1.0-0') : '—' }}
+                  </span>
+                </div>
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[11px] font-bold uppercase tracking-wider text-gw-text-muted">Mistakes</span>
+                  <span class="text-xs font-bold text-gw-text-muted">{{ item.avgMistakeCount | number:'1.1-1' }}</span>
+                </div>
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[11px] font-bold uppercase tracking-wider text-gw-text-muted">Duration</span>
+                  <span class="text-xs font-bold text-gw-text-muted">{{ item.avgDurationMinutes | number:'1.0-0' }}m</span>
+                </div>
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[11px] font-bold uppercase tracking-wider text-gw-text-muted">Re-reads</span>
+                  <span class="text-xs font-bold"
+                    [class.text-gw-error]="item.avgReReadRate > 1.5"
+                    [class.text-gw-text-muted]="item.avgReReadRate <= 1.5">
+                    {{ item.avgReReadRate | number:'1.1-1' }}
+                  </span>
+                </div>
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[11px] font-bold uppercase tracking-wider text-gw-text-muted">Repractice</span>
+                  <span class="text-xs font-black"
+                    [class.text-gw-success]="item.repracticeConversionRate >= 30"
+                    [class.text-gw-text-muted]="item.repracticeConversionRate < 30">
+                    {{ item.repracticeConversionRate | number:'1.0-0' }}%
+                  </span>
+                </div>
+                <div class="flex items-center justify-between gap-2">
+                  <span class="text-[11px] font-bold uppercase tracking-wider text-gw-text-muted">Last Used</span>
+                  <span class="text-[11px] font-semibold text-gw-text-muted">
+                    {{ item.lastUsedDate ? (item.lastUsedDate | date:'MMM d') : 'Never' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          } @empty {
+            <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm py-16 flex flex-col items-center gap-3 text-center">
+              <i-lucide [img]="ChartIcon" size="32" class="text-gw-text-muted opacity-40"></i-lucide>
+              <p class="text-sm font-black text-gw-text italic">No scripts found</p>
+            </div>
+          }
         </div>
       }
 
@@ -211,33 +304,36 @@ export class AdminScriptAnalyticsComponent implements OnInit {
   readonly FilterIcon = Filter;
 
   categories = ['Grammar Drill', 'Roleplay', 'Mock Interview', 'Vocabulary Sprint', 'Fluency Drill', 'Repractice Round'];
-  selectedCategory = '';
-  sortField = 'sessions';
+  selectedCategory = signal('');
+  sortField = signal('sessions');
   isLoading = signal(true);
   data = signal<ScriptAnalyticsItem[]>([]);
 
-  filtered = computed(() => {
-    const items = this.selectedCategory
-      ? this.data().filter(d => d.category === this.selectedCategory)
-      : this.data();
-    return this.sort(items);
+  // Category-filtered set (no sort) — drives both the table and the summary KPIs
+  filteredByCategory = computed(() => {
+    const cat = this.selectedCategory();
+    return cat ? this.data().filter(d => d.category === cat) : this.data();
   });
 
+  filtered = computed(() => this.sort(this.filteredByCategory()));
+
   avgCompletion = computed(() => {
-    const items = this.data();
+    const items = this.filteredByCategory();
     return items.length ? items.reduce((s, i) => s + i.completionRate, 0) / items.length : 0;
   });
-  inactiveCount = computed(() => this.data().filter(i => i.isInactive).length);
+  inactiveCount = computed(() => this.filteredByCategory().filter(i => i.isInactive).length);
   avgFluency = computed(() => {
-    const active = this.data().filter(i => i.avgFluencyScore > 0);
+    const active = this.filteredByCategory().filter(i => i.avgFluencyScore > 0);
     return active.length ? active.reduce((s, i) => s + i.avgFluencyScore, 0) / active.length : 0;
   });
 
   ngOnInit() { this.loadData(); }
 
+  // Load the full analytics set once; category filter + sort run client-side
+  // off signals so both dropdowns react instantly without a server round-trip.
   loadData() {
     this.isLoading.set(true);
-    this.scriptService.getScriptAnalytics(this.selectedCategory || undefined).pipe(
+    this.scriptService.getScriptAnalytics().pipe(
       catchError(() => of([]))
     ).subscribe(data => {
       this.data.set(data ?? []);
@@ -245,11 +341,10 @@ export class AdminScriptAnalyticsComponent implements OnInit {
     });
   }
 
-  sortData() { /* computed handles it */ }
-
   private sort(items: ScriptAnalyticsItem[]): ScriptAnalyticsItem[] {
+    const field = this.sortField();
     return [...items].sort((a, b) => {
-      switch (this.sortField) {
+      switch (field) {
         case 'completion':  return b.completionRate - a.completionRate;
         case 'fluency':     return b.avgFluencyScore - a.avgFluencyScore;
         case 'mistakes':    return b.avgMistakeCount - a.avgMistakeCount;

@@ -1,5 +1,5 @@
 import {
-  Component, Input, Output, EventEmitter, OnDestroy, OnInit, ElementRef, ViewChild
+  Component, Input, Output, EventEmitter, OnDestroy, OnInit, ElementRef, ViewChild, NgZone
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
@@ -30,18 +30,28 @@ export class VoiceRecorderComponent implements OnInit, OnDestroy {
   private canvasCtx: CanvasRenderingContext2D | null = null;
   private destroy$ = new Subject<void>();
 
-  constructor(private engine: VoiceRecognitionEngine) {}
+  constructor(private engine: VoiceRecognitionEngine, private zone: NgZone) {}
 
   ngOnInit(): void {
+    // The engine drives state from inside async chains (after getUserMedia / VAD), which
+    // zone.js does not always reschedule back into the Angular zone — so a raw subscribe
+    // can update `this.state` without triggering change detection, leaving the UI stuck on
+    // "Requesting microphone…" while recognition is actually listening. Run these updates
+    // through NgZone.run so the view always repaints, regardless of the emitting zone.
+    // (The Session Room masked this via its constant broadcast/SignalR activity; repractice,
+    // being idle, exposed it.)
     this.engine.state$.pipe(takeUntil(this.destroy$)).subscribe(s => {
-      this.state = s;
+      console.log('[VDIAG][recorder] state$ ->', s, { turnIndex: this.turnIndex });
+      this.zone.run(() => {
+        this.state = s;
+      });
       if (s === 'listening') {
         setTimeout(() => this.initCanvas(), 100);
       }
     });
 
     this.engine.interimTranscript$.pipe(takeUntil(this.destroy$)).subscribe(t => {
-      this.interimText = t;
+      this.zone.run(() => { this.interimText = t; });
     });
 
     this.engine.volumeLevel$.pipe(takeUntil(this.destroy$)).subscribe(v => {
@@ -57,17 +67,24 @@ export class VoiceRecorderComponent implements OnInit, OnDestroy {
     // Re-entrancy guard: a session is already starting/running. Without this, auto-start
     // (defaultVoiceStarter) racing a manual mic tap launches two concurrent sessions on the
     // shared singleton engine, orphaning a recognizer and wedging state on 'requesting'.
+    console.log('[VDIAG][recorder] startRecording() called', { turnIndex: this.turnIndex, currentState: this.state });
     if (this.state === 'requesting' || this.state === 'listening' || this.state === 'processing') {
+      console.warn('[VDIAG][recorder] startRecording() BLOCKED by re-entrancy guard', { turnIndex: this.turnIndex, currentState: this.state });
       return;
     }
     this.errorMessage = '';
     this.recordingStarted.emit();
     try {
       const result = await this.engine.startSession(this.expectedText);
+      console.log('[VDIAG][recorder] startSession resolved', { turnIndex: this.turnIndex, score: result?.overallScore });
       this.recordingComplete.emit(result);
     } catch (err: any) {
       // Superseded by a newer session/stop — silently ignore; the active session owns the UI.
-      if (err?.message === VoiceRecognitionEngine.SUPERSEDED) return;
+      if (err?.message === VoiceRecognitionEngine.SUPERSEDED) {
+        console.warn('[VDIAG][recorder] startSession SUPERSEDED — ignored', { turnIndex: this.turnIndex });
+        return;
+      }
+      console.error('[VDIAG][recorder] startSession rejected', { turnIndex: this.turnIndex, message: err?.message });
       this.errorMessage = err?.message || 'Recording failed. Please try again.';
       this.errorOccurred.emit(this.errorMessage);
     }

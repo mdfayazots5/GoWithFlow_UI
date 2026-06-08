@@ -118,6 +118,10 @@ export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDe
 
       // Configure audio capture for this turn. Capture when the host enabled session recording
       // (all participants) OR the user opted into the personal archive.
+      // NOTE: on the native app this enables capture only on the WEB client / facilitator turns.
+      // Native SPEAKER (recognition) turns intentionally capture nothing — the recorder starves the
+      // on-device recognizer (mic contention, verified 2026-06-08). The engine no longer starts a
+      // native recorder during recognition; recognition/scoring always takes mic priority.
       this.voiceEngine.enableAudioCapture(this.audioArchiveSvc.shouldCapture());
 
       // Facilitator "Read Aloud" turns have no recognition recorder — capture them standalone

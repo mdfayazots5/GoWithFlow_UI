@@ -259,12 +259,15 @@ export class AdminService {
     );
   }
 
-  exportReports(params: any = {}): Observable<Blob> {
+  // Phase 10 (R2): backend uploads the Excel to R2 and returns a presigned URL
+  // in ApiResponse.data — it no longer streams bytes. Return that URL string.
+  exportReports(params: any = {}): Observable<string> {
     let httpParams = new HttpParams();
     Object.keys(params).forEach(key => {
       if (params[key]) httpParams = httpParams.set(key, params[key]);
     });
-    return this.http.get(`${this.baseUrl}/reports/export`, { params: httpParams, responseType: 'blob' });
+    return this.http.get<any>(`${this.baseUrl}/reports/export`, { params: httpParams })
+      .pipe(map(res => res?.data as string));
   }
 
   // ── Cohort Management ────────────────────────────────────────

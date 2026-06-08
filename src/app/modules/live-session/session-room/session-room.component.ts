@@ -12,6 +12,8 @@ import { catchError, of } from 'rxjs';
 import { SessionPreferencesService } from '@core/services/session-preferences.service';
 import { VoiceBroadcastService } from '@core/services/voice-broadcast.service';
 import { SessionCapabilitiesService } from '@core/services/session-capabilities.service';
+import { SessionService } from '@core/services/session.service';
+import { AudioArchiveService } from '@core/services/audio-archive.service';
 
 type TurnShiftEvent = {
   newActiveMemberId: string | number;
@@ -308,6 +310,8 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
   readonly sessionPrefs = inject(SessionPreferencesService);
   readonly capabilities = inject(SessionCapabilitiesService);
   private voiceBroadcast = inject(VoiceBroadcastService);
+  private sessionService = inject(SessionService);
+  private audioArchiveSvc = inject(AudioArchiveService);
 
   readonly ActivityIcon = Activity;
   readonly TimerIcon = Clock;
@@ -390,6 +394,16 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
     this.voiceBroadcast.init(sessionId, myUserId);
     this.ws.connect(sessionId, user?.id || '', 'live-session');
     this.loadCurrentTurn(sessionId);
+
+    // Re-derive the host "Record Session" flag from the server on every entry into the room.
+    // AudioArchiveService.sessionRecordingEnabled is a root-singleton normally set only in the
+    // lobby; a mid-session page reload / deep-link into /live-session bypasses the lobby and would
+    // otherwise leave it false, silently stopping turn-clip capture for the consolidated recording.
+    // Best-effort: a failed lookup leaves the existing flag (and personal-archive consent) untouched.
+    this.sessionService.getLobbyState(sessionId).subscribe({
+      next: state => this.audioArchiveSvc.setSessionRecordingEnabled(state.recordingEnabled === true),
+      error: () => { /* non-fatal — keep whatever the lobby/consent already set */ }
+    });
 
     // ── Existing event listeners ──
     this.ws.on('TURN_SHIFT').subscribe((shiftEvent: TurnShiftEvent) => {

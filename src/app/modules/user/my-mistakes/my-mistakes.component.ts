@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { MistakeService } from '../mistake.service';
 import { RepracticeService } from '../../repractice/repractice.service';
 import { Mistake, MistakeSummary } from '@core/models/mistake.model';
-import { LucideAngularModule, AlertCircle, CheckCircle, Clock, ChevronRight, TrendingUp, Mic2, Filter, Info } from 'lucide-angular';
+import { LucideAngularModule, AlertCircle, CheckCircle, Clock, ChevronRight, TrendingUp, Mic2, Info } from 'lucide-angular';
 import { Router, RouterLink } from '@angular/router';
 import { ToastService } from '@core/services/toast.service';
 import { SkeletonListComponent } from '@shared/ui/skeleton';
@@ -41,24 +41,7 @@ import { SkeletonListComponent } from '@shared/ui/skeleton';
           }
         </div>
 
-        <!-- Filter Tabs -->
         <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm overflow-hidden">
-          <div class="flex items-center gap-2 px-4 py-3 border-b border-gw-bg overflow-x-auto scrollbar-none">
-            <i-lucide [img]="FilterIcon" size="14" class="text-gw-text-muted shrink-0"></i-lucide>
-            @for (tab of tabs; track tab) {
-              <button
-                (click)="activeTab.set(tab); loadMistakes()"
-                class="whitespace-nowrap px-4 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all shrink-0"
-                [class.bg-gw-primary]="activeTab() === tab"
-                [class.text-white]="activeTab() === tab"
-                [class.bg-gw-bg]="activeTab() !== tab"
-                [class.text-gw-text-muted]="activeTab() !== tab"
-              >
-                {{ tab }}
-              </button>
-            }
-          </div>
-
           <!-- Mistake List -->
           @if (isLoading()) {
             <app-skeleton-list [rows]="3" [bare]="true" [avatar]="false"></app-skeleton-list>
@@ -168,8 +151,6 @@ import { SkeletonListComponent } from '@shared/ui/skeleton';
   `,
   styles: [`
     :host { display: block; }
-    .scrollbar-none::-webkit-scrollbar { display: none; }
-    .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
   `]
 })
 export class MyMistakesComponent implements OnInit {
@@ -178,14 +159,12 @@ export class MyMistakesComponent implements OnInit {
   private toast           = inject(ToastService);
   private router          = inject(Router);
 
-  readonly FilterIcon = Filter;
   readonly ClockIcon  = Clock;
   readonly CheckIcon  = CheckCircle;
   readonly NextIcon   = ChevronRight;
   readonly InfoIcon   = Info;
   readonly MicIcon    = Mic2;
 
-  tabs = ['All', 'Grammar', 'Pronunciation', 'Hesitation', 'Speed'];
   activeTab   = signal('All');
   mistakes    = signal<Mistake[]>([]);
   summary     = signal<MistakeSummary | null>(null);

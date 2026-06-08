@@ -130,6 +130,12 @@ export class VoiceRecognitionEngine implements OnDestroy {
   /** Thrown by startSession() when a newer session/stop superseded it mid-await. Callers swallow it. */
   static readonly SUPERSEDED = 'SESSION_SUPERSEDED';
 
+  // Watchdog for the WEB startup phase (permission → VAD → recognizer). The mic UI is
+  // disabled while state is 'requesting', so a stalled getUserMedia (ignored permission
+  // prompt, mic held by another app/tab, OS audio hang) would wedge the recorder forever.
+  // This timer forces a visible, retryable 'error' if 'listening' is not reached in time.
+  private _webStartWatchdog: any = null;
+
   // ─── Audio Archive Support ──────────────────────────────────────────────────
   private mediaRecorder: MediaRecorder | null = null;
   private audioChunks: BlobPart[] = [];
@@ -351,7 +357,9 @@ export class VoiceRecognitionEngine implements OnDestroy {
 
   // ─── MAIN ENTRY POINT ───────────────────────────────────────────────────────
   async startSession(expectedText: string): Promise<VoiceSessionResult> {
+    console.log('[VDIAG][engine] startSession() ENTER', { stateOnEntry: this.state$.value, gen: this._sessionGen + 1, isCapacitorNative: this.isCapacitorNative, isMobile: this._isMobile });
     if (this.state$.value !== 'idle') {
+      console.warn('[VDIAG][engine] startSession() state not idle -> stopSession()', { state: this.state$.value });
       this.stopSession();
     }
 
@@ -413,50 +421,109 @@ export class VoiceRecognitionEngine implements OnDestroy {
       console.warn('[VRE] Unreliable mobile engine for Web Speech', { engine: cap.browserEngine });
     }
 
-    const permitted = await this.requestMicPermission();
-    // A newer session (or a stop) ran while we awaited the permission prompt — abort this
-    // stale run without touching state. The superseding session owns state$ now.
-    if (gen !== this._sessionGen) throw new Error(VoiceRecognitionEngine.SUPERSEDED);
-    if (!permitted) {
-      this.state$.next('error');
-      throw new Error('Microphone permission denied. Please allow microphone access and try again.');
+    // Permission → VAD → recognizer. Wrapped so the recorder UI can NEVER stay wedged on
+    // 'requesting' (its mic button is disabled in that state). Any thrown failure — or a
+    // getUserMedia that never settles — is converted into a visible, retryable 'error'
+    // instead of a permanent "Requesting microphone…". See startWebRecognition().
+    try {
+      return await this.startWebRecognition(expectedText, gen);
+    } catch (err: any) {
+      if (err?.message === VoiceRecognitionEngine.SUPERSEDED) throw err;
+      this.vad.stop();
+      if (this.state$.value !== 'error') this.state$.next('error');
+      throw err;
     }
+  }
 
-    // Skip VAD on mobile — the VAD's getUserMedia stream conflicts with the
-    // Web Speech API's internal audio pipeline on Android Chrome, causing
-    // speech recognition to receive no audio (zero onresult events).
-    // On mobile, continuous=false lets the browser handle end-of-speech natively.
-    if (!this._isMobile) {
-      await this.vad.start();
-      if (gen !== this._sessionGen) { this.vad.stop(); throw new Error(VoiceRecognitionEngine.SUPERSEDED); }
-    }
+  // ─── WEB STARTUP (permission → VAD → recognizer) WITH MIC WATCHDOG ───────────
+  // The recorder disables the mic button while state is 'requesting', so a stalled
+  // startup wedges the UI with no escape. This races the real startup against a
+  // watchdog: if 'listening' is not reached within the window (ignored permission
+  // prompt, mic held by another app/tab, OS audio hang), it forces an 'error' so the
+  // recorder shows a message and re-enables the mic for retry. Mirrors the keep-alive
+  // / hard-ceiling philosophy already used on the native path.
+  private startWebRecognition(expectedText: string, gen: number): Promise<VoiceSessionResult> {
+    const WEB_MIC_TIMEOUT_MS = 12000;
 
-    if (this.captureAudio) {
-      this.audioChunks = [];
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        this.mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-        this.mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) this.audioChunks.push(e.data); };
-        this.mediaRecorder.onstop = () => {
-          this.lastAudioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
-          stream.getTracks().forEach(t => t.stop());
-        };
-        this.mediaRecorder.start(100);
-      } catch { /* audio capture is best-effort */ }
-    }
-
-    // Final checkpoint before opening the recognizer — covers the captureAudio getUserMedia await.
-    if (gen !== this._sessionGen) throw new Error(VoiceRecognitionEngine.SUPERSEDED);
-
-    return new Promise((resolve, reject) => {
-      this.startRecognition(expectedText, resolve, reject);
+    const watchdog = new Promise<never>((_, reject) => {
+      this._clearWebStartWatchdog();
+      this._webStartWatchdog = setTimeout(() => {
+        // Act only if this run is still active AND we never advanced past 'requesting'.
+        if (gen !== this._sessionGen || this.state$.value !== 'requesting') return;
+        console.warn('[VDIAG][engine] web mic watchdog FIRED — still requesting after timeout', { gen, ms: WEB_MIC_TIMEOUT_MS });
+        this._sessionGen++;   // invalidate the stalled startup so a late getUserMedia aborts as SUPERSEDED
+        this.vad.stop();
+        this.state$.next('error');
+        reject(new Error("Couldn't start the microphone. Make sure you allowed mic access (look for the mic icon near the address bar) and that no other app is using it, then tap the mic to try again."));
+      }, WEB_MIC_TIMEOUT_MS);
     });
+
+    const startup = (async (): Promise<VoiceSessionResult> => {
+      console.log('[VDIAG][engine] awaiting requestMicPermission()...', { gen });
+      const permitted = await this.requestMicPermission();
+      console.log('[VDIAG][engine] requestMicPermission() resolved', { gen, permitted, currentGen: this._sessionGen });
+      // A newer session (or a stop/watchdog) ran while we awaited — abort this stale run.
+      if (gen !== this._sessionGen) { console.warn('[VDIAG][engine] SUPERSEDED after permission', { gen, currentGen: this._sessionGen }); throw new Error(VoiceRecognitionEngine.SUPERSEDED); }
+      if (!permitted) {
+        this.state$.next('error');
+        throw new Error('Microphone permission denied. Please allow microphone access and try again.');
+      }
+
+      // Skip VAD on mobile — the VAD's getUserMedia stream conflicts with the
+      // Web Speech API's internal audio pipeline on Android Chrome, causing
+      // speech recognition to receive no audio (zero onresult events).
+      // On mobile, continuous=false lets the browser handle end-of-speech natively.
+      if (!this._isMobile) {
+        console.log('[VDIAG][engine] awaiting vad.start()...', { gen });
+        await this.vad.start();
+        console.log('[VDIAG][engine] vad.start() resolved', { gen, currentGen: this._sessionGen });
+        if (gen !== this._sessionGen) { console.warn('[VDIAG][engine] SUPERSEDED after vad.start', { gen, currentGen: this._sessionGen }); this.vad.stop(); throw new Error(VoiceRecognitionEngine.SUPERSEDED); }
+      }
+
+      if (this.captureAudio) {
+        this.audioChunks = [];
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          this.mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+          this.mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) this.audioChunks.push(e.data); };
+          this.mediaRecorder.onstop = () => {
+            this.lastAudioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+            stream.getTracks().forEach(t => t.stop());
+          };
+          this.mediaRecorder.start(100);
+        } catch { /* audio capture is best-effort */ }
+      }
+
+      // Final checkpoint before opening the recognizer — covers the captureAudio getUserMedia await.
+      if (gen !== this._sessionGen) { console.warn('[VDIAG][engine] SUPERSEDED before startRecognition', { gen, currentGen: this._sessionGen }); throw new Error(VoiceRecognitionEngine.SUPERSEDED); }
+
+      console.log('[VDIAG][engine] -> startRecognition()', { gen });
+      return await new Promise<VoiceSessionResult>((resolve, reject) => {
+        this.startRecognition(expectedText, resolve, reject);
+      });
+    })();
+
+    // If the watchdog wins the race, the stalled startup may still reject later (once its
+    // getUserMedia settles and the gen-check throws SUPERSEDED). Swallow that orphan
+    // rejection so it does not surface as an unhandledrejection.
+    startup.catch(() => {});
+
+    return Promise.race([startup, watchdog]).finally(() => this._clearWebStartWatchdog());
+  }
+
+  private _clearWebStartWatchdog(): void {
+    if (this._webStartWatchdog) {
+      clearTimeout(this._webStartWatchdog);
+      this._webStartWatchdog = null;
+    }
   }
 
   stopSession(): void {
+    console.log('[VDIAG][engine] stopSession()', { stateOnEntry: this.state$.value, gen: this._sessionGen });
     this._intentionalStop = true;
     this._sessionGen++;   // invalidate any in-flight startSession continuation
     this.cleanupSilenceTimeout();
+    this._clearWebStartWatchdog();
 
     if (this.isCapacitorNative) {
       NativeSpeechRecognition.stop().catch(() => { /* ignore */ });
@@ -619,10 +686,15 @@ export class VoiceRecognitionEngine implements OnDestroy {
         langConfirmed = true;
         if (lang) { try { localStorage.setItem(this._langCacheKey, lang); } catch { /* ignore */ } }
         console.debug('[VRE] Native language confirmed', { lang: lang ?? '(device default)' });
-        // Recognition now owns the mic — attempt the best-effort turn recording alongside it.
-        // Started here (not before start) so the recognizer always wins the mic; failure to
-        // capture (e.g. concurrent-capture not permitted) never affects recognition/scoring.
-        if (this.captureAudio) void this.startNativeClipCapture();
+        // NOTE: do NOT start turn-audio capture here. On-device testing (IV2201/Android 13, 2026-06-08)
+        // proved the native recorder and the SODA SpeechRecognizer CONTEND for the single mic: opening
+        // capacitor-voice-recorder alongside an active recognizer starves the recognizer (it returns
+        // NO_SPEECH_DETECTED). Recognition/scoring is the core feature and must never be sacrificed for
+        // recording, so speaker-turn capture is disabled on native. Facilitator read-aloud turns (no
+        // recognizer running) still capture reliably via startStandaloneCapture(). Web is unaffected
+        // (its MediaRecorder path in startWebRecognition can coexist with the Web Speech API).
+        // See ProjectOverview "KNOWN FAILURE … / mic contention". To re-enable, a single-mic-owner
+        // re-architecture (record-then-recognize) is required.
       };
 
       // The recognizer ended (onEndOfSpeech / swallowed timeout) with no usable
@@ -803,31 +875,33 @@ export class VoiceRecognitionEngine implements OnDestroy {
     // in onerror and surfaced as a clear user-facing message.
     const hasSpeechApi = !!(window as any).SpeechRecognition || !!(window as any).webkitSpeechRecognition;
     if (this._isMobile && hasSpeechApi) {
-      console.debug('[VRE] Mobile browser — skipping getUserMedia probe, SpeechRecognition handles permissions');
+      console.log('[VDIAG][engine][perm] mobile + SpeechRecognition -> skip getUserMedia probe, return true');
       return true;
     }
 
     if (navigator.permissions) {
       try {
+        console.log('[VDIAG][engine][perm] querying Permissions API...');
         const result = await navigator.permissions.query({ name: 'microphone' as PermissionName });
+        console.log('[VDIAG][engine][perm] Permissions API state =', result.state);
         if (result.state === 'granted') {
-          console.debug('[VRE] Mic permission already granted (Permissions API)');
           return true;
         }
         if (result.state === 'denied') {
-          console.debug('[VRE] Mic permission denied (Permissions API)');
           return false;
         }
         // 'prompt' — fall through to getUserMedia to trigger the prompt
-      } catch { /* Permissions API unsupported — fall through */ }
+      } catch (e) { console.log('[VDIAG][engine][perm] Permissions API threw — falling through', e); }
     }
 
     try {
+      console.log('[VDIAG][engine][perm] awaiting getUserMedia({audio:true}) — browser prompt may be showing now...');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('[VDIAG][engine][perm] getUserMedia granted');
       stream.getTracks().forEach(t => t.stop());
       return true;
     } catch (e) {
-      console.warn('[VRE] Mic permission denied via getUserMedia', e);
+      console.warn('[VDIAG][engine][perm] getUserMedia DENIED/failed', e);
       return false;
     }
   }
@@ -848,6 +922,21 @@ export class VoiceRecognitionEngine implements OnDestroy {
       return;
     }
 
+    // Tear down any previous instance first. A restart that leaves the old instance
+    // alive lets it fire onend/onerror('aborted') into THIS session's promise. Detach
+    // handlers before abort() so the teardown itself does not trigger our 'aborted' path.
+    if (this.recognition) {
+      try {
+        this.recognition.onresult = null;
+        this.recognition.onerror = null;
+        this.recognition.onend = null;
+        this.recognition.onstart = null;
+        this.recognition.onaudiostart = null;
+        this.recognition.abort();
+      } catch { /* ignore */ }
+      this.recognition = null;
+    }
+
     this.recognition = new SpeechRecognition();
     // en-IN is preferred. Edge mobile does not support it — _useFallbackLang is set
     // to true after the first language-not-supported error and subsequent attempts use en-US.
@@ -861,6 +950,9 @@ export class VoiceRecognitionEngine implements OnDestroy {
 
     this.startTimeMs = Date.now();
     this.state$.next('listening');
+    // Reached 'listening' — the startup watchdog is no longer needed (recognition itself
+    // may legitimately run far longer than the watchdog window).
+    this._clearWebStartWatchdog();
 
     console.debug('[VRE] Recognition started', {
       continuous: this.recognition.continuous,
@@ -894,7 +986,7 @@ export class VoiceRecognitionEngine implements OnDestroy {
           // Mobile gets a longer window because natural inter-phrase pauses
           // are longer and the speech API fires partials more aggressively.
           const postFinalMs = this._isMobile ? 4500 : 2500;
-          this.resetSilenceTimeout(() => this.finalize(expectedText, resolve), postFinalMs);
+          this.resetSilenceTimeout(() => this.finalize(expectedText, resolve, reject), postFinalMs);
 
         } else {
           interim += result[0].transcript;
@@ -905,7 +997,7 @@ export class VoiceRecognitionEngine implements OnDestroy {
           // users may take extra prep time and speak slower.
           if (this.allFinalTranscripts.length === 0) {
             const fallbackMs = this._isMobile ? 12000 : 8000;
-            this.resetSilenceTimeout(() => this.finalize(expectedText, resolve), fallbackMs);
+            this.resetSilenceTimeout(() => this.finalize(expectedText, resolve, reject), fallbackMs);
           }
         }
       }
@@ -947,8 +1039,8 @@ export class VoiceRecognitionEngine implements OnDestroy {
     // recognizer. On an insecure context or a backend-less engine, onaudiostart
     // never fires — the gap between 'onstart' and 'onaudiostart' in the logs is
     // the tell-tale signature of a blocked Web Speech path.
-    this.recognition.onstart       = () => console.debug('[VRE] onstart — speech service started', { lang: this.recognition?.lang });
-    this.recognition.onaudiostart  = () => console.debug('[VRE] onaudiostart — microphone audio capture began');
+    this.recognition.onstart       = () => console.log('[VDIAG][engine] onstart — speech service started', { lang: this.recognition?.lang });
+    this.recognition.onaudiostart  = () => console.log('[VDIAG][engine] onaudiostart — microphone audio capture began (mic truly open)');
     this.recognition.onspeechstart = () => console.debug('[VRE] onspeechstart — speech detected');
     this.recognition.onspeechend   = () => console.debug('[VRE] onspeechend — speech ended');
     this.recognition.onaudioend    = () => console.debug('[VRE] onaudioend — microphone audio capture ended');
@@ -956,6 +1048,17 @@ export class VoiceRecognitionEngine implements OnDestroy {
     // ── EVENT: error handling ────────────────────────────────────────────────
     this.recognition.onerror = (event: any) => {
       console.warn('[VRE] Recognition error', { error: event.error, retryCount: this.retryCount, _hasSpoken: this._hasSpoken, lang: this.recognition?.lang });
+
+      // 'aborted' is benign — it fires whenever we stop/restart/replace the recognizer
+      // (e.g. the desktop no-finals onend restart, or a superseding session). It must
+      // NEVER reject the session. If we already have speech, finalize; if the user
+      // deliberately stopped, go idle; otherwise stay listening (onend handles relisten).
+      if (event.error === 'aborted') {
+        if (this._intentionalStop) return;
+        if (this.allFinalTranscripts.length > 0) { this.finalize(expectedText, resolve, reject); return; }
+        console.debug('[VRE] aborted with no finals — benign, awaiting onend relisten');
+        return;
+      }
 
       // Permission denied — SpeechRecognition itself asked and was refused.
       // Surfaces when getUserMedia probe is skipped on mobile browsers.
@@ -996,7 +1099,7 @@ export class VoiceRecognitionEngine implements OnDestroy {
         if (this.allFinalTranscripts.length > 0) {
           console.debug('[VRE] no-speech after finals — extending timeout instead of retrying');
           const extendMs = this._isMobile ? 4500 : 2500;
-          this.resetSilenceTimeout(() => this.finalize(expectedText, resolve), extendMs);
+          this.resetSilenceTimeout(() => this.finalize(expectedText, resolve, reject), extendMs);
           return;
         }
         // No transcripts yet — user genuinely has not spoken.
@@ -1044,17 +1147,20 @@ export class VoiceRecognitionEngine implements OnDestroy {
           try { this.recognition.start(); } catch (e) { /* ignore */ }
         } else {
           // Desktop (continuous=true): onend with finals means recognition ended cleanly
-          this.finalize(expectedText, resolve);
+          this.finalize(expectedText, resolve, reject);
         }
         // iOS: onresult already restarted recognition; silence timer handles finalize
       } else if (!this.isIOS) {
-        // No finals yet — restart to keep listening
+        // No finals yet — keep listening. Re-`start()` on the SAME (already-ended) instance
+        // is what fires SpeechRecognition 'aborted' on desktop Chrome and used to kill the
+        // session. Restart through startRecognition() instead, which tears down the old
+        // instance and creates a fresh one cleanly.
         if (this.retryCount < this.maxRetries) {
           this.retryCount++;
-          console.warn('[BELL] Unexpected onend — restarting, bell will fire', { attempt: this.retryCount });
+          console.warn('[BELL] Unexpected onend — restarting with fresh instance, bell will fire', { attempt: this.retryCount });
           setTimeout(() => {
-            if (this.state$.value === 'listening') {
-              try { this.recognition.start(); } catch (e) { /* ignore */ }
+            if (this.state$.value === 'listening' && !this._intentionalStop) {
+              this.startRecognition(expectedText, resolve, reject);
             }
           }, 300);
         }
@@ -1064,7 +1170,7 @@ export class VoiceRecognitionEngine implements OnDestroy {
     // Initial fallback: if no activity at all within this window, finalise
     // with whatever transcripts exist (or an empty result).
     const fallbackMs = this._isMobile ? 12000 : 8000;
-    this.resetSilenceTimeout(() => this.finalize(expectedText, resolve), fallbackMs);
+    this.resetSilenceTimeout(() => this.finalize(expectedText, resolve, reject), fallbackMs);
 
     console.warn('[BELL] Initial recognition.start() — bell will fire now', {
       isMobile: this._isMobile,
@@ -1123,7 +1229,8 @@ export class VoiceRecognitionEngine implements OnDestroy {
 
   private finalize(
     expectedText: string,
-    resolve: (r: VoiceSessionResult) => void
+    resolve: (r: VoiceSessionResult) => void,
+    reject?: (e: any) => void
   ): void {
     if (this.state$.value !== 'listening') return;
 
@@ -1142,7 +1249,28 @@ export class VoiceRecognitionEngine implements OnDestroy {
     if (elapsed < minMs && wordCount < minWords && !this._hasSpoken) {
       console.debug('[VRE] Minimum-duration guard — rescheduling', { elapsed, wordCount });
       const rescheduleMs = this._isMobile ? 4500 : 2500;
-      this.resetSilenceTimeout(() => this.finalize(expectedText, resolve), rescheduleMs);
+      this.resetSilenceTimeout(() => this.finalize(expectedText, resolve, reject), rescheduleMs);
+      return;
+    }
+
+    // No transcript captured at all (combined empty / zero words). This is the signature of
+    // a browser whose Web Speech surface accepts audio but never emits onresult (desktop Edge
+    // is the classic case: onstart/onaudiostart/onspeechstart fire, but no transcript), or of
+    // genuine silence. Either way, scoring empty input yields a misleading baseline (~18) and
+    // silently advances. Mirror the native path: reject with a clear, retry-able message
+    // instead of resolving a phantom score.
+    if (wordCount === 0) {
+      console.warn('[VRE] finalize with empty transcript — rejecting as no-speech', { elapsed, engine: this._engine });
+      this._intentionalStop = true;
+      this.cleanupSilenceTimeout();
+      if (this.recognition) { try { this.recognition.stop(); } catch { /* ignore */ } }
+      this.vad.stop();
+      this.state$.next('error');
+      const edgeHint = this._engine === 'edge'
+        ? ' If you are on Microsoft Edge and speaking clearly, try Google Chrome or install the GoWithFlow app — Edge does not always provide a working speech service.'
+        : '';
+      const err = new Error(`No speech detected. Please tap the mic and speak clearly.${edgeHint}`);
+      if (reject) reject(err); else resolve(this.buildEmptyResult(expectedText));
       return;
     }
 
