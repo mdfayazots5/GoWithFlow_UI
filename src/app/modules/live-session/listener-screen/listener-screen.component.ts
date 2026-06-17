@@ -2,7 +2,7 @@
 import { Component, Input, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TurnState } from '@core/models/voice.model';
-import { LucideAngularModule, Mic, ThumbsUp, AlertCircle, Volume2 } from 'lucide-angular';
+import { LucideAngularModule, Mic, ThumbsUp, AlertCircle, Volume2, Ear } from 'lucide-angular';
 import { LiveSessionService } from '../live-session.service';
 import { VoiceBroadcastService } from '@core/services/voice-broadcast.service';
 import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.component';
@@ -20,9 +20,11 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
           <span class="text-[11px] font-black uppercase tracking-widest text-white/30 italic">
             Turn {{ turnState.turnIndex }} / {{ turnState.totalTurns }}
           </span>
-          <span class="px-2 py-0.5 bg-[#E07B39]/15 text-[#E07B39] text-[11px] font-black uppercase tracking-wider rounded-full italic">
-            {{ turnState.utterance.grammarTag }}
-          </span>
+          @if (!turnState.hideScriptText) {
+            <span class="px-2 py-0.5 bg-[#E07B39]/15 text-[#E07B39] text-[11px] font-black uppercase tracking-wider rounded-full italic">
+              {{ turnState.utterance.grammarTag }}
+            </span>
+          }
         </div>
         <div class="h-1 bg-white/8 rounded-full overflow-hidden">
           <div
@@ -82,12 +84,22 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
       </div>
 
       <!-- Utterance Card -->
-      <div class="bg-white/5 rounded-[20px] border border-white/8 px-4 py-3 space-y-2">
-        <span class="text-[11px] font-black uppercase tracking-widest text-white/25 italic">Currently Reading</span>
-        <p class="text-base font-black text-white/75 italic leading-snug tracking-tight">
-          "{{ turnState.utterance.englishText }}"
-        </p>
-      </div>
+      @if (turnState.hideScriptText) {
+        <!-- Blind Q&A: the candidate hears the AI interviewer's question — never reads it. -->
+        <div class="bg-white/5 rounded-[20px] border border-white/8 px-4 py-4 flex items-center gap-2.5">
+          <i-lucide [img]="EarIcon" size="16" class="text-[#E07B39] flex-shrink-0"></i-lucide>
+          <span class="text-[11px] font-black uppercase tracking-widest text-white/55 italic leading-snug">
+            Listen carefully — the interviewer is asking your question
+          </span>
+        </div>
+      } @else {
+        <div class="bg-white/5 rounded-[20px] border border-white/8 px-4 py-3 space-y-2">
+          <span class="text-[11px] font-black uppercase tracking-widest text-white/25 italic">Currently Reading</span>
+          <p class="text-base font-black text-white/75 italic leading-snug tracking-tight">
+            "{{ turnState.utterance.englishText }}"
+          </p>
+        </div>
+      }
 
       <!-- Inline Banners (condensed) -->
       @if (showReReadBanner) {
@@ -176,6 +188,7 @@ export class ListenerScreenComponent {
 
   readonly MicIcon = Mic;
   readonly VolumeIcon = Volume2;
+  readonly EarIcon = Ear;
 
   lastAction = signal<string | null>(null);
 

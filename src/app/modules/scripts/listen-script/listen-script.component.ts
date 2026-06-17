@@ -2,70 +2,84 @@ import { Component, OnDestroy, OnInit, PLATFORM_ID, computed, effect, inject, si
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatBottomSheet, MatBottomSheetModule } from '@angular/material/bottom-sheet';
-import { MatMenuModule } from '@angular/material/menu';
 import {
   LucideAngularModule, ChevronLeft, Play, Pause, SkipForward, SkipBack,
-  Repeat, Gauge, AudioLines, Headphones, Check
+  AudioLines, Headphones, SlidersHorizontal,
 } from 'lucide-angular';
 import { catchError, of } from 'rxjs';
 import { ScriptService } from '@core/services/script.service';
-import { ScriptPlaybackService, PLAYBACK_SPEEDS } from '@core/services/voice/script-playback.service';
-import { ListenVoicesSheetComponent } from './listen-voices.sheet';
+import { ScriptPlaybackService } from '@core/services/voice/script-playback.service';
+import { ListenSettingsSheetComponent } from './listen-settings.sheet';
 
 /**
- * Listen Script — Spotify-lyrics-style audio player for a session script.
+ * Listen Script — immersive, Spotify-style audio player for a session script.
  *
- * Audio is generated live, on-device, line-by-line (see ScriptPlaybackService). The active line
- * is highlighted and auto-scrolled into view; the user can scroll freely and tap any line to jump
- * playback there. No session is joined and no microphone is opened.
+ * Full-screen (no app header / bottom tab bar — see app.component fullBleedPatterns). Audio is
+ * generated live, on-device, line-by-line (ScriptPlaybackService). The active line is highlighted
+ * and auto-scrolled into view; the user can tap any line — or tap/drag the seek bar — to jump.
+ * The on-device TTS engine is LINE-LEVEL (no mid-line seek), so the seek bar snaps to the nearest
+ * line. Speed / Repeat / Voices live in the Settings sheet. No session, no microphone.
  */
 @Component({
   selector: 'app-listen-script',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, RouterLink, MatBottomSheetModule, MatMenuModule],
+  imports: [CommonModule, LucideAngularModule, RouterLink, MatBottomSheetModule],
   template: `
-    <div class="min-h-screen bg-gw-bg flex flex-col">
+    <div class="fixed inset-0 flex flex-col text-white"
+      style="background: radial-gradient(120% 80% at 50% 0%, #232347 0%, #1A1A2E 45%, #0F0F1C 100%);">
 
-      <!-- Header -->
-      <div class="sticky top-0 z-10 bg-gw-bg/95 backdrop-blur px-4 pt-2 pb-3 flex items-center gap-3">
+      <!-- Top bar -->
+      <div class="flex items-center justify-between px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-2 shrink-0">
         <button routerLink="/scripts/listen"
-          class="w-10 h-10 rounded-xl bg-white border border-gw-card-border flex items-center justify-center text-gw-text-muted hover:text-gw-primary transition-all shrink-0">
-          <i-lucide [img]="BackIcon" size="20"></i-lucide>
+          class="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center text-white/80 hover:text-white active:scale-95 transition-all">
+          <i-lucide [img]="BackIcon" size="22"></i-lucide>
         </button>
-        <div class="min-w-0 flex-1">
-          <p class="text-[11px] font-bold text-gw-text-muted uppercase tracking-widest italic">Listen Script</p>
-          <h2 class="text-base font-black text-gw-text italic uppercase tracking-tight truncate">
-            {{ title() || 'Loading…' }}
-          </h2>
-        </div>
+        <span class="text-[11px] font-black uppercase tracking-[0.25em] text-white/45 italic">Now Listening</span>
+        <button (click)="openSettings()"
+          class="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center text-white/80 hover:text-white active:scale-95 transition-all">
+          <i-lucide [img]="SettingsIcon" size="20"></i-lucide>
+        </button>
       </div>
 
       @if (isLoading()) {
-        <div class="flex flex-col items-center justify-center py-24 gap-4">
-          <div class="w-10 h-10 border-4 border-gw-primary border-t-transparent rounded-full animate-spin"></div>
-          <p class="text-sm font-black uppercase tracking-widest italic text-gw-text-muted">Loading script…</p>
+        <div class="flex-1 flex flex-col items-center justify-center gap-4">
+          <div class="w-10 h-10 border-4 border-white/70 border-t-transparent rounded-full animate-spin"></div>
+          <p class="text-sm font-black uppercase tracking-widest italic text-white/50">Loading script…</p>
         </div>
       }
 
       @else if (!playback.hasContent()) {
-        <div class="flex flex-col items-center justify-center py-24 gap-4 text-center px-6">
-          <div class="w-12 h-12 rounded-2xl bg-white border border-gw-card-border flex items-center justify-center">
-            <i-lucide [img]="HeadphonesIcon" size="22" class="text-gw-text-muted"></i-lucide>
+        <div class="flex-1 flex flex-col items-center justify-center gap-4 text-center px-6">
+          <div class="w-14 h-14 rounded-2xl bg-white/10 flex items-center justify-center">
+            <i-lucide [img]="HeadphonesIcon" size="24" class="text-white/60"></i-lucide>
           </div>
-          <p class="text-base font-black text-gw-text italic">Nothing to play</p>
+          <p class="text-base font-black italic">Nothing to play</p>
           <a routerLink="/scripts/listen" class="text-gw-primary font-bold text-sm italic">Pick another script</a>
         </div>
       }
 
       @else {
+        <!-- Artwork + title -->
+        <div class="flex flex-col items-center px-6 pt-2 pb-3 shrink-0">
+          <div class="w-32 h-32 rounded-[28px] flex items-center justify-center shadow-2xl mb-3"
+            [style.background]="'linear-gradient(135deg, ' + playback.roleColor(playback.roles()[0]) + ', #3D5A99)'">
+            <i-lucide [img]="HeadphonesIcon" size="52" class="text-white"></i-lucide>
+          </div>
+          <h1 class="text-lg font-black italic uppercase tracking-tight text-center leading-tight line-clamp-2">
+            {{ title() || 'Listen Script' }}
+          </h1>
+          <p class="text-[11px] font-bold uppercase tracking-widest italic text-white/40 mt-0.5">
+            {{ playback.roles().length }} {{ playback.roles().length === 1 ? 'voice' : 'voices' }} · {{ playback.lines().length }} lines
+          </p>
+        </div>
+
         <!-- Lyrics list -->
-        <div class="flex-1 px-4 pb-40 space-y-1.5">
+        <div class="flex-1 overflow-y-auto px-4 pb-4 space-y-1.5 min-h-0">
           @for (line of playback.lines(); track line.index) {
             <button [id]="'listen-line-' + line.index"
               (click)="playback.seekTo(line.index)"
               class="w-full text-left rounded-2xl px-4 py-3 transition-all duration-300"
-              [class.bg-white]="line.index === playback.currentIndex()"
-              [class.shadow-md]="line.index === playback.currentIndex()"
+              [style.background]="line.index === playback.currentIndex() ? 'rgba(255,255,255,0.10)' : 'transparent'"
               [style.border]="line.index === playback.currentIndex() ? '1px solid ' + playback.roleColor(line.speakerLabel) : '1px solid transparent'">
 
               <div class="flex items-center gap-2 mb-1">
@@ -80,95 +94,60 @@ import { ListenVoicesSheetComponent } from './listen-voices.sheet';
                 }
               </div>
 
-              <p class="font-bold leading-relaxed transition-all duration-300"
-                [class.text-gw-text]="line.index === playback.currentIndex()"
+              <p class="font-bold leading-relaxed text-white transition-all duration-300"
                 [class.text-base]="line.index === playback.currentIndex()"
-                [class.text-gw-text-muted]="line.index !== playback.currentIndex()"
                 [class.text-sm]="line.index !== playback.currentIndex()"
-                [class.opacity-60]="line.index < playback.currentIndex()">
+                [style.opacity]="line.index === playback.currentIndex() ? 1 : (line.index < playback.currentIndex() ? 0.4 : 0.6)">
                 {{ line.text }}
               </p>
             </button>
           }
         </div>
 
-        <!-- Playback dock -->
-        <div class="fixed bottom-0 left-0 right-0 z-20 bg-white border-t border-gw-card-border px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <div class="max-w-lg mx-auto">
+        <!-- Dock: seek + transport -->
+        <div class="shrink-0 px-6 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]
+                    bg-gradient-to-t from-[#0F0F1C] via-[#0F0F1C]/95 to-transparent">
 
-            <!-- progress -->
-            <div class="flex items-center gap-2 mb-3">
-              <span class="text-[11px] font-bold text-gw-text-muted tabular-nums">{{ playback.currentIndex() + 1 }}</span>
-              <div class="flex-1 h-1.5 bg-gw-bg rounded-full overflow-hidden">
-                <div class="h-full bg-gw-primary rounded-full transition-all duration-300"
-                  [style.width.%]="progressPct()"></div>
+          <!-- Seek bar (snaps to nearest LINE — engine has no mid-line seek) -->
+          <div class="flex items-center gap-2.5 mb-3">
+            <span class="text-[11px] font-bold text-white/55 tabular-nums w-6 text-right">{{ playback.currentIndex() + 1 }}</span>
+            <div class="flex-1 py-2 cursor-pointer touch-none"
+              (pointerdown)="onSeekDown($event)"
+              (pointermove)="onSeekMove($event)"
+              (pointerup)="onSeekUp($event)"
+              (pointercancel)="onSeekUp($event)">
+              <div class="relative h-1.5 bg-white/15 rounded-full">
+                <div class="absolute inset-y-0 left-0 bg-white rounded-full" [style.width.%]="progressPct()"></div>
+                <div class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-white shadow"
+                  [style.left.%]="progressPct()"></div>
               </div>
-              <span class="text-[11px] font-bold text-gw-text-muted tabular-nums">{{ playback.lines().length }}</span>
             </div>
+            <span class="text-[11px] font-bold text-white/55 tabular-nums w-6">{{ playback.lines().length }}</span>
+          </div>
 
-            <!-- transport -->
-            <div class="flex items-center justify-between gap-2">
-              <!-- speed -->
-              <button [matMenuTriggerFor]="speedMenu"
-                class="h-11 px-3 rounded-xl bg-gw-bg flex items-center gap-1.5 text-gw-text-muted hover:text-gw-primary transition-all">
-                <i-lucide [img]="SpeedIcon" size="16"></i-lucide>
-                <span class="text-[11px] font-black tabular-nums">{{ playback.rate() }}x</span>
-              </button>
-              <mat-menu #speedMenu="matMenu" class="gwf-speed-menu">
-                @for (s of speeds; track s) {
-                  <button mat-menu-item (click)="playback.setRate(s)"
-                    class="!flex items-center justify-between gap-6 !text-sm !font-bold">
-                    <span class="tabular-nums">{{ s }}x</span>
-                    @if (playback.rate() === s) {
-                      <i-lucide [img]="CheckIcon" size="16" class="text-gw-primary"></i-lucide>
-                    }
-                  </button>
-                }
-              </mat-menu>
-
-              <div class="flex items-center gap-2">
-                <button (click)="playback.prev()"
-                  class="w-11 h-11 rounded-xl bg-gw-bg flex items-center justify-center text-gw-text hover:text-gw-primary transition-all">
-                  <i-lucide [img]="PrevIcon" size="20"></i-lucide>
-                </button>
-
-                <button (click)="playback.togglePlay()"
-                  class="w-14 h-14 rounded-2xl bg-gw-primary text-white flex items-center justify-center shadow-lg hover:opacity-90 active:scale-95 transition-all">
-                  <i-lucide [img]="playback.isPlaying() ? PauseIcon : PlayIcon" size="26"></i-lucide>
-                </button>
-
-                <button (click)="playback.next()"
-                  class="w-11 h-11 rounded-xl bg-gw-bg flex items-center justify-center text-gw-text hover:text-gw-primary transition-all">
-                  <i-lucide [img]="NextIcon" size="20"></i-lucide>
-                </button>
-              </div>
-
-              <!-- repeat -->
-              <button (click)="playback.cycleRepeat()"
-                class="h-11 px-3 rounded-xl flex items-center gap-1.5 transition-all"
-                [class.bg-gw-primary]="playback.repeat() !== 'off'"
-                [class.text-white]="playback.repeat() !== 'off'"
-                [class.bg-gw-bg]="playback.repeat() === 'off'"
-                [class.text-gw-text-muted]="playback.repeat() === 'off'">
-                <i-lucide [img]="RepeatIcon" size="16"></i-lucide>
-                <span class="text-[11px] font-black uppercase">{{ repeatLabel() }}</span>
-              </button>
-            </div>
-
-            <!-- voices -->
-            <button (click)="openVoices()"
-              class="mt-2.5 w-full h-10 rounded-xl bg-gw-bg flex items-center justify-center gap-2 text-gw-text-muted hover:text-gw-primary transition-all">
-              <i-lucide [img]="WaveIcon" size="15"></i-lucide>
-              <span class="text-[11px] font-black uppercase tracking-widest">Voices · {{ playback.roles().length }} roles</span>
+          <!-- Transport -->
+          <div class="flex items-center justify-center gap-6">
+            <button (click)="playback.prev()"
+              class="w-12 h-12 rounded-full flex items-center justify-center text-white/85 hover:text-white active:scale-95 transition-all">
+              <i-lucide [img]="PrevIcon" size="26"></i-lucide>
             </button>
 
+            <button (click)="playback.togglePlay()"
+              class="w-16 h-16 rounded-full bg-white text-[#1A1A2E] flex items-center justify-center shadow-xl active:scale-95 transition-all">
+              <i-lucide [img]="playback.isPlaying() ? PauseIcon : PlayIcon" size="30"></i-lucide>
+            </button>
+
+            <button (click)="playback.next()"
+              class="w-12 h-12 rounded-full flex items-center justify-center text-white/85 hover:text-white active:scale-95 transition-all">
+              <i-lucide [img]="NextIcon" size="26"></i-lucide>
+            </button>
           </div>
         </div>
       }
 
     </div>
   `,
-  styles: [`:host { display: block; }`]
+  styles: [`:host { display: block; }`],
 })
 export class ListenScriptComponent implements OnInit, OnDestroy {
   readonly playback = inject(ScriptPlaybackService);
@@ -182,31 +161,26 @@ export class ListenScriptComponent implements OnInit, OnDestroy {
   readonly PauseIcon = Pause;
   readonly NextIcon = SkipForward;
   readonly PrevIcon = SkipBack;
-  readonly RepeatIcon = Repeat;
-  readonly SpeedIcon = Gauge;
   readonly WaveIcon = AudioLines;
   readonly HeadphonesIcon = Headphones;
-  readonly CheckIcon = Check;
-
-  readonly speeds = PLAYBACK_SPEEDS;
+  readonly SettingsIcon = SlidersHorizontal;
 
   title = signal('');
   isLoading = signal(true);
 
+  private scrubbing = false;
+
   readonly progressPct = computed(() => {
     const total = this.playback.lines().length;
-    return total ? ((this.playback.currentIndex() + 1) / total) * 100 : 0;
+    return total > 1 ? (this.playback.currentIndex() / (total - 1)) * 100 : 0;
   });
 
-  repeatLabel(): string {
-    return { off: 'Repeat', one: 'Line', all: 'All' }[this.playback.repeat()];
-  }
-
   constructor() {
-    // Auto-scroll the active line into view whenever the playback position changes.
+    // Auto-scroll the active line into view whenever the playback position changes
+    // (skip while the user is actively dragging the seek bar to avoid fighting their input).
     effect(() => {
       const idx = this.playback.currentIndex();
-      if (!isPlatformBrowser(this.platformId) || !this.playback.hasContent()) return;
+      if (!isPlatformBrowser(this.platformId) || !this.playback.hasContent() || this.scrubbing) return;
       queueMicrotask(() => {
         document.getElementById(`listen-line-${idx}`)
           ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -230,16 +204,39 @@ export class ListenScriptComponent implements OnInit, OnDestroy {
       if (data) {
         this.title.set(data.scriptTitle ?? '');
         this.playback.load(scriptId, data.scriptTitle ?? '', data.utterances ?? []);
-        // Auto-start: arriving here is a user navigation (gesture), so begin narration
-        // immediately. If the browser blocks audio without a gesture, the user taps Play.
+        // Auto-start: arriving here is a user navigation (gesture), so begin narration immediately.
         this.playback.play();
       }
       this.isLoading.set(false);
     });
   }
 
-  openVoices(): void {
-    this.sheet.open(ListenVoicesSheetComponent, { panelClass: 'preview-bottom-sheet' });
+  // ── Seek bar: map an X position to the nearest LINE (no mid-line seek on-device) ──
+  onSeekDown(e: PointerEvent): void {
+    this.scrubbing = true;
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
+    this.seekFromEvent(e);
+  }
+  onSeekMove(e: PointerEvent): void {
+    if (this.scrubbing) this.seekFromEvent(e);
+  }
+  onSeekUp(e: PointerEvent): void {
+    if (!this.scrubbing) return;
+    this.scrubbing = false;
+    (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
+  }
+
+  private seekFromEvent(e: PointerEvent): void {
+    const total = this.playback.lines().length;
+    if (!total) return;
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const frac = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const idx = Math.round(frac * (total - 1));
+    if (idx !== this.playback.currentIndex()) this.playback.seekTo(idx);
+  }
+
+  openSettings(): void {
+    this.sheet.open(ListenSettingsSheetComponent, { panelClass: 'preview-bottom-sheet' });
   }
 
   ngOnDestroy(): void {

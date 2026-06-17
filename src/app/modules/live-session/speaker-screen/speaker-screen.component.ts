@@ -2,7 +2,7 @@
 import { Component, Input, Output, EventEmitter, OnDestroy, OnChanges, AfterViewChecked, inject, signal, ViewChild, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TurnState, VoiceAnalysis } from '@core/models/voice.model';
-import { LucideAngularModule, CheckCircle2, ChevronRight, RotateCcw, Eye, EyeOff, FastForward } from 'lucide-angular';
+import { LucideAngularModule, CheckCircle2, ChevronRight, RotateCcw, Eye, EyeOff, FastForward, Ear, Mic } from 'lucide-angular';
 import { LiveSessionService } from '../live-session.service';
 import { ToastService } from '@core/services/toast.service';
 import { SessionPreferencesService } from '@core/services/session-preferences.service';
@@ -53,6 +53,8 @@ export class SpeakerScreenComponent implements OnChanges, AfterViewChecked, OnDe
   readonly CheckIcon = ChevronRight;
   readonly RetryIcon = RotateCcw;
   readonly SkipIcon = FastForward;
+  readonly EarIcon = Ear;
+  readonly MicIcon = Mic;
 
   sessionResult: VoiceSessionResult | null = null;
   analysisPhase: 'recording' | 'feedback' | 'confirmed' = 'recording';

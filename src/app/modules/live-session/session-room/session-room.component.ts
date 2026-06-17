@@ -13,6 +13,7 @@ import { SessionPreferencesService } from '@core/services/session-preferences.se
 import { VoiceBroadcastService } from '@core/services/voice-broadcast.service';
 import { SessionCapabilitiesService } from '@core/services/session-capabilities.service';
 import { TtsService } from '@core/services/voice/tts.service';
+import { getVoicePersona } from '@core/services/voice/voice-personas';
 import { SessionService } from '@core/services/session.service';
 import { AudioArchiveService } from '@core/services/audio-archive.service';
 
@@ -595,10 +596,15 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
     const text = state.utterance?.englishText ?? '';
 
     if (text) {
+      // Indian-English named voice persona (en-IN, clearer for the target learners). The persona's
+      // gender + variant + pitch drive a distinct device voice; falls back to gender if no name.
+      const persona = getVoicePersona(state.aiVoiceName ?? state.aiVoiceGender);
       await this.tts.speak(text, {
         rate: state.aiSpeechRate ?? 1.0,
-        gender: state.aiVoiceGender ?? undefined,
-        lang: 'en-US'
+        gender: persona.gender,
+        pitch: persona.pitch,
+        voiceVariant: persona.variant,
+        lang: 'en-IN',
       });
     }
 

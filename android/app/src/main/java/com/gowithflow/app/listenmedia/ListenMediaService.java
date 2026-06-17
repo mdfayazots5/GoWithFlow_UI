@@ -8,6 +8,10 @@ import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ServiceInfo;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -313,14 +317,41 @@ public class ListenMediaService extends Service {
         session.setPlaybackState(state);
 
         Line current = lines.isEmpty() ? null : lines.get(clamp(index));
-        MediaMetadataCompat meta = new MediaMetadataCompat.Builder()
+        MediaMetadataCompat.Builder meta = new MediaMetadataCompat.Builder()
                 .putString(MediaMetadataCompat.METADATA_KEY_TITLE, current != null ? current.text : title)
                 .putString(MediaMetadataCompat.METADATA_KEY_ARTIST,
                         current != null ? current.speaker + " · " + title : title)
                 .putLong(MediaMetadataCompat.METADATA_KEY_NUM_TRACKS, lines.size())
-                .putLong(MediaMetadataCompat.METADATA_KEY_TRACK_NUMBER, index + 1L)
-                .build();
-        session.setMetadata(meta);
+                .putLong(MediaMetadataCompat.METADATA_KEY_TRACK_NUMBER, index + 1L);
+        Bitmap art = getArtwork();
+        if (art != null) {
+            meta.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, art);
+            meta.putBitmap(MediaMetadataCompat.METADATA_KEY_DISPLAY_ICON, art);
+        }
+        session.setMetadata(meta.build());
+    }
+
+    /** App-launcher icon rendered to a Bitmap (cached) for lock-screen / notification artwork.
+     *  Handles adaptive/vector launcher icons by drawing the Drawable to a Bitmap. */
+    private Bitmap artwork;
+    private Bitmap getArtwork() {
+        if (artwork != null) return artwork;
+        try {
+            int iconRes = getApplicationInfo().icon;
+            Drawable d = androidx.core.content.ContextCompat.getDrawable(this, iconRes);
+            if (d instanceof BitmapDrawable) {
+                artwork = ((BitmapDrawable) d).getBitmap();
+            } else if (d != null) {
+                int w = d.getIntrinsicWidth() > 0 ? d.getIntrinsicWidth() : 512;
+                int h = d.getIntrinsicHeight() > 0 ? d.getIntrinsicHeight() : 512;
+                Bitmap bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+                Canvas canvas = new Canvas(bmp);
+                d.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+                d.draw(canvas);
+                artwork = bmp;
+            }
+        } catch (Exception ignored) { /* no artwork — notification still shows, just without an image */ }
+        return artwork;
     }
 
     private Notification buildNotification() {
@@ -329,6 +360,7 @@ public class ListenMediaService extends Service {
 
         NotificationCompat.Builder b = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setSmallIcon(smallIcon)
+                .setLargeIcon(getArtwork())
                 .setContentTitle(current != null ? current.speaker : "Listen Script")
                 .setContentText(current != null ? current.text : title)
                 .setContentIntent(contentIntent())

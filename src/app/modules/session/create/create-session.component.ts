@@ -6,6 +6,7 @@ import { Router, RouterLink } from '@angular/router';
 import { SessionService } from '@core/services/session.service';
 import { ScriptService } from '@core/services/script.service';
 import { ToastService } from '@core/services/toast.service';
+import { AI_VOICES, getVoicePersona } from '@core/services/voice/voice-personas';
 import {
   LucideAngularModule,
   ChevronRight,
@@ -166,10 +167,11 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
               <div class="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-gw-bg">
                 <div class="flex flex-col gap-1.5">
                   <label class="text-[10px] font-bold uppercase tracking-[0.16em] text-gw-text-muted">Voice</label>
-                  <select formControlName="aiVoiceGender"
+                  <select formControlName="aiVoiceName"
                     class="w-full h-11 bg-gw-bg rounded-xl px-2.5 text-[12px] font-bold text-gw-text border-2 border-transparent focus:border-gw-primary outline-none cursor-pointer">
-                    <option value="Female">Female</option>
-                    <option value="Male">Male</option>
+                    @for (v of voices; track v.id) {
+                      <option [value]="v.id">{{ v.name }} ({{ v.gender === 'Male' ? 'M' : 'F' }})</option>
+                    }
                   </select>
                 </div>
                 <div class="flex flex-col gap-1.5">
@@ -247,6 +249,9 @@ export class CreateSessionComponent implements OnInit {
   readonly LayersIcon = Layers;
   readonly BotIcon = Bot;
 
+  /** The 6 named Indian AI voices for the picker. */
+  readonly voices = AI_VOICES;
+
   private readonly categoryModeMap: Record<string, string> = {
     'Grammar Drill': 'Grammar Drill',
     'Roleplay': 'Roleplay',
@@ -255,6 +260,7 @@ export class CreateSessionComponent implements OnInit {
     'Vocabulary Sprint': 'Vocabulary Sprint',
     'Vocabulary': 'Vocabulary Sprint',
     'Fluency Drill': 'Fluency Drill',
+    'Question & Answer': 'Question & Answer',
     'Repractice Round': 'Repractice Round',
     'Repetition': 'Repractice Round'
   };
@@ -275,7 +281,7 @@ export class CreateSessionComponent implements OnInit {
     const defaults: Record<string, number> = {
       'Grammar Drill': 2, 'Roleplay': 2, 'Mock Interview': 2,
       'Interview': 2, 'Vocabulary Sprint': 2, 'Vocabulary': 2,
-      'Fluency Drill': 2, 'Repractice Round': 2, 'Repetition': 2
+      'Fluency Drill': 2, 'Question & Answer': 2, 'Repractice Round': 2, 'Repetition': 2
     };
     return defaults[cat] ?? 2;
   });
@@ -302,7 +308,7 @@ export class CreateSessionComponent implements OnInit {
     roomExpiry: ['1hr', Validators.required],
     // AI Voice Participant (Phase 17)
     aiEnabled: [false],
-    aiVoiceGender: ['Female'],
+    aiVoiceName: ['aarav'],
     aiSpeechRate: [1.00],
     aiQuestionDelay: [2]
   });
@@ -380,8 +386,10 @@ export class CreateSessionComponent implements OnInit {
     // AI Voice Participant (Phase 17): send config only when enabled. The backend fills every
     // non-host slot with the AI, so the candidate can start solo without inviting anyone.
     if (this.aiEnabled()) {
+      const persona = getVoicePersona(this.createForm.value.aiVoiceName);
       payload.aiEnabled = true;
-      payload.aiVoiceGender = this.createForm.value.aiVoiceGender;
+      payload.aiVoiceName = persona.id;                 // named Indian voice (primary)
+      payload.aiVoiceGender = persona.gender;           // derived, for legacy back-compat
       payload.aiSpeechRate = Number(this.createForm.value.aiSpeechRate);
       payload.aiQuestionDelaySec = Number(this.createForm.value.aiQuestionDelay);
     }

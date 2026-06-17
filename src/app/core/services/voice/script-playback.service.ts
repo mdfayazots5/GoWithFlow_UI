@@ -191,7 +191,11 @@ export class ScriptPlaybackService {
 
   cycleRepeat(): void {
     const order: RepeatMode[] = ['off', 'one', 'all'];
-    const mode = order[(order.indexOf(this.repeat()) + 1) % order.length];
+    this.setRepeat(order[(order.indexOf(this.repeat()) + 1) % order.length]);
+  }
+
+  /** Set the repeat mode directly (used by the Settings sheet). */
+  setRepeat(mode: RepeatMode): void {
     this.repeat.set(mode);
     if (this.native) void ListenMedia.setRepeat({ mode });
   }

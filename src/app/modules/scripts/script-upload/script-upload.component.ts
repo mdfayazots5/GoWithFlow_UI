@@ -226,7 +226,7 @@ import { RouterLink } from '@angular/router';
                   <option value="Mock Interview">Mock Interview</option>
                   <option value="Vocabulary Sprint">Vocabulary Sprint</option>
                   <option value="Fluency Drill">Fluency Drill</option>
-                  <option value="Repractice Round">Repractice Round</option>
+                  <option value="Question & Answer">Question &amp; Answer</option>
                 </select>
               </div>
 
@@ -479,7 +479,7 @@ export class ScriptUploadComponent {
     { label: 'Mock Interview',   value: 'Mock Interview' },
     { label: 'Vocabulary Sprint',value: 'Vocabulary Sprint' },
     { label: 'Fluency Drill',    value: 'Fluency Drill' },
-    { label: 'Repractice Round', value: 'Repractice Round' },
+    { label: 'Question & Answer',value: 'Question & Answer' },
   ];
 
   downloadTemplate(category: string) {
@@ -587,15 +587,15 @@ Self-validate before outputting:
       'Mock Interview':   'Interviewer / Candidate',
       'Vocabulary Sprint':'Tutor / Learner',
       'Fluency Drill':    'Speaker A / Speaker B',
-      'Repractice Round': 'Coach / Learner',
+      'Question & Answer':'Interviewer / Candidate',
     };
     return m[cat] ?? 'Speaker A / Speaker B';
   }
   private staticMin(cat: string): number {
-    return { 'Grammar Drill': 12, 'Roleplay': 16, 'Mock Interview': 20, 'Vocabulary Sprint': 20, 'Fluency Drill': 30, 'Repractice Round': 14 }[cat] ?? 12;
+    return { 'Grammar Drill': 12, 'Roleplay': 16, 'Mock Interview': 20, 'Vocabulary Sprint': 20, 'Fluency Drill': 30, 'Question & Answer': 16 }[cat] ?? 12;
   }
   private staticMax(cat: string): number {
-    return { 'Grammar Drill': 30, 'Roleplay': 40, 'Mock Interview': 50, 'Vocabulary Sprint': 40, 'Fluency Drill': 60, 'Repractice Round': 28 }[cat] ?? 30;
+    return { 'Grammar Drill': 30, 'Roleplay': 40, 'Mock Interview': 50, 'Vocabulary Sprint': 40, 'Fluency Drill': 60, 'Question & Answer': 40 }[cat] ?? 30;
   }
   private staticMandatory(cat: string): string {
     const m: Record<string, string> = {
@@ -603,7 +603,7 @@ Self-validate before outputting:
       'Mock Interview':   'E (GrammarTag), G (FocusWord)',
       'Vocabulary Sprint':'D (HintText), G (FocusWord), H (PronunciationNote on Tutor rows)',
       'Fluency Drill':    'E/G/H must be left blank',
-      'Repractice Round': 'D (HintText), E (GrammarTag — same on all rows)',
+      'Question & Answer':'E (GrammarTag) — Interviewer rows are questions; Candidate rows are model answers (hidden on-screen)',
     };
     return m[cat] ?? 'E (GrammarTag — same on all rows)';
   }

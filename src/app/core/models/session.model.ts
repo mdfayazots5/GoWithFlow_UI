@@ -4,7 +4,7 @@ export interface Session {
   id: string;
   sessionName: string;
   joinCode: string;
-  sessionMode: 'Grammar Drill' | 'Roleplay' | 'Mock Interview' | 'Vocabulary Sprint' | 'Fluency Drill' | 'Repractice Round';
+  sessionMode: 'Grammar Drill' | 'Roleplay' | 'Mock Interview' | 'Vocabulary Sprint' | 'Fluency Drill' | 'Question & Answer' | 'Repractice Round';
   maxMembers: number;
   currentMembers: number;
   sessionDuration: number;

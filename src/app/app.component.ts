@@ -103,6 +103,10 @@ export class AppComponent {
 
   /* Self-contained full-screen routes: no header, no bottom nav, no shell padding. */
   private readonly fullBleedRoutes = ['/auth', '/live-session', '/repractice'];
+  // Routes that are full-bleed only in a deeper form. The Listen PLAYER (/scripts/listen/:scriptId)
+  // is an immersive music screen with no app header/tab bar — but the Listen PICKER tab
+  // (/scripts/listen) must keep the bottom nav, so it is matched by segment depth, not includes().
+  private readonly fullBleedPatterns = [/\/scripts\/listen\/[^/?#]+/];
 
   constructor() {
     this.backButton.init();
@@ -128,7 +132,8 @@ export class AppComponent {
 
   isFullBleed(): boolean {
     const url = this.currentUrl();
-    return this.fullBleedRoutes.some(path => url.includes(path));
+    return this.fullBleedRoutes.some(path => url.includes(path))
+      || this.fullBleedPatterns.some(re => re.test(url));
   }
 
   showHeader(): boolean {

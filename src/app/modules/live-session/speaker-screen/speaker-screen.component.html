@@ -19,14 +19,27 @@
     </div>
   </div>
 
+  <!-- ── BLIND Q&A MODE ─────────────────────────────────────────────────────────
+       Question & Answer: the candidate must not read the question or model answer.
+       Hide the grammar tag, utterance text and hint; show a listen/answer prompt instead. -->
+  @if (turnState.hideScriptText) {
+    <div class="flex items-center gap-2.5 px-4 py-3.5 bg-white/5 border border-white/10 rounded-2xl mt-1">
+      <i-lucide [img]="turnState.isFacilitatorTurn ? EarIcon : MicIcon" size="16" class="text-[#E07B39] flex-shrink-0"></i-lucide>
+      <span class="text-[11px] font-black uppercase tracking-widest text-white/55 italic leading-snug">
+        {{ turnState.isFacilitatorTurn ? 'Listen to the interviewer’s question' : 'Answer in your own words — speak naturally' }}
+      </span>
+    </div>
+  }
+
   <!-- Grammar Tag -->
-  @if (turnState.utterance.grammarTag) {
+  @if (!turnState.hideScriptText && turnState.utterance.grammarTag) {
     <span class="inline-flex self-start px-3 py-1 bg-[#E07B39] text-white rounded-lg text-[11px] font-black uppercase tracking-widest italic shadow-lg shadow-[#E07B39]/20">
       {{ turnState.utterance.grammarTag }}
     </span>
   }
 
-  <!-- Utterance Text -->
+  <!-- Utterance Text (hidden in blind Q&A mode) -->
+  @if (!turnState.hideScriptText) {
   <div class="space-y-2">
     <h1
       class="font-black text-white italic leading-[1.15] tracking-tight break-words"
@@ -44,9 +57,10 @@
       </p>
     }
   </div>
+  }
 
-  <!-- Hint -->
-  @if (turnState.utterance.hintText) {
+  <!-- Hint (hidden in blind Q&A mode) -->
+  @if (!turnState.hideScriptText && turnState.utterance.hintText) {
     <div class="space-y-2">
       <button
         (click)="showHint.set(!showHint())"

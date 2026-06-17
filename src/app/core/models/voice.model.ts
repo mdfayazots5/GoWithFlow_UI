@@ -36,8 +36,13 @@ export interface TurnState {
   isFacilitatorTurn: boolean;
   /** Phase 17 — true when the active slot is the AI Voice Participant. Client narrates via TTS then advances. */
   isAi?: boolean;
+  /** Phase 2 (Q&A) — true for Question & Answer sessions: hide the question/model-answer text, grammar tag
+   *  and hint on BOTH the AI Interviewer turn and the candidate's answer turn (candidate only hears + speaks). */
+  hideScriptText?: boolean;
   /** Phase 17 — session AI config (present only on AI sessions). */
   aiVoiceGender?: 'Male' | 'Female' | null;
+  /** Named Indian voice persona id (e.g. "aarav") chosen for this session's AI. */
+  aiVoiceName?: string | null;
   aiSpeechRate?: number | null;
   aiQuestionDelaySec?: number | null;
 }
