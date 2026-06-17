@@ -14,5 +14,15 @@ export const SCRIPTS_ROUTES: Routes = [
   {
     path: 'prepare/:scriptId',
     loadComponent: () => import('./script-prepare/script-prepare.component').then(m => m.ScriptPrepareComponent)
+  },
+  {
+    path: 'listen',
+    data: { title: 'Listen Script' },
+    loadComponent: () => import('./listen-script/listen-picker.component').then(m => m.ListenPickerComponent)
+  },
+  {
+    path: 'listen/:scriptId',
+    data: { title: 'Listen Script' },
+    loadComponent: () => import('./listen-script/listen-script.component').then(m => m.ListenScriptComponent)
   }
 ];

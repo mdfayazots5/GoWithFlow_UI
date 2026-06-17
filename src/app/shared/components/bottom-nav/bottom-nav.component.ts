@@ -2,7 +2,7 @@
 import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { LucideAngularModule, Home, History, TrendingUp, RefreshCw } from 'lucide-angular';
+import { LucideAngularModule, Home, History, TrendingUp, RefreshCw, Headphones } from 'lucide-angular';
 import { AuthService } from '@core/services/auth.service';
 
 /**
@@ -62,6 +62,7 @@ export class BottomNavComponent {
 
   private readonly defaultItems: BottomNavItem[] = [
     { label: 'Home',     path: '/user/dashboard',   icon: Home,       exact: true  },
+    { label: 'Listen',   path: '/scripts/listen',    icon: Headphones, exact: false },
     { label: 'Review',   path: '/user/my-mistakes',  icon: RefreshCw,  exact: false },
     { label: 'Progress', path: '/user/progress',     icon: TrendingUp, exact: false },
     { label: 'History',  path: '/session/history',   icon: History,    exact: false }

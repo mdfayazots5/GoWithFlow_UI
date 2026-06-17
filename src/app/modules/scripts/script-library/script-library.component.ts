@@ -5,7 +5,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import {
   LucideAngularModule,
-  Search, BookOpen, Layers, Eye, Play, Trash2, Plus, BookMarked, Loader2
+  Search, BookOpen, Layers, Eye, Play, Trash2, Plus, BookMarked, Loader2, Headphones
 } from 'lucide-angular';
 import { MatBottomSheet, MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import { ScriptPreviewComponent } from './script-preview.component';
@@ -174,6 +174,13 @@ import { SkeletonListComponent } from '@shared/ui/skeleton';
                          title="Prepare">
                         <i-lucide [img]="PrepareIcon" size="15"></i-lucide>
                       </a>
+                      <a [routerLink]="['/scripts/listen', script.id]"
+                         class="w-10 h-10 rounded-xl flex items-center justify-center
+                                text-gw-text-muted bg-gw-bg
+                                hover:text-gw-primary hover:bg-gw-primary/10 transition-all no-underline"
+                         title="Listen">
+                        <i-lucide [img]="ListenIcon" size="15"></i-lucide>
+                      </a>
                       <button (click)="startSession(script)"
                               class="w-10 h-10 rounded-xl flex items-center justify-center
                                      text-white hover:opacity-90 active:scale-95 transition-all"
@@ -236,6 +243,7 @@ export class ScriptLibraryComponent implements OnInit {
   readonly TrashIcon    = Trash2;
   readonly PlusIcon     = Plus;
   readonly PrepareIcon  = BookMarked;
+  readonly ListenIcon   = Headphones;
   readonly LoaderIcon   = Loader2;
 
   scripts    = signal<Script[]>([]);

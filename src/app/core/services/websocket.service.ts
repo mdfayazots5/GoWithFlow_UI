@@ -1,18 +1,21 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import * as signalR from '@microsoft/signalr';
-import { Observable, Subject } from 'rxjs';
+import { Observable, Subject, firstValueFrom } from 'rxjs';
 import { environment } from '@env/environment';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class WebsocketService {
+  private auth = inject(AuthService);
   private connection: signalR.HubConnection | null = null;
   private messageSubjects: { [key: string]: Subject<any> } = {};
   private connectionStartPromise: Promise<void> | null = null;
+  // De-dupes concurrent refreshes when several negotiate/reconnect attempts overlap.
+  private refreshInFlight: Promise<string> | null = null;
 
   connect(sessionId: string | null, userId: string, hubPath: 'session' | 'live-session'): void {
-    const token = localStorage.getItem('gwf_token');
     const hubUrl = `${environment.wsBaseUrl}/hubs/${hubPath}`;
 
     if (this.connection) {
@@ -25,12 +28,16 @@ export class WebsocketService {
       this.messageSubjects = {};
     }
 
-    const qs = sessionId
-      ? `?access_token=${token}&sessionId=${sessionId}`
-      : `?access_token=${token}`;
+    // sessionId stays as the only manual query param. The JWT is supplied via
+    // accessTokenFactory so SignalR re-reads it on every negotiate AND every
+    // auto-reconnect (the old static `?access_token=` snapshot went stale on
+    // reconnect / token rotation → negotiate 401).
+    const qs = sessionId ? `?sessionId=${sessionId}` : '';
 
     this.connection = new signalR.HubConnectionBuilder()
-      .withUrl(`${hubUrl}${qs}`)
+      .withUrl(`${hubUrl}${qs}`, {
+        accessTokenFactory: () => this.resolveAccessToken()
+      })
       .withAutomaticReconnect()
       .build();
 
@@ -116,5 +123,53 @@ export class WebsocketService {
     this.connection = null;
     this.connectionStartPromise = null;
     this.messageSubjects = {};
+  }
+
+  /**
+   * Supplies the freshest JWT to SignalR on every negotiate / reconnect.
+   * If the stored token is missing or expired, refreshes it first so an
+   * idle-expired token never reaches the negotiate endpoint (→ 401).
+   */
+  private async resolveAccessToken(): Promise<string> {
+    const token = localStorage.getItem('gwf_token');
+
+    if (token && !this.isExpired(token)) {
+      return token;
+    }
+
+    // Token missing or expired — try a refresh (only if we have a refresh token).
+    if (localStorage.getItem('gwf_refreshToken')) {
+      try {
+        return await this.refreshAccessToken();
+      } catch (err) {
+        console.error('[WS] token refresh before negotiate failed', err);
+      }
+    }
+
+    // Best-effort fallback: hand over whatever we have (may be empty) and let
+    // the backend reject it cleanly rather than throwing here.
+    return token ?? '';
+  }
+
+  /** Shares a single in-flight refresh across overlapping negotiate/reconnect attempts. */
+  private refreshAccessToken(): Promise<string> {
+    if (!this.refreshInFlight) {
+      this.refreshInFlight = firstValueFrom(this.auth.refreshToken())
+        .then(() => localStorage.getItem('gwf_token') ?? '')
+        .finally(() => { this.refreshInFlight = null; });
+    }
+    return this.refreshInFlight;
+  }
+
+  /** Decodes the JWT `exp` claim; treats unparseable tokens and a 30s skew window as expired. */
+  private isExpired(token: string): boolean {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (!payload?.exp) return false; // no exp claim → let backend decide
+      const skewSeconds = 30;
+      return Date.now() >= (payload.exp - skewSeconds) * 1000;
+    } catch {
+      return true; // malformed token → force a refresh attempt
+    }
   }
 }

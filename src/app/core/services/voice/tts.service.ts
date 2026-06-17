@@ -15,7 +15,7 @@ export class TtsService {
    * Speaks `text` and resolves when playback completes (the plugin's speak() promise resolves on
    * finish). Failures never throw to the caller — narration must never wedge the turn flow.
    */
-  async speak(text: string, opts: { rate?: number; lang?: string; gender?: 'Male' | 'Female' } = {}): Promise<void> {
+  async speak(text: string, opts: { rate?: number; lang?: string; gender?: 'Male' | 'Female'; pitch?: number } = {}): Promise<void> {
     const clean = (text ?? '').trim();
     if (!clean) return;
 
@@ -27,7 +27,7 @@ export class TtsService {
         text: clean,
         lang,
         rate: opts.rate ?? 1.0,
-        pitch: 1.0,
+        pitch: opts.pitch ?? 1.0,
         volume: 1.0,
         ...(voiceIndex != null ? { voice: voiceIndex } : {})
       });
@@ -56,11 +56,18 @@ export class TtsService {
       if (!voices?.length) return null;
 
       const prefix = lang.slice(0, 2).toLowerCase();
-      const wanted = gender.toLowerCase();
       const inLang = voices.filter(v => (v.lang ?? '').toLowerCase().startsWith(prefix));
       const pool = inLang.length ? inLang : voices;
 
-      const match = pool.find(v => (v.name ?? '').toLowerCase().includes(wanted));
+      // NOTE: "female" contains the substring "male", so a naive `name.includes('male')`
+      // matches female voices too — selecting Male then spoke in a female voice. Match
+      // female explicitly, and require male names to NOT also contain "female".
+      const matchesGender = (name: string): boolean => {
+        const n = name.toLowerCase();
+        return gender === 'Female' ? n.includes('female') : n.includes('male') && !n.includes('female');
+      };
+
+      const match = pool.find(v => matchesGender(v.name ?? ''));
       if (!match) return null;
 
       return voices.indexOf(match);
