@@ -626,8 +626,18 @@ export class VoiceRecognitionEngine implements OnDestroy {
     const candidates = this.buildLanguageCandidates(cachedLang);
     console.debug('[VRE] Native session start', { deviceLang: navigator.language, cachedLang, candidates });
 
+    // Adaptive end-of-speech window. A flat 1.2 s truncated long Session Room
+    // utterances: a natural breath mid-sentence (e.g. at a comma/period boundary)
+    // tripped the silence timer and the rest of the line was lost (confirmed on
+    // IV2201 2026-06-17 — "Good evening… Grand Stay Hotel…" finalised at "Grand").
+    // Short repractice drills still want the snappy stop, so scale the window to the
+    // expected word count: short ⇒ snappy, long ⇒ tolerant of inter-phrase pauses.
+    const expectedWordCount = (expectedText || '').trim().split(/\s+/).filter(Boolean).length;
+    const SILENCE_MS = expectedWordCount <= 6 ? 1200
+                     : expectedWordCount <= 12 ? 2000
+                     : 2500;
+
     return new Promise<VoiceSessionResult>((resolve, reject) => {
-      const SILENCE_MS          = 1200;   // pause after last partial ⇒ user finished (snappy, Duolingo-like)
       const KEEPALIVE_MS        = 7000;   // no signal this long ⇒ recognizer timed out on silence; relisten
       const HARD_CEIL_MS        = 30000;  // absolute ceiling for the whole turn
       const RESTART_GAP_MS      = 300;    // let the recognizer release before the next start

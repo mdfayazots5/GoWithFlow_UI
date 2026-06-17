@@ -12,7 +12,8 @@ import {
   Search,
   Users,
   Clock,
-  Layers
+  Layers,
+  Bot
 } from 'lucide-angular';
 import { Script } from '@core/models/script.model';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
@@ -136,6 +137,65 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
             </div>
           </div>
 
+          <!-- AI Voice Participant (Phase 17) -->
+          <div class="bg-white rounded-2xl border border-gw-card-border p-5">
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-start gap-3">
+                <div class="w-9 h-9 rounded-xl bg-gw-primary/10 flex items-center justify-center shrink-0">
+                  <i-lucide [img]="BotIcon" size="18" class="text-gw-primary"></i-lucide>
+                </div>
+                <div>
+                  <p class="text-[13px] font-bold text-gw-text">AI Voice Participant</p>
+                  <p class="text-[11px] text-gw-text-muted mt-0.5 leading-snug">Practice solo — the AI reads the other role's scripted lines aloud. No second person needed.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                [attr.aria-checked]="aiEnabled()"
+                (click)="toggleAi()"
+                class="relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 mt-0.5"
+                [style.background]="aiEnabled() ? 'var(--gw-primary)' : '#c9cdd6'"
+              >
+                <span class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
+                  [style.transform]="aiEnabled() ? 'translateX(20px)' : 'translateX(0)'"></span>
+              </button>
+            </div>
+
+            @if (aiEnabled()) {
+              <div class="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-gw-bg">
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-[10px] font-bold uppercase tracking-[0.16em] text-gw-text-muted">Voice</label>
+                  <select formControlName="aiVoiceGender"
+                    class="w-full h-11 bg-gw-bg rounded-xl px-2.5 text-[12px] font-bold text-gw-text border-2 border-transparent focus:border-gw-primary outline-none cursor-pointer">
+                    <option value="Female">Female</option>
+                    <option value="Male">Male</option>
+                  </select>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-[10px] font-bold uppercase tracking-[0.16em] text-gw-text-muted">Speed</label>
+                  <select formControlName="aiSpeechRate"
+                    class="w-full h-11 bg-gw-bg rounded-xl px-2.5 text-[12px] font-bold text-gw-text border-2 border-transparent focus:border-gw-primary outline-none cursor-pointer">
+                    <option [ngValue]="0.75">Slow</option>
+                    <option [ngValue]="1.00">Normal</option>
+                    <option [ngValue]="1.25">Fast</option>
+                  </select>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                  <label class="text-[10px] font-bold uppercase tracking-[0.16em] text-gw-text-muted">Delay</label>
+                  <select formControlName="aiQuestionDelay"
+                    class="w-full h-11 bg-gw-bg rounded-xl px-2.5 text-[12px] font-bold text-gw-text border-2 border-transparent focus:border-gw-primary outline-none cursor-pointer">
+                    <option [ngValue]="0">0s</option>
+                    <option [ngValue]="1">1s</option>
+                    <option [ngValue]="2">2s</option>
+                    <option [ngValue]="3">3s</option>
+                    <option [ngValue]="5">5s</option>
+                  </select>
+                </div>
+              </div>
+            }
+          </div>
+
           <!-- Submit Button -->
           <button
             type="button"
@@ -185,6 +245,7 @@ export class CreateSessionComponent implements OnInit {
   readonly UsersIcon = Users;
   readonly ClockIcon = Clock;
   readonly LayersIcon = Layers;
+  readonly BotIcon = Bot;
 
   private readonly categoryModeMap: Record<string, string> = {
     'Grammar Drill': 'Grammar Drill',
@@ -200,6 +261,7 @@ export class CreateSessionComponent implements OnInit {
 
   isLoading = signal(false);
   selectedScript = signal<Script | null>(null);
+  aiEnabled = signal(false);
 
   derivedMode = computed(() => {
     const cat = this.selectedScript()?.category ?? '';
@@ -237,8 +299,19 @@ export class CreateSessionComponent implements OnInit {
     sessionName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(60)]],
     scriptId: ['', Validators.required],
     sessionDuration: [30, Validators.required],
-    roomExpiry: ['1hr', Validators.required]
+    roomExpiry: ['1hr', Validators.required],
+    // AI Voice Participant (Phase 17)
+    aiEnabled: [false],
+    aiVoiceGender: ['Female'],
+    aiSpeechRate: [1.00],
+    aiQuestionDelay: [2]
   });
+
+  toggleAi() {
+    const next = !this.aiEnabled();
+    this.aiEnabled.set(next);
+    this.createForm.patchValue({ aiEnabled: next });
+  }
 
   ngOnInit() {
     this.createForm.valueChanges.subscribe(() => this.updateFormValid());
@@ -297,18 +370,36 @@ export class CreateSessionComponent implements OnInit {
     }
 
     const roomExpiryMap: Record<string, number> = { '1hr': 60, '6hr': 360, '24hr': 1440 };
-    const payload = {
+    const payload: any = {
       sessionName: this.createForm.value.sessionName,
       sessionDuration: this.createForm.value.sessionDuration,
       scriptId: Number(this.createForm.value.scriptId),
       roomExpiryMinutes: roomExpiryMap[this.createForm.value.roomExpiry] ?? 60
     };
 
+    // AI Voice Participant (Phase 17): send config only when enabled. The backend fills every
+    // non-host slot with the AI, so the candidate can start solo without inviting anyone.
+    if (this.aiEnabled()) {
+      payload.aiEnabled = true;
+      payload.aiVoiceGender = this.createForm.value.aiVoiceGender;
+      payload.aiSpeechRate = Number(this.createForm.value.aiSpeechRate);
+      payload.aiQuestionDelaySec = Number(this.createForm.value.aiQuestionDelay);
+    }
+
     this.isLoading.set(true);
     this.sessionService.createSession(payload).subscribe({
       next: (res) => {
         localStorage.setItem('gwf_sessionId', String(res.sessionId));
         localStorage.setItem('gwf_joinCode', res.joinCode);
+
+        // AI session: every non-host slot is already filled by the AI, so there are no guest
+        // slots to invite — go straight to the lobby.
+        if (this.aiEnabled()) {
+          this.isLoading.set(false);
+          this.toast.success('AI practice session created!');
+          this.router.navigate(['/session/lobby', res.sessionId]);
+          return;
+        }
 
         // Fetch all slot names from backend via validateCode — list items have no utterances
         this.sessionService.validateCode(res.joinCode).subscribe({

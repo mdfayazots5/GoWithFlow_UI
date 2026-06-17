@@ -12,6 +12,7 @@ import { catchError, of } from 'rxjs';
 import { SessionPreferencesService } from '@core/services/session-preferences.service';
 import { VoiceBroadcastService } from '@core/services/voice-broadcast.service';
 import { SessionCapabilitiesService } from '@core/services/session-capabilities.service';
+import { TtsService } from '@core/services/voice/tts.service';
 import { SessionService } from '@core/services/session.service';
 import { AudioArchiveService } from '@core/services/audio-archive.service';
 
@@ -22,6 +23,7 @@ type TurnShiftEvent = {
   slotIndex: number;
   turnIndex: number;
   nextUtterance: TurnState['utterance'];
+  isAi?: boolean;
 };
 
 type PresenceToast = {
@@ -312,6 +314,7 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
   private voiceBroadcast = inject(VoiceBroadcastService);
   private sessionService = inject(SessionService);
   private audioArchiveSvc = inject(AudioArchiveService);
+  private tts = inject(TtsService);
 
   readonly ActivityIcon = Activity;
   readonly TimerIcon = Clock;
@@ -376,6 +379,8 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     if (this.timerInterval) clearInterval(this.timerInterval);
+    if (this._aiAdvanceTimer) clearTimeout(this._aiAdvanceTimer);
+    this.tts.stop();
     this.voiceBroadcast.destroy();
     this.ws.disconnect();
   }
@@ -431,6 +436,8 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
     this.ws.on('SESSION_ENDED').subscribe((data: { sessionId: number; summary: SessionSummary }) => {
       console.log('[Session] SESSION_ENDED received', { sessionId, totalTurns: data?.summary?.totalTurns });
       this._sessionEnded = true;
+      if (this._aiAdvanceTimer) clearTimeout(this._aiAdvanceTimer);
+      this.tts.stop();
 
       // Persist elapsed time so the report page can display real duration
       sessionStorage.setItem(`gwf_session_duration_${sessionId}`, String(this.timeSeconds));
@@ -466,6 +473,15 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
       if (userId === myUserId) return; // don't toast for ourselves re-joining
 
       this.memberNameMap.set(userId, data.name);
+
+      // Reconciliation safety-net: if this rejoiner is the current active speaker, clear the
+      // sticky "current speaker has left" banner. Covers a transient drop→rejoin that beat the
+      // backend grace window, and any genuine leave→rejoin without an intervening TURN_SHIFT.
+      const currentActiveSpeaker = String(this.turnState()?.activeMemberId ?? '');
+      if (userId === currentActiveSpeaker) {
+        this.speakerLeftAlert.set(false);
+      }
+
       this.pushPresenceToast('joined', data.name);
     });
 
@@ -557,6 +573,48 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
       this.turnState.set(state);
     }
     this.isSpeaker.set(String(state.activeMemberId) === localStorage.getItem('gwf_userId'));
+
+    // Phase 17 — if this turn is held by the AI, narrate it via TTS then advance. Driven from the
+    // canonical state (full utterance text + AI config) rather than the optimistic shift event.
+    this.maybeNarrateAiTurn(state);
+  }
+
+  // ── AI Voice Participant narration (Phase 17) ──
+  private _narratedTurnKey: string | null = null;
+  private _aiAdvanceTimer: ReturnType<typeof setTimeout> | null = null;
+
+  private async maybeNarrateAiTurn(state: TurnState) {
+    if (!state.isAi || this._sessionEnded) return;
+
+    // Fire once per turn — updateState runs on every loadCurrentTurn (incl. the optimistic-confirm
+    // reload), so guard against re-narrating the same AI turn.
+    const key = `${state.sessionId}:${state.turnIndex}`;
+    if (this._narratedTurnKey === key) return;
+    this._narratedTurnKey = key;
+
+    const text = state.utterance?.englishText ?? '';
+
+    if (text) {
+      await this.tts.speak(text, {
+        rate: state.aiSpeechRate ?? 1.0,
+        gender: state.aiVoiceGender ?? undefined,
+        lang: 'en-US'
+      });
+    }
+
+    if (this._sessionEnded) return;
+
+    const delayMs = Math.max(0, state.aiQuestionDelaySec ?? 0) * 1000;
+    if (this._aiAdvanceTimer) clearTimeout(this._aiAdvanceTimer);
+    this._aiAdvanceTimer = setTimeout(() => this.advanceAiTurn(state), delayMs);
+  }
+
+  private advanceAiTurn(state: TurnState) {
+    if (this._sessionEnded) return;
+    // SignalR hub: AdvanceAiTurn(sessionId, turnIndex). Backend guards double-advance (turnIndex must
+    // match the active turn), so a stray second call from another client is rejected harmlessly.
+    this.ws.emit('AdvanceAiTurn', String(state.sessionId), state.turnIndex)
+      .catch(err => console.error('[Session] AdvanceAiTurn failed', err));
   }
 
   private handleTurnShift(sessionId: string, shiftEvent: TurnShiftEvent) {

@@ -34,6 +34,12 @@ export interface TurnState {
   nextUtterance?: string;
   /** True when the active speaker is a facilitator (Interviewer, Tutor, Coach). No scoring on these turns. */
   isFacilitatorTurn: boolean;
+  /** Phase 17 — true when the active slot is the AI Voice Participant. Client narrates via TTS then advances. */
+  isAi?: boolean;
+  /** Phase 17 — session AI config (present only on AI sessions). */
+  aiVoiceGender?: 'Male' | 'Female' | null;
+  aiSpeechRate?: number | null;
+  aiQuestionDelaySec?: number | null;
 }
 
 export interface UtteranceData {
@@ -66,6 +72,8 @@ export interface MemberScore {
   listenerRating: number;
   /** True when this member played a facilitator role (Interviewer, Tutor, Coach). Excluded from performance scoreboard. */
   isFacilitator: boolean;
+  /** Phase 17 — true for the AI Voice Participant. Excluded from the scored leaderboard; shown as an AI partner. */
+  isAi?: boolean;
 }
 
 export interface VocabularySummary {

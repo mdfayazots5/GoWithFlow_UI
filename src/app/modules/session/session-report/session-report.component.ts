@@ -5,7 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LiveSessionService } from '../../live-session/live-session.service';
 import { RepracticeService } from '../../repractice/repractice.service';
 import { SessionSummary, MemberScore } from '@core/models/voice.model';
-import { LucideAngularModule, CheckCircle2, Trophy, Clock, Target, Zap, ChevronRight, Home, Layout, TrendingUp, RefreshCw, AlertCircle, BookOpen } from 'lucide-angular';
+import { LucideAngularModule, CheckCircle2, Trophy, Clock, Target, Zap, ChevronRight, Home, Layout, TrendingUp, RefreshCw, AlertCircle, BookOpen, Bot } from 'lucide-angular';
 import { ToastService } from '@core/services/toast.service';
 import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.component';
 
@@ -55,46 +55,46 @@ interface ScoreboardRow {
 
       <!-- ── Report ── -->
       @else if (summary()) {
-        <div class="space-y-10 animate-in zoom-in-95 duration-500 px-4 max-w-3xl mx-auto pt-10">
+        <div class="space-y-6 animate-in zoom-in-95 duration-500 px-4 max-w-3xl mx-auto pt-6">
 
           <!-- Success Header -->
-          <div class="flex flex-col items-center gap-5 py-6 text-center">
-            <div class="w-20 h-20 bg-gw-success/10 rounded-[36px] flex items-center justify-center shadow-xl shadow-gw-success/5 animate-bounce">
-              <i-lucide [img]="SuccessIcon" size="40" class="text-gw-success"></i-lucide>
+          <div class="flex flex-col items-center gap-3 py-2 text-center">
+            <div class="w-16 h-16 bg-gw-success/10 rounded-[28px] flex items-center justify-center shadow-lg shadow-gw-success/5 animate-bounce">
+              <i-lucide [img]="SuccessIcon" size="32" class="text-gw-success"></i-lucide>
             </div>
-            <div class="space-y-1.5">
-              <h2 class="text-4xl font-black text-gw-text italic uppercase tracking-tight">SESSION COMPLETE!</h2>
-              <p class="text-sm font-bold text-gw-text-muted uppercase tracking-widest italic">Great progress today — flow forward!</p>
+            <div class="space-y-1">
+              <h2 class="text-[26px] leading-none font-black text-gw-text italic uppercase tracking-tight">SESSION COMPLETE!</h2>
+              <p class="text-[11px] font-bold text-gw-text-muted uppercase tracking-widest italic">Great progress today — flow forward!</p>
             </div>
           </div>
 
           <!-- Quick Stats Row -->
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
 
-            <div class="bg-white p-5 rounded-[28px] border border-gw-card-border shadow-sm space-y-1">
-              <span class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Script</span>
-              <p class="text-sm font-black text-gw-text italic uppercase leading-tight truncate" [title]="summary()!.scriptTitle">
+            <div class="bg-white p-4 rounded-2xl border border-gw-card-border shadow-sm space-y-1">
+              <span class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted italic">Script</span>
+              <p class="text-[13px] font-black text-gw-text italic uppercase leading-tight truncate" [title]="summary()!.scriptTitle">
                 {{ summary()!.scriptTitle || '—' }}
               </p>
             </div>
 
-            <div class="bg-[#E07B39]/5 border border-[#E07B39]/20 p-5 rounded-[28px] shadow-sm space-y-1 text-center">
-              <span class="text-[11px] font-black uppercase tracking-widest text-[#E07B39] italic">Top Score</span>
-              <p class="text-2xl font-black text-[#E07B39] italic">{{ topScore() }}%</p>
+            <div class="bg-[#E07B39]/5 border border-[#E07B39]/20 p-4 rounded-2xl shadow-sm space-y-1 text-center">
+              <span class="text-[10px] font-black uppercase tracking-widest text-[#E07B39] italic">Top Score</span>
+              <p class="text-[22px] leading-none font-black text-[#E07B39] italic">{{ topScore() }}%</p>
             </div>
 
-            <div class="bg-white p-5 rounded-[28px] border border-gw-card-border shadow-sm space-y-1 text-center">
-              <span class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Total Mistakes</span>
-              <p class="text-2xl font-black italic"
+            <div class="bg-white p-4 rounded-2xl border border-gw-card-border shadow-sm space-y-1 text-center">
+              <span class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted italic">Total Mistakes</span>
+              <p class="text-[22px] leading-none font-black italic"
                  [class.text-gw-error]="summary()!.totalMistakesAllMembers > 0"
                  [class.text-gw-success]="summary()!.totalMistakesAllMembers === 0">
                 {{ summary()!.totalMistakesAllMembers }}
               </p>
             </div>
 
-            <div class="bg-white p-5 rounded-[28px] border border-gw-card-border shadow-sm space-y-1 text-center">
-              <span class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted italic">Duration</span>
-              <p class="text-2xl font-black text-gw-text italic">{{ sessionDuration() }}</p>
+            <div class="bg-white p-4 rounded-2xl border border-gw-card-border shadow-sm space-y-1 text-center">
+              <span class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted italic">Duration</span>
+              <p class="text-[22px] leading-none font-black text-gw-text italic">{{ sessionDuration() }}</p>
             </div>
 
           </div>
@@ -113,17 +113,52 @@ interface ScoreboardRow {
           }
 
           <!-- Leaderboard -->
-          <div class="space-y-4">
-            <h3 class="text-base font-black text-gw-text italic uppercase tracking-widest border-l-4 border-gw-primary pl-4">
+          <div class="space-y-3">
+            <h3 class="text-sm font-black text-gw-text italic uppercase tracking-widest border-l-4 border-gw-primary pl-3">
               Leaderboard
             </h3>
 
             @if (scoreboard().length === 0) {
-              <div class="py-12 text-center text-gw-text-muted italic text-sm font-bold">
+              <div class="py-10 text-center text-gw-text-muted italic text-[13px] font-bold">
                 No member scores recorded for this session.
               </div>
             } @else {
-              <div class="bg-white rounded-[32px] border border-gw-card-border overflow-hidden shadow-sm">
+              <!-- Mobile: stacked cards (no horizontal scroll) -->
+              <div class="space-y-2 md:hidden">
+                @for (row of scoreboard(); track row.name; let i = $index) {
+                  <div class="bg-white rounded-2xl border border-gw-card-border shadow-sm px-3.5 py-3 flex items-center gap-3"
+                       [ngClass]="{'ring-2 ring-gw-primary/25': i === 0}">
+                    <div class="w-6 flex items-center justify-center shrink-0">
+                      @if (i === 0) {
+                        <i-lucide [img]="TrophyIcon" size="16" class="text-[#F59E0B]"></i-lucide>
+                      } @else {
+                        <span class="text-[13px] font-black italic text-gw-text-muted">{{ i + 1 }}</span>
+                      }
+                    </div>
+                    <app-user-avatar [name]="row.name" [avatarUrl]="row.avatarUrl" size="xs"></app-user-avatar>
+                    <div class="flex-1 min-w-0">
+                      <p class="text-[13px] font-bold italic text-gw-text truncate">{{ row.name }}</p>
+                      <div class="flex items-center gap-1.5 mt-0.5">
+                        <span class="px-2 py-0.5 rounded-md text-[10px] font-black italic uppercase tracking-wider" [ngClass]="row.ratingColor">{{ row.rating }}</span>
+                        <span class="text-[11px] font-bold italic"
+                              [class.text-gw-error]="row.mistakes > 0"
+                              [class.text-gw-text-muted]="row.mistakes === 0">
+                          {{ row.mistakes }} mistake{{ row.mistakes === 1 ? '' : 's' }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="text-right shrink-0">
+                      <p class="text-[20px] leading-none font-black italic"
+                         [class.text-gw-success]="row.fluency >= 80"
+                         [class.text-gw-text]="row.fluency < 80">{{ row.fluency }}%</p>
+                      <p class="text-[9px] font-black uppercase tracking-widest text-gw-text-muted italic mt-0.5">Fluency</p>
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <!-- Desktop: full table -->
+              <div class="hidden md:block bg-white rounded-[32px] border border-gw-card-border overflow-hidden shadow-sm">
                 <table class="w-full">
                   <thead>
                     <tr class="bg-gw-bg/60">
@@ -224,8 +259,24 @@ interface ScoreboardRow {
             </div>
           }
 
+          <!-- AI Voice Participant (Phase 17 — narrated, not scored) -->
+          @if (aiPartners().length > 0) {
+            <div class="flex items-center gap-3 px-4 py-3.5 bg-gw-primary/5 border border-gw-primary/15 rounded-2xl">
+              <div class="w-9 h-9 rounded-xl bg-gw-primary/15 flex items-center justify-center flex-shrink-0">
+                <i-lucide [img]="BotIcon" size="18" class="text-gw-primary"></i-lucide>
+              </div>
+              <div class="min-w-0">
+                <p class="text-[10px] font-black uppercase tracking-widest text-gw-text-muted italic">AI Partner</p>
+                <p class="text-[13px] font-black text-gw-primary italic truncate">
+                  {{ aiPartners().join(', ') }}
+                </p>
+                <p class="text-[11px] font-bold text-gw-text-muted italic leading-snug">Read the script aloud — not scored</p>
+              </div>
+            </div>
+          }
+
           <!-- Turns Completed Banner -->
-          <div class="flex items-center gap-4 px-6 py-5 bg-[#1A1A2E] rounded-[32px] text-white">
+          <div class="flex items-center gap-4 px-5 py-4 bg-[#1A1A2E] rounded-[28px] text-white">
             <div class="w-14 h-14 bg-gw-accent/20 rounded-[20px] flex items-center justify-center flex-shrink-0">
               <i-lucide [img]="TrendingIcon" size="26" class="text-gw-accent"></i-lucide>
             </div>
@@ -289,6 +340,7 @@ export class SessionReportComponent implements OnInit {
   readonly RetryIcon = RefreshCw;
   readonly ErrorIcon = AlertCircle;
   readonly VocabIcon = BookOpen;
+  readonly BotIcon = Bot;
 
   summary = signal<SessionSummary | null>(null);
   isLoading = signal(true);
@@ -305,7 +357,7 @@ export class SessionReportComponent implements OnInit {
   scoreboard = computed<ScoreboardRow[]>(() => {
     const scores = this.summary()?.memberScores ?? [];
     return [...scores]
-      .filter(m => !m.isFacilitator)
+      .filter(m => !m.isFacilitator && !m.isAi)
       .sort((a, b) => b.fluencyScore - a.fluencyScore)
       .map(m => ({
         name: m.fullName,
@@ -322,13 +374,19 @@ export class SessionReportComponent implements OnInit {
   // Facilitator members listed separately (they facilitated but were not scored)
   facilitators = computed<string[]>(() => {
     const scores = this.summary()?.memberScores ?? [];
-    return scores.filter(m => m.isFacilitator).map(m => m.fullName);
+    return scores.filter(m => m.isFacilitator && !m.isAi).map(m => m.fullName);
   });
 
-  // Top score = highest fluency among performance members only
+  // AI Voice Participant(s) — narrated, not scored (Phase 17). Shown as an AI partner chip.
+  aiPartners = computed<string[]>(() => {
+    const scores = this.summary()?.memberScores ?? [];
+    return scores.filter(m => m.isAi).map(m => m.fullName);
+  });
+
+  // Top score = highest fluency among scored (human) performers only
   topScore = computed<number>(() => {
     const scores = this.summary()?.memberScores ?? [];
-    const performers = scores.filter(m => !m.isFacilitator);
+    const performers = scores.filter(m => !m.isFacilitator && !m.isAi);
     if (performers.length === 0) return 0;
     return Math.round(Math.max(...performers.map(m => m.fluencyScore)));
   });
