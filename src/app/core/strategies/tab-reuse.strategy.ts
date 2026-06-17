@@ -5,13 +5,21 @@ import {
   ActivatedRouteSnapshot,
 } from '@angular/router';
 
-// Only the 4 primary bottom-nav tabs are kept alive.
-// Everything else (detail pages, forms, session room) recreates normally.
+// Only the primary bottom-nav tabs (user + admin shells) are kept alive, so re-tapping a tab
+// reattaches the already-loaded component instead of refetching its data. Everything else
+// (detail pages, forms, session room) recreates normally.
 const TAB_ROUTES = new Set([
+  // User shell tabs
   'user/dashboard',
   'user/my-mistakes',
   'user/progress',
   'session/history',
+  // Admin shell tabs (mirror the user behaviour — see admin-layout adminNavItems)
+  'admin/dashboard',
+  'admin/users',
+  'admin/scripts',
+  'admin/reports',
+  'admin/cohorts',
 ]);
 
 function routeKey(route: ActivatedRouteSnapshot): string {

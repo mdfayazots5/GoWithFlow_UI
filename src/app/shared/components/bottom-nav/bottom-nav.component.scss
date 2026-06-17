@@ -22,21 +22,26 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  gap: 3px;
-  padding-top: 10px;
+  justify-content: center; // icons-only: vertically center the icon
   text-decoration: none;
   color: #9ca3af;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
   transition: color 0.2s ease;
   -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
   user-select: none;
 
-  span {
-    line-height: 1;
-    transition: color 0.2s ease;
+  // Labels are hidden in the bar (icons only); the active tab's name is surfaced
+  // elsewhere on tap. Kept in the DOM, visually removed, still read by screen readers.
+  .nav-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   &:active .nav-icon-wrap {

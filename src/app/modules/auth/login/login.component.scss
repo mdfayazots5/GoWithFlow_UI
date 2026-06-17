@@ -1,9 +1,10 @@
 // ── Page shell ────────────────────────────────────────────────────────────────
-// Fills the full-bleed content area (shell adds no padding for /auth routes).
+// Light theme — matches the rest of the app (UIStandards.md §2/§4). Fills the
+// full-bleed content area (shell adds no padding for /auth routes).
 
 .login-page {
   min-height: 100%;
-  background: linear-gradient(160deg, #0D1526 0%, #1A2B4A 50%, #0D1526 100%);
+  background: var(--gwf-bg, #F4F6F9);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -35,7 +36,7 @@
 .logo-icon {
   width: 60px;
   height: 60px;
-  background: var(--gwf-primary);
+  background: var(--gwf-primary, #5C35A8);
   border-radius: 18px;
   display: flex;
   align-items: center;
@@ -43,22 +44,20 @@
   font-size: 26px;
   font-weight: 800;
   color: #FFFFFF;
-  box-shadow:
-    0 0 0 1px rgba(92, 53, 168, 0.4),
-    0 8px 32px rgba(92, 53, 168, 0.5);
+  box-shadow: 0 8px 24px rgba(92, 53, 168, 0.28);
 }
 
 .brand-name {
   font-size: 24px;
   font-weight: 800;
-  color: #FFFFFF;
+  color: var(--gwf-text, #1A1A2E);
   margin: 0;
   letter-spacing: -0.5px;
 }
 
 .brand-tagline {
   font-size: 13px;
-  color: rgba(255, 255, 255, 0.45);
+  color: var(--gwf-text-muted, #6B7280);
   margin: 0;
   letter-spacing: 0.3px;
 }
@@ -67,13 +66,11 @@
 
 .login-card {
   width: 100%;
-  background: #161F38;
-  border: 1px solid #25324F;
+  background: #FFFFFF;
+  border: 1px solid var(--gwf-card-border, #E0E4EC);
   border-radius: 22px;
   padding: clamp(22px, 5vw, 32px);
-  box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.35),
-    0 32px 56px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 30px rgba(26, 26, 46, 0.06);
 }
 
 .card-head {
@@ -83,14 +80,14 @@
 .card-title {
   font-size: 19px;
   font-weight: 800;
-  color: #EAEDF5;
+  color: var(--gwf-text, #1A1A2E);
   margin: 0 0 4px;
   letter-spacing: -0.2px;
 }
 
 .card-subtitle {
   font-size: 13px;
-  color: #94A1BD;
+  color: var(--gwf-text-muted, #6B7280);
   margin: 0;
 }
 
@@ -113,7 +110,7 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: #94A1BD;
+  color: var(--gwf-text-muted, #6B7280);
 }
 
 .field-control {
@@ -125,22 +122,22 @@
 .field-icon {
   position: absolute;
   left: 14px;
-  color: #5A6A86;
+  color: var(--gwf-text-muted, #6B7280);
   pointer-events: none;
   display: flex;
 }
 
 .field-input {
   width: 100%;
-  height: 52px;
-  border: 1.5px solid #25324F;
+  height: 52px;            // ≥44px touch target (UIStandards §6)
+  border: 1.5px solid var(--gwf-card-border, #E0E4EC);
   border-radius: 12px;
   padding: 0 16px;
-  font-size: 15px;
+  font-size: 16px;         // 16px avoids iOS focus-zoom on inputs
   font-weight: 500;
   font-family: inherit;
-  color: #EAEDF5;
-  background: #0F1A30;
+  color: var(--gwf-text, #1A1A2E);
+  background: #FFFFFF;
   outline: none;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 
@@ -148,17 +145,17 @@
   &.has-action { padding-right: 48px; }
 
   &::placeholder {
-    color: #5A6A86;
+    color: var(--gwf-text-muted, #6B7280);
+    opacity: 0.7;
   }
 
   &:focus {
-    border-color: #8E6FD4;
-    background: #1B2742;
-    box-shadow: 0 0 0 3px rgba(142, 111, 212, 0.18);
+    border-color: var(--gwf-primary, #5C35A8);
+    box-shadow: 0 0 0 3px rgba(92, 53, 168, 0.14);
   }
 
   // Keep the icon in sync with the focused field.
-  &:focus ~ .field-icon { color: #8E6FD4; }
+  &:focus ~ .field-icon { color: var(--gwf-primary, #5C35A8); }
 }
 
 .field-action {
@@ -172,28 +169,28 @@
   background: transparent;
   border: none;
   border-radius: 9px;
-  color: #5A6A86;
+  color: var(--gwf-text-muted, #6B7280);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: color 0.15s ease;
 
-  &:active { color: #8E6FD4; }
+  &:active { color: var(--gwf-primary, #5C35A8); }
 }
 
 .field-error {
   font-size: 12px;
   font-weight: 500;
-  color: #F2545B;
+  color: var(--gwf-error, #D32F2F);
 }
 
 .error-banner {
-  background: rgba(242, 84, 91, 0.12);
-  border: 1px solid rgba(242, 84, 91, 0.32);
+  background: rgba(211, 47, 47, 0.08);
+  border: 1px solid rgba(211, 47, 47, 0.28);
   border-radius: 10px;
   padding: 10px 14px;
   font-size: 13px;
   font-weight: 500;
-  color: #F2545B;
+  color: var(--gwf-error, #D32F2F);
   text-align: center;
 }
 
@@ -202,7 +199,7 @@
 .btn-login {
   width: 100%;
   height: 54px;
-  background: var(--gwf-primary);
+  background: var(--gwf-primary, #5C35A8);
   color: #FFFFFF;
   border: none;
   border-radius: 14px;
@@ -215,13 +212,13 @@
   align-items: center;
   justify-content: center;
   margin-top: 6px;
-  box-shadow: 0 4px 20px rgba(92, 53, 168, 0.45);
+  box-shadow: 0 4px 16px rgba(92, 53, 168, 0.28);
   transition: opacity 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
   -webkit-tap-highlight-color: transparent;
 
   &:active:not(:disabled) {
     transform: scale(0.98);
-    box-shadow: 0 2px 10px rgba(92, 53, 168, 0.3);
+    box-shadow: 0 2px 8px rgba(92, 53, 168, 0.22);
   }
 
   &:disabled {
@@ -234,7 +231,7 @@
 .btn-spinner {
   width: 20px;
   height: 20px;
-  border: 2.5px solid rgba(255, 255, 255, 0.35);
+  border: 2.5px solid rgba(255, 255, 255, 0.4);
   border-top-color: #FFFFFF;
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
@@ -246,12 +243,12 @@
   margin: 0;
   font-size: 13px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--gwf-text-muted, #6B7280);
   text-align: center;
 }
 
 .footer-link {
-  color: #B79CF0;
+  color: var(--gwf-primary, #5C35A8);
   font-weight: 700;
   text-decoration: none;
   margin-left: 4px;

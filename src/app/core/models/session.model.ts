@@ -81,6 +81,8 @@ export interface LobbyState {
   members: LobbyMember[];
   canStart: boolean;
   recordingEnabled: boolean;
+  /** Phase 17: AI Voice Participant enabled — lobby hides the "Record Session" toggle when true. */
+  aiEnabled: boolean;
 }
 
 export interface LobbyMember {

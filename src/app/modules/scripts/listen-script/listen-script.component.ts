@@ -229,7 +229,7 @@ export class ListenScriptComponent implements OnInit, OnDestroy {
     ).subscribe(data => {
       if (data) {
         this.title.set(data.scriptTitle ?? '');
-        this.playback.load(scriptId, data.utterances ?? []);
+        this.playback.load(scriptId, data.scriptTitle ?? '', data.utterances ?? []);
         // Auto-start: arriving here is a user navigation (gesture), so begin narration
         // immediately. If the browser blocks audio without a gesture, the user taps Play.
         this.playback.play();

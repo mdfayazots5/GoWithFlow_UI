@@ -108,7 +108,8 @@ export class SessionService {
             slotName: m.slotName ?? ''
           } as LobbyMember)),
           canStart: d.canStart ?? false,
-          recordingEnabled: d.recordingEnabled === true
+          recordingEnabled: d.recordingEnabled === true,
+          aiEnabled: d.aiEnabled === true
         } as LobbyState;
       })
     );

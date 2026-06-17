@@ -207,14 +207,17 @@
 
   </div>
 
-  <!-- Audio Recording — host control only -->
+  <!-- Audio Recording — host control only. Hidden for AI sessions (AI turns aren't captured). -->
+  @if (!aiEnabled()) {
   @if (isHost()) {
     <div class="bg-white rounded-[20px] border border-gw-card-border p-4 flex items-center justify-between gap-4">
       <div class="flex-1 min-w-0">
         <p class="text-xs font-black text-gw-text">Record Session Audio</p>
         <p class="text-[11px] text-gw-text-muted mt-0.5 leading-snug">Records all participant turns from start to finish. Stored 90 days.</p>
       </div>
-      <button (click)="toggleAudioConsent()"
+      <button type="button" (click)="toggleAudioConsent()"
+              [attr.aria-label]="audioConsentEnabled() ? 'Turn off session recording' : 'Turn on session recording'"
+              [attr.aria-pressed]="audioConsentEnabled()"
               class="w-12 h-6 rounded-full flex items-center transition-all duration-200 flex-shrink-0 relative"
               [class.bg-gw-primary]="audioConsentEnabled()"
               [class.bg-gw-card-border]="!audioConsentEnabled()">
@@ -229,6 +232,7 @@
       <i-lucide [img]="ShieldIcon" size="14" class="text-gw-text-muted shrink-0"></i-lucide>
       <p class="text-[11px] text-gw-text-muted">This session is being recorded by the host.</p>
     </div>
+  }
   }
 
   <!-- Script Preview Accordion -->

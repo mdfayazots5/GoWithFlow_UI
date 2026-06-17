@@ -39,12 +39,14 @@ export interface BottomNavItem {
             [routerLink]="item.path"
             routerLinkActive="active"
             [routerLinkActiveOptions]="{ exact: item.exact ?? false }"
+            [attr.aria-label]="item.label"
             class="nav-tab"
           >
             <div class="nav-icon-wrap">
-              <i-lucide [img]="item.icon" size="20"></i-lucide>
+              <i-lucide [img]="item.icon" size="22"></i-lucide>
             </div>
-            <span>{{ item.label }}</span>
+            <!-- Label hidden visually (icons-only bar); kept for screen readers. -->
+            <span class="nav-label">{{ item.label }}</span>
           </a>
         }
       </nav>

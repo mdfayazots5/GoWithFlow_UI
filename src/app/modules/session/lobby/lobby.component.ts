@@ -79,6 +79,9 @@ export class LobbyComponent implements OnInit, OnDestroy {
 
   memberCount = computed(() => this.state()?.members?.length ?? 0);
 
+  /** Phase 17: AI session — recording isn't captured for AI turns, so the toggle is hidden. */
+  aiEnabled = computed(() => this.state()?.aiEnabled === true);
+
   hasEnoughPlayers = computed(() => this.memberCount() >= 2);
 
   allReady = computed(() => {

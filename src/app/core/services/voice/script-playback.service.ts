@@ -1,18 +1,21 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
+import { Capacitor } from '@capacitor/core';
 import { TtsService } from './tts.service';
+import { ListenMedia, ListenMediaLine } from './listen-media.plugin';
 
 /**
- * Listen Script — on-device, LINE-LEVEL playback engine.
+ * Listen Script — LINE-LEVEL playback engine, with two backends behind one public API:
  *
- * The on-device TTS engine (`@capacitor-community/text-to-speech`) speaks a whole line and only
- * signals when that line finishes — it exposes NO word/sentence timing and NO mid-utterance seek.
- * So this engine operates at the LINE (utterance) granularity:
- *   - highlight = the line currently being spoken
- *   - "seek"    = jump to / prev / next LINE (no continuous scrubber exists)
- *   - "pause"   = stop the current line; resume re-speaks that line from its start
+ *  - **Native (Android):** delegates to the `ListenMedia` foreground media service so playback
+ *    survives lock/background and exposes lock-screen + notification-panel controls. The service is
+ *    the source of truth; this engine sends the queue/commands and mirrors `stateChanged` events
+ *    back into the signals the UI reads.
+ *  - **Web:** a JS line-by-line loop over `TtsService` (no lock screen on the web platform).
  *
- * OUTPUT only — it never opens the microphone, so it does not contend with the recognizer
- * (Voice constitution rule #1). Listen Script is a standalone, non-session experience.
+ * The on-device TTS engine speaks a whole line and signals only when it finishes — NO word timing,
+ * NO mid-line seek. So granularity is the LINE: highlight = current line; "seek/rewind/ff" = jump/
+ * prev/next line; "pause" stops the line and resume re-speaks it. OUTPUT only — never opens the mic
+ * (Voice constitution rule #1).
  */
 
 export interface PlaybackLine {
@@ -49,6 +52,7 @@ export class ScriptPlaybackService {
 
   // ── Reactive state ────────────────────────────────────────────────
   readonly scriptId = signal<string | null>(null);
+  readonly title = signal('');
   readonly lines = signal<PlaybackLine[]>([]);
   readonly currentIndex = signal(0);
   readonly isPlaying = signal(false);
@@ -65,11 +69,29 @@ export class ScriptPlaybackService {
   /** Monotonic token: bumped on any stop so a pending speak()-loop knows it was superseded. */
   private playToken = 0;
 
+  /** True on the Capacitor APK — routes playback through the native foreground media service. */
+  private readonly native = Capacitor.isNativePlatform();
+  /** Whether the native service has been started for the current script. */
+  private nativeStarted = false;
+
+  constructor() {
+    // Mirror native playback state (incl. lock-screen / notification control actions) into signals.
+    if (this.native) {
+      void ListenMedia.addListener('stateChanged', s => {
+        this.currentIndex.set(s.index);
+        this.isPlaying.set(s.isPlaying);
+        this.rate.set(s.rate);
+        this.repeat.set(s.repeat);
+        this.persist();
+      });
+    }
+  }
+
   /**
    * Loads a script's utterances into the engine and restores the last-listened position for
    * this script ("Continue From Last Position"). Resets transport state.
    */
-  load(scriptId: string, utterances: Array<{ speakerLabel: string; englishText: string; hintText?: string }>): void {
+  load(scriptId: string, title: string, utterances: Array<{ speakerLabel: string; englishText: string; hintText?: string }>): void {
     this.stopInternal();
 
     const lines: PlaybackLine[] = (utterances ?? []).map((u, i) => ({
@@ -89,11 +111,13 @@ export class ScriptPlaybackService {
     }
 
     this.scriptId.set(scriptId);
+    this.title.set(title ?? '');
     this.lines.set(lines);
     this.roles.set(roles);
     this.roleVoices.set(roleVoices);
     this.isPlaying.set(false);
     this.repeat.set('off');
+    this.nativeStarted = false;
 
     const resume = this.readSavedPosition(scriptId);
     this.currentIndex.set(resume != null && resume < lines.length ? resume : 0);
@@ -108,11 +132,17 @@ export class ScriptPlaybackService {
   play(): void {
     if (!this.hasContent() || this.isPlaying()) return;
     this.isPlaying.set(true);
+    if (this.native) {
+      if (!this.nativeStarted) { this.nativeStarted = true; void this.nativeStart(this.currentIndex()); }
+      else void ListenMedia.play();
+      return;
+    }
     void this.runLoop(this.currentIndex());
   }
 
   pause(): void {
     this.isPlaying.set(false);
+    if (this.native) { void ListenMedia.pause(); this.persist(); return; }
     this.playToken++;          // cancel any in-flight loop
     void this.tts.stop();
     this.persist();
@@ -130,11 +160,12 @@ export class ScriptPlaybackService {
   seekTo(index: number): void {
     if (!this.hasContent()) return;
     const clamped = Math.max(0, Math.min(this.lines().length - 1, index));
+    this.currentIndex.set(clamped);
+    this.persist();
+    if (this.native) { void ListenMedia.seekTo({ index: clamped }); return; }
     const wasPlaying = this.isPlaying();
     this.playToken++;          // cancel current line
     void this.tts.stop();
-    this.currentIndex.set(clamped);
-    this.persist();
     if (wasPlaying) {
       this.isPlaying.set(true);
       void this.runLoop(clamped);
@@ -143,6 +174,7 @@ export class ScriptPlaybackService {
 
   setRate(rate: number): void {
     this.rate.set(rate);
+    if (this.native) { void ListenMedia.setRate({ rate }); return; }
     if (this.isPlaying()) {
       // Restart the current line so the new speed takes effect immediately.
       const i = this.currentIndex();
@@ -159,7 +191,9 @@ export class ScriptPlaybackService {
 
   cycleRepeat(): void {
     const order: RepeatMode[] = ['off', 'one', 'all'];
-    this.repeat.set(order[(order.indexOf(this.repeat()) + 1) % order.length]);
+    const mode = order[(order.indexOf(this.repeat()) + 1) % order.length];
+    this.repeat.set(mode);
+    if (this.native) void ListenMedia.setRepeat({ mode });
   }
 
   /** Stable display color for a role, by its first-appearance order. */
@@ -173,6 +207,11 @@ export class ScriptPlaybackService {
     const current = this.roleVoices()[label];
     if (!current || current.gender === gender) return;
     this.roleVoices.update(m => ({ ...m, [label]: { ...current, gender } }));
+    if (this.native) {
+      // Re-send the queue with updated per-line voices; native continues from the current line.
+      if (this.nativeStarted && this.isPlaying()) void this.nativeStart(this.currentIndex());
+      return;
+    }
     if (this.isPlaying() && this.currentLine()?.speakerLabel === label) {
       const i = this.currentIndex();
       this.playToken++;
@@ -185,6 +224,7 @@ export class ScriptPlaybackService {
   reset(): void {
     this.stopInternal();
     this.scriptId.set(null);
+    this.title.set('');
     this.lines.set([]);
     this.roles.set([]);
     this.roleVoices.set({});
@@ -226,8 +266,35 @@ export class ScriptPlaybackService {
 
   private stopInternal(): void {
     this.isPlaying.set(false);
+    if (this.native) { void ListenMedia.stop(); this.nativeStarted = false; return; }
     this.playToken++;
     void this.tts.stop();
+  }
+
+  /** Hands the full queue + transport state to the native foreground media service and begins playback. */
+  private async nativeStart(startIndex: number): Promise<void> {
+    try { await ListenMedia.ensureNotificationPermission(); } catch { /* controls still work, banner may be hidden */ }
+    try {
+      await ListenMedia.start({
+        title: this.title(),
+        lines: this.buildNativeLines(),
+        startIndex,
+        rate: this.rate(),
+        repeat: this.repeat(),
+      });
+    } catch (err) {
+      console.error('[ListenMedia] native start failed', err);
+      this.isPlaying.set(false);
+      this.nativeStarted = false;
+    }
+  }
+
+  private buildNativeLines(): ListenMediaLine[] {
+    const voices = this.roleVoices();
+    return this.lines().map(l => {
+      const v = voices[l.speakerLabel] ?? VOICE_PALETTE[0];
+      return { text: l.text, speakerLabel: l.speakerLabel, gender: v.gender, pitch: v.pitch };
+    });
   }
 
   // ── Position persistence ("Continue From Last Position") ──────────
