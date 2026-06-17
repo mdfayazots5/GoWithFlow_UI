@@ -6,6 +6,8 @@ export interface ListenMediaLine {
   speakerLabel: string;
   gender: 'Male' | 'Female';
   pitch: number;
+  /** Which same-gender en-IN device voice to prefer (0,1,2) — the named persona's variant. */
+  variant?: number;
 }
 
 export interface ListenMediaStartOptions {

@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { Capacitor } from '@capacitor/core';
 import { TtsService } from './tts.service';
 import { ListenMedia, ListenMediaLine } from './listen-media.plugin';
+import { AI_VOICES, VoicePersona, getVoicePersona } from './voice-personas';
 
 /**
  * Listen Script — LINE-LEVEL playback engine, with two backends behind one public API:
@@ -26,25 +27,13 @@ export interface PlaybackLine {
 }
 
 export type RepeatMode = 'off' | 'one' | 'all';
-export type VoiceGender = 'Male' | 'Female';
-
-export interface RoleVoice {
-  gender: VoiceGender;
-  pitch: number;
-}
+// Voice personas (the 6 named Indian voices) live in voice-personas.ts — single source of truth.
+export type { VoicePersona } from './voice-personas';
 
 export const PLAYBACK_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
 
 /** Distinct display colors per role (assigned by first-appearance order) for the lyrics view. */
 const ROLE_COLORS = ['#7C3AED', '#0891B2', '#E07B39', '#2E7D32', '#DB2777', '#3D5A99'];
-
-/** Audible per-role differentiation using only the on-device engine's gender + pitch knobs. */
-const VOICE_PALETTE: RoleVoice[] = [
-  { gender: 'Female', pitch: 1.0 },
-  { gender: 'Male', pitch: 0.92 },
-  { gender: 'Female', pitch: 1.18 },
-  { gender: 'Male', pitch: 1.12 },
-];
 
 @Injectable({ providedIn: 'root' })
 export class ScriptPlaybackService {
@@ -60,8 +49,8 @@ export class ScriptPlaybackService {
   readonly repeat = signal<RepeatMode>('off');
   /** Distinct speaker labels in order of first appearance. */
   readonly roles = signal<string[]>([]);
-  /** Per-role voice assignment (label → gender/pitch); user-overridable via the Voices sheet. */
-  readonly roleVoices = signal<Record<string, RoleVoice>>({});
+  /** Per-role voice assignment (label → named Indian persona); user-overridable via the Settings sheet. */
+  readonly roleVoices = signal<Record<string, VoicePersona>>({});
 
   readonly currentLine = computed<PlaybackLine | null>(() => this.lines()[this.currentIndex()] ?? null);
   readonly hasContent = computed(() => this.lines().length > 0);
@@ -102,10 +91,11 @@ export class ScriptPlaybackService {
     }));
 
     const roles: string[] = [];
-    const roleVoices: Record<string, RoleVoice> = {};
+    const roleVoices: Record<string, VoicePersona> = {};
     for (const l of lines) {
       if (!roles.includes(l.speakerLabel)) {
-        roleVoices[l.speakerLabel] = VOICE_PALETTE[roles.length % VOICE_PALETTE.length];
+        // Assign a distinct named Indian persona per role, in first-appearance order.
+        roleVoices[l.speakerLabel] = AI_VOICES[roles.length % AI_VOICES.length];
         roles.push(l.speakerLabel);
       }
     }
@@ -206,11 +196,12 @@ export class ScriptPlaybackService {
     return ROLE_COLORS[(i < 0 ? 0 : i) % ROLE_COLORS.length];
   }
 
-  /** User override of a role's voice from the Voices sheet. */
-  setRoleGender(label: string, gender: VoiceGender): void {
+  /** User override of a role's voice (named Indian persona) from the Settings sheet. */
+  setRoleVoice(label: string, personaId: string): void {
+    const persona = getVoicePersona(personaId);
     const current = this.roleVoices()[label];
-    if (!current || current.gender === gender) return;
-    this.roleVoices.update(m => ({ ...m, [label]: { ...current, gender } }));
+    if (current && current.id === persona.id) return;
+    this.roleVoices.update(m => ({ ...m, [label]: persona }));
     if (this.native) {
       // Re-send the queue with updated per-line voices; native continues from the current line.
       if (this.nativeStarted && this.isPlaying()) void this.nativeStart(this.currentIndex());
@@ -251,8 +242,11 @@ export class ScriptPlaybackService {
       this.persist();
 
       const line = this.lines()[i];
-      const voice = this.roleVoices()[line.speakerLabel] ?? VOICE_PALETTE[0];
-      await this.tts.speak(line.text, { rate: this.rate(), gender: voice.gender, pitch: voice.pitch });
+      const persona = this.roleVoices()[line.speakerLabel] ?? AI_VOICES[0];
+      await this.tts.speak(line.text, {
+        rate: this.rate(), gender: persona.gender, pitch: persona.pitch,
+        voiceVariant: persona.variant, lang: 'en-IN',
+      });
 
       // Superseded (paused / seeked / rate change) — abandon this loop silently.
       if (token !== this.playToken || !this.isPlaying()) return;
@@ -296,8 +290,8 @@ export class ScriptPlaybackService {
   private buildNativeLines(): ListenMediaLine[] {
     const voices = this.roleVoices();
     return this.lines().map(l => {
-      const v = voices[l.speakerLabel] ?? VOICE_PALETTE[0];
-      return { text: l.text, speakerLabel: l.speakerLabel, gender: v.gender, pitch: v.pitch };
+      const p = voices[l.speakerLabel] ?? AI_VOICES[0];
+      return { text: l.text, speakerLabel: l.speakerLabel, gender: p.gender, pitch: p.pitch, variant: p.variant };
     });
   }
 

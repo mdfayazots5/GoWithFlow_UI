@@ -2,9 +2,8 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatBottomSheetRef } from '@angular/material/bottom-sheet';
 import { LucideAngularModule, X, Gauge, Repeat, AudioLines } from 'lucide-angular';
-import {
-  ScriptPlaybackService, PLAYBACK_SPEEDS, RepeatMode, VoiceGender,
-} from '@core/services/voice/script-playback.service';
+import { ScriptPlaybackService, PLAYBACK_SPEEDS, RepeatMode } from '@core/services/voice/script-playback.service';
+import { AI_VOICES } from '@core/services/voice/voice-personas';
 
 /**
  * Listen Script — "Settings" sheet. Single place to change playback Speed, Repeat mode
@@ -68,7 +67,7 @@ import {
         </div>
       </div>
 
-      <!-- Voices -->
+      <!-- Voices — one of 6 named Indian voices per role -->
       @if (playback.roles().length > 0) {
         <div class="space-y-2">
           <div class="flex items-center gap-2 text-gw-text">
@@ -78,21 +77,18 @@ import {
           <div class="space-y-2">
             @for (role of playback.roles(); track role) {
               <div class="flex items-center justify-between gap-3 bg-gw-bg rounded-xl px-3.5 py-2.5">
-                <span class="text-sm font-bold text-gw-text truncate flex items-center gap-2">
+                <span class="text-sm font-bold text-gw-text truncate flex items-center gap-2 min-w-0">
                   <span class="w-2 h-2 rounded-full shrink-0" [style.background]="playback.roleColor(role)"></span>
-                  {{ role }}
+                  <span class="truncate">{{ role }}</span>
                 </span>
-                <div class="flex bg-white rounded-lg p-0.5 border border-gw-card-border shrink-0">
-                  @for (g of genders; track g) {
-                    <button (click)="playback.setRoleGender(role, g)"
-                      class="px-3 py-1 rounded-md text-[11px] font-black uppercase tracking-widest transition-all"
-                      [class.bg-gw-primary]="genderOf(role) === g"
-                      [class.text-white]="genderOf(role) === g"
-                      [class.text-gw-text-muted]="genderOf(role) !== g">
-                      {{ g }}
-                    </button>
+                <select
+                  [value]="voiceIdOf(role)"
+                  (change)="playback.setRoleVoice(role, $any($event.target).value)"
+                  class="h-9 bg-white rounded-lg px-2 text-[12px] font-bold text-gw-text border border-gw-card-border outline-none cursor-pointer shrink-0">
+                  @for (v of voices; track v.id) {
+                    <option [value]="v.id">{{ v.name }} ({{ v.gender === 'Male' ? 'M' : 'F' }})</option>
                   }
-                </div>
+                </select>
               </div>
             }
           </div>
@@ -100,7 +96,8 @@ import {
       }
 
       <p class="text-[11px] font-semibold text-gw-text-muted italic leading-relaxed">
-        Audio is read on your device. Voices and available speeds depend on your device's text-to-speech engine.
+        Voices are Indian English (en-IN) and read on your device. Exact voices/speeds depend on your device's
+        text-to-speech engine.
       </p>
     </div>
   `,
@@ -116,15 +113,15 @@ export class ListenSettingsSheetComponent {
   readonly WaveIcon = AudioLines;
 
   readonly speeds = PLAYBACK_SPEEDS;
-  readonly genders: VoiceGender[] = ['Female', 'Male'];
+  readonly voices = AI_VOICES;
   readonly repeatModes: Array<{ mode: RepeatMode; label: string }> = [
     { mode: 'off', label: 'Off' },
     { mode: 'one', label: 'Line' },
     { mode: 'all', label: 'All' },
   ];
 
-  genderOf(role: string): VoiceGender {
-    return this.playback.roleVoices()[role]?.gender ?? 'Female';
+  voiceIdOf(role: string): string {
+    return this.playback.roleVoices()[role]?.id ?? this.voices[0].id;
   }
 
   close(): void {

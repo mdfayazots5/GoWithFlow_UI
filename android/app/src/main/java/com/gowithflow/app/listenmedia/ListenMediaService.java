@@ -98,6 +98,7 @@ public class ListenMediaService extends Service {
         String speaker = "";
         String gender = "Female";
         float pitch = 1f;
+        int variant = 0;   // which same-gender en-IN voice to prefer (0,1,2)
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────
@@ -257,16 +258,50 @@ public class ListenMediaService extends Service {
         }
     };
 
-    /** Best-effort gender voice match (same rule as the JS TtsService: "female" contains "male"). */
+    /**
+     * Selects an Indian-English voice for the line. Prefers en-IN (falls back en-IN → en-GB → en-US),
+     * then among the same-gender voices in that language picks the persona's `variant`-th so the 6
+     * named voices use genuinely different device voices where available (pitch differentiates the rest).
+     */
     private void applyVoice(Line line) {
         try {
-            if (tts.getVoices() == null) return;
+            if (tts == null) return;
+
+            // Prefer Indian English; fall back to British, then US.
+            java.util.Locale chosen = null;
+            for (java.util.Locale loc : new java.util.Locale[]{ new java.util.Locale("en", "IN"), java.util.Locale.UK, java.util.Locale.US }) {
+                int r = tts.isLanguageAvailable(loc);
+                if (r == TextToSpeech.LANG_AVAILABLE || r == TextToSpeech.LANG_COUNTRY_AVAILABLE || r == TextToSpeech.LANG_COUNTRY_VAR_AVAILABLE) {
+                    chosen = loc;
+                    break;
+                }
+            }
+            if (chosen != null) tts.setLanguage(chosen);
+
+            java.util.Set<Voice> all = tts.getVoices();
+            if (all == null) return;
+
             boolean wantFemale = !"Male".equalsIgnoreCase(line.gender);
-            for (Voice v : tts.getVoices()) {
+            String langPrefix = chosen != null ? chosen.getLanguage().toLowerCase() : "en";
+            String countryPrefix = chosen != null ? chosen.getCountry().toLowerCase() : "";
+
+            java.util.List<Voice> inLocale = new java.util.ArrayList<>();
+            java.util.List<Voice> inLang = new java.util.ArrayList<>();
+            for (Voice v : all) {
                 String n = v.getName() == null ? "" : v.getName().toLowerCase();
                 boolean isFemale = n.contains("female");
-                boolean match = wantFemale ? isFemale : (n.contains("male") && !isFemale);
-                if (match) { tts.setVoice(v); return; }
+                boolean genderOk = wantFemale ? isFemale : (n.contains("male") && !isFemale);
+                if (!genderOk) continue;
+                String vLang = (v.getLocale() != null && v.getLocale().getLanguage() != null) ? v.getLocale().getLanguage().toLowerCase() : "";
+                String vCountry = (v.getLocale() != null && v.getLocale().getCountry() != null) ? v.getLocale().getCountry().toLowerCase() : "";
+                if (!vLang.equals(langPrefix)) continue;
+                if (countryPrefix.isEmpty() || vCountry.equals(countryPrefix)) inLocale.add(v);
+                else inLang.add(v);
+            }
+
+            java.util.List<Voice> pool = !inLocale.isEmpty() ? inLocale : inLang;
+            if (!pool.isEmpty()) {
+                tts.setVoice(pool.get(Math.max(0, line.variant) % pool.size()));
             }
         } catch (Exception ignored) { /* device voice set varies — fall back to default */ }
     }
@@ -427,6 +462,7 @@ public class ListenMediaService extends Service {
                 l.speaker = o.optString("speakerLabel", "");
                 l.gender = o.optString("gender", "Female");
                 l.pitch = (float) o.optDouble("pitch", 1.0);
+                l.variant = o.optInt("variant", 0);
                 lines.add(l);
             }
         } catch (Exception ignored) { /* malformed queue → empty, JS will surface empty state */ }

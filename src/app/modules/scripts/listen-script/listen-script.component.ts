@@ -11,6 +11,9 @@ import { ScriptService } from '@core/services/script.service';
 import { ScriptPlaybackService } from '@core/services/voice/script-playback.service';
 import { ListenSettingsSheetComponent } from './listen-settings.sheet';
 
+/** Device tier per UIStandards.md §2 Device-Type Matrix. */
+type Tier = 'xxs' | 'phone' | 'tablet' | 'desktop';
+
 /**
  * Listen Script — immersive, Spotify-style audio player for a session script.
  *
@@ -28,16 +31,19 @@ import { ListenSettingsSheetComponent } from './listen-settings.sheet';
     <div class="fixed inset-0 flex flex-col text-white"
       style="background: radial-gradient(120% 80% at 50% 0%, #232347 0%, #1A1A2E 45%, #0F0F1C 100%);">
 
+      <!-- Centered content column — §2 content max-width; gradient fills behind on tablet/desktop -->
+      <div class="flex-1 flex flex-col min-h-0 w-full max-w-md md:max-w-lg lg:max-w-xl mx-auto">
+
       <!-- Top bar -->
       <div class="flex items-center justify-between px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-2 shrink-0">
         <button routerLink="/scripts/listen"
           class="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center text-white/80 hover:text-white active:scale-95 transition-all">
-          <i-lucide [img]="BackIcon" size="22"></i-lucide>
+          <i-lucide [img]="BackIcon" [size]="iconSize('top')"></i-lucide>
         </button>
         <span class="text-[11px] font-black uppercase tracking-[0.25em] text-white/45 italic">Now Listening</span>
         <button (click)="openSettings()"
           class="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center text-white/80 hover:text-white active:scale-95 transition-all">
-          <i-lucide [img]="SettingsIcon" size="20"></i-lucide>
+          <i-lucide [img]="SettingsIcon" [size]="iconSize('top')"></i-lucide>
         </button>
       </div>
 
@@ -61,11 +67,12 @@ import { ListenSettingsSheetComponent } from './listen-settings.sheet';
       @else {
         <!-- Artwork + title -->
         <div class="flex flex-col items-center px-6 pt-2 pb-3 shrink-0">
-          <div class="w-32 h-32 rounded-[28px] flex items-center justify-center shadow-2xl mb-3"
+          <div class="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 lg:w-36 lg:h-36 rounded-[28px] flex items-center justify-center shadow-2xl mb-3"
             [style.background]="'linear-gradient(135deg, ' + playback.roleColor(playback.roles()[0]) + ', #3D5A99)'">
-            <i-lucide [img]="HeadphonesIcon" size="52" class="text-white"></i-lucide>
+            <i-lucide [img]="HeadphonesIcon" [size]="iconSize('art')" class="text-white"></i-lucide>
           </div>
-          <h1 class="text-lg font-black italic uppercase tracking-tight text-center leading-tight line-clamp-2">
+          <h1 class="font-black italic uppercase tracking-tight text-center leading-tight line-clamp-2"
+            [style.fontSize]="'clamp(1rem, 4.6vw, 1.5rem)'">
             {{ title() || 'Listen Script' }}
           </h1>
           <p class="text-[11px] font-bold uppercase tracking-widest italic text-white/40 mt-0.5">
@@ -74,7 +81,7 @@ import { ListenSettingsSheetComponent } from './listen-settings.sheet';
         </div>
 
         <!-- Lyrics list -->
-        <div class="flex-1 overflow-y-auto px-4 pb-4 space-y-1.5 min-h-0">
+        <div class="flex-1 overflow-y-auto px-4 pb-4 space-y-1.5 min-h-0" style="scroll-behavior: smooth;">
           @for (line of playback.lines(); track line.index) {
             <button [id]="'listen-line-' + line.index"
               (click)="playback.seekTo(line.index)"
@@ -89,14 +96,13 @@ import { ListenSettingsSheetComponent } from './listen-settings.sheet';
                   {{ line.speakerLabel }}
                 </span>
                 @if (line.index === playback.currentIndex() && playback.isPlaying()) {
-                  <i-lucide [img]="WaveIcon" size="13" class="animate-pulse"
+                  <i-lucide [img]="WaveIcon" [size]="iconSize('wave')" class="animate-pulse"
                     [style.color]="playback.roleColor(line.speakerLabel)"></i-lucide>
                 }
               </div>
 
               <p class="font-bold leading-relaxed text-white transition-all duration-300"
-                [class.text-base]="line.index === playback.currentIndex()"
-                [class.text-sm]="line.index !== playback.currentIndex()"
+                [style.fontSize]="line.index === playback.currentIndex() ? 'clamp(0.95rem, 4vw, 1.25rem)' : 'clamp(0.85rem, 3.4vw, 1rem)'"
                 [style.opacity]="line.index === playback.currentIndex() ? 1 : (line.index < playback.currentIndex() ? 0.4 : 0.6)">
                 {{ line.text }}
               </p>
@@ -126,25 +132,26 @@ import { ListenSettingsSheetComponent } from './listen-settings.sheet';
           </div>
 
           <!-- Transport -->
-          <div class="flex items-center justify-center gap-6">
+          <div class="flex items-center justify-center gap-6 md:gap-8">
             <button (click)="playback.prev()"
-              class="w-12 h-12 rounded-full flex items-center justify-center text-white/85 hover:text-white active:scale-95 transition-all">
-              <i-lucide [img]="PrevIcon" size="26"></i-lucide>
+              class="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center text-white/85 hover:text-white active:scale-95 transition-all">
+              <i-lucide [img]="PrevIcon" [size]="iconSize('side')"></i-lucide>
             </button>
 
             <button (click)="playback.togglePlay()"
-              class="w-16 h-16 rounded-full bg-white text-[#1A1A2E] flex items-center justify-center shadow-xl active:scale-95 transition-all">
-              <i-lucide [img]="playback.isPlaying() ? PauseIcon : PlayIcon" size="30"></i-lucide>
+              class="w-14 h-14 sm:w-16 sm:h-16 md:w-[68px] md:h-[68px] rounded-full bg-white text-[#1A1A2E] flex items-center justify-center shadow-xl active:scale-95 transition-all">
+              <i-lucide [img]="playback.isPlaying() ? PauseIcon : PlayIcon" [size]="iconSize('play')"></i-lucide>
             </button>
 
             <button (click)="playback.next()"
-              class="w-12 h-12 rounded-full flex items-center justify-center text-white/85 hover:text-white active:scale-95 transition-all">
-              <i-lucide [img]="NextIcon" size="26"></i-lucide>
+              class="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center text-white/85 hover:text-white active:scale-95 transition-all">
+              <i-lucide [img]="NextIcon" [size]="iconSize('side')"></i-lucide>
             </button>
           </div>
         </div>
       }
 
+      </div>
     </div>
   `,
   styles: [`:host { display: block; }`],
@@ -168,7 +175,24 @@ export class ListenScriptComponent implements OnInit, OnDestroy {
   title = signal('');
   isLoading = signal(true);
 
+  /** Device tier (§2 matrix) — drives per-device icon sizes. Fonts use clamp() (CSS, no JS). */
+  readonly tier = signal<Tier>('phone');
+  private readonly ICONS: Record<string, Record<Tier, number>> = {
+    top:  { xxs: 18, phone: 20, tablet: 22, desktop: 22 },
+    art:  { xxs: 40, phone: 48, tablet: 58, desktop: 64 },
+    wave: { xxs: 12, phone: 13, tablet: 14, desktop: 14 },
+    side: { xxs: 22, phone: 24, tablet: 26, desktop: 28 },
+    play: { xxs: 26, phone: 30, tablet: 33, desktop: 34 },
+  };
+  iconSize(key: string): number { return this.ICONS[key][this.tier()]; }
+
   private scrubbing = false;
+  private readonly onResize = () => this.computeTier();
+
+  private computeTier(): void {
+    const w = window.innerWidth;
+    this.tier.set(w < 360 ? 'xxs' : w < 768 ? 'phone' : w < 1024 ? 'tablet' : 'desktop');
+  }
 
   readonly progressPct = computed(() => {
     const total = this.playback.lines().length;
@@ -176,16 +200,30 @@ export class ListenScriptComponent implements OnInit, OnDestroy {
   });
 
   constructor() {
-    // Auto-scroll the active line into view whenever the playback position changes
-    // (skip while the user is actively dragging the seek bar to avoid fighting their input).
+    // Resolve the device tier now and on resize/orientation change (browser only).
+    if (isPlatformBrowser(this.platformId)) {
+      this.computeTier();
+      window.addEventListener('resize', this.onResize, { passive: true });
+    }
+
+    // Spotify-style auto-scroll: smoothly ease the active line to the VERTICAL CENTER of the lyrics
+    // viewport whenever the playback position changes (skip while the user is dragging the seek bar).
     effect(() => {
       const idx = this.playback.currentIndex();
       if (!isPlatformBrowser(this.platformId) || !this.playback.hasContent() || this.scrubbing) return;
-      queueMicrotask(() => {
-        document.getElementById(`listen-line-${idx}`)
-          ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      });
+      queueMicrotask(() => this.centerActiveLine(idx));
     });
+  }
+
+  /** Smoothly center the active lyric line within its scroll container (Spotify-like easing). */
+  private centerActiveLine(idx: number): void {
+    const el = document.getElementById(`listen-line-${idx}`);
+    const container = el?.parentElement;
+    if (!el || !container) return;
+    const cRect = container.getBoundingClientRect();
+    const eRect = el.getBoundingClientRect();
+    const delta = (eRect.top - cRect.top) - (container.clientHeight / 2) + (el.clientHeight / 2);
+    container.scrollTo({ top: Math.max(0, container.scrollTop + delta), behavior: 'smooth' });
   }
 
   ngOnInit(): void {
@@ -240,6 +278,7 @@ export class ListenScriptComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (isPlatformBrowser(this.platformId)) window.removeEventListener('resize', this.onResize);
     this.playback.reset();
   }
 }
