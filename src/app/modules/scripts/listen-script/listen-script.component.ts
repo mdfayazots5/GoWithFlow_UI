@@ -2,13 +2,14 @@ import { Component, OnDestroy, OnInit, PLATFORM_ID, computed, effect, inject, si
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatBottomSheet, MatBottomSheetModule } from '@angular/material/bottom-sheet';
+import { MatMenuModule } from '@angular/material/menu';
 import {
   LucideAngularModule, ChevronLeft, Play, Pause, SkipForward, SkipBack,
-  Repeat, Gauge, AudioLines, Headphones
+  Repeat, Gauge, AudioLines, Headphones, Check
 } from 'lucide-angular';
 import { catchError, of } from 'rxjs';
 import { ScriptService } from '@core/services/script.service';
-import { ScriptPlaybackService } from '@core/services/voice/script-playback.service';
+import { ScriptPlaybackService, PLAYBACK_SPEEDS } from '@core/services/voice/script-playback.service';
 import { ListenVoicesSheetComponent } from './listen-voices.sheet';
 
 /**
@@ -21,7 +22,7 @@ import { ListenVoicesSheetComponent } from './listen-voices.sheet';
 @Component({
   selector: 'app-listen-script',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule, RouterLink, MatBottomSheetModule],
+  imports: [CommonModule, LucideAngularModule, RouterLink, MatBottomSheetModule, MatMenuModule],
   template: `
     <div class="min-h-screen bg-gw-bg flex flex-col">
 
@@ -65,17 +66,17 @@ import { ListenVoicesSheetComponent } from './listen-voices.sheet';
               class="w-full text-left rounded-2xl px-4 py-3 transition-all duration-300"
               [class.bg-white]="line.index === playback.currentIndex()"
               [class.shadow-md]="line.index === playback.currentIndex()"
-              [class.border]="line.index === playback.currentIndex()"
-              [class.border-gw-primary]="line.index === playback.currentIndex()">
+              [style.border]="line.index === playback.currentIndex() ? '1px solid ' + playback.roleColor(line.speakerLabel) : '1px solid transparent'">
 
               <div class="flex items-center gap-2 mb-1">
-                <span class="text-[11px] font-black uppercase tracking-widest"
-                  [class.text-gw-primary]="line.index === playback.currentIndex()"
-                  [class.text-gw-text-muted]="line.index !== playback.currentIndex()">
+                <span class="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest"
+                  [style.color]="playback.roleColor(line.speakerLabel)">
+                  <span class="w-1.5 h-1.5 rounded-full" [style.background]="playback.roleColor(line.speakerLabel)"></span>
                   {{ line.speakerLabel }}
                 </span>
                 @if (line.index === playback.currentIndex() && playback.isPlaying()) {
-                  <i-lucide [img]="WaveIcon" size="13" class="text-gw-primary animate-pulse"></i-lucide>
+                  <i-lucide [img]="WaveIcon" size="13" class="animate-pulse"
+                    [style.color]="playback.roleColor(line.speakerLabel)"></i-lucide>
                 }
               </div>
 
@@ -108,11 +109,22 @@ import { ListenVoicesSheetComponent } from './listen-voices.sheet';
             <!-- transport -->
             <div class="flex items-center justify-between gap-2">
               <!-- speed -->
-              <button (click)="playback.cycleSpeed()"
+              <button [matMenuTriggerFor]="speedMenu"
                 class="h-11 px-3 rounded-xl bg-gw-bg flex items-center gap-1.5 text-gw-text-muted hover:text-gw-primary transition-all">
                 <i-lucide [img]="SpeedIcon" size="16"></i-lucide>
                 <span class="text-[11px] font-black tabular-nums">{{ playback.rate() }}x</span>
               </button>
+              <mat-menu #speedMenu="matMenu" class="gwf-speed-menu">
+                @for (s of speeds; track s) {
+                  <button mat-menu-item (click)="playback.setRate(s)"
+                    class="!flex items-center justify-between gap-6 !text-sm !font-bold">
+                    <span class="tabular-nums">{{ s }}x</span>
+                    @if (playback.rate() === s) {
+                      <i-lucide [img]="CheckIcon" size="16" class="text-gw-primary"></i-lucide>
+                    }
+                  </button>
+                }
+              </mat-menu>
 
               <div class="flex items-center gap-2">
                 <button (click)="playback.prev()"
@@ -174,6 +186,9 @@ export class ListenScriptComponent implements OnInit, OnDestroy {
   readonly SpeedIcon = Gauge;
   readonly WaveIcon = AudioLines;
   readonly HeadphonesIcon = Headphones;
+  readonly CheckIcon = Check;
+
+  readonly speeds = PLAYBACK_SPEEDS;
 
   title = signal('');
   isLoading = signal(true);
@@ -215,6 +230,9 @@ export class ListenScriptComponent implements OnInit, OnDestroy {
       if (data) {
         this.title.set(data.scriptTitle ?? '');
         this.playback.load(scriptId, data.utterances ?? []);
+        // Auto-start: arriving here is a user navigation (gesture), so begin narration
+        // immediately. If the browser blocks audio without a gesture, the user taps Play.
+        this.playback.play();
       }
       this.isLoading.set(false);
     });

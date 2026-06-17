@@ -30,7 +30,10 @@ export interface RoleVoice {
   pitch: number;
 }
 
-export const PLAYBACK_SPEEDS = [0.5, 1, 1.25, 1.5, 2] as const;
+export const PLAYBACK_SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 2] as const;
+
+/** Distinct display colors per role (assigned by first-appearance order) for the lyrics view. */
+const ROLE_COLORS = ['#7C3AED', '#0891B2', '#E07B39', '#2E7D32', '#DB2777', '#3D5A99'];
 
 /** Audible per-role differentiation using only the on-device engine's gender + pitch knobs. */
 const VOICE_PALETTE: RoleVoice[] = [
@@ -157,6 +160,12 @@ export class ScriptPlaybackService {
   cycleRepeat(): void {
     const order: RepeatMode[] = ['off', 'one', 'all'];
     this.repeat.set(order[(order.indexOf(this.repeat()) + 1) % order.length]);
+  }
+
+  /** Stable display color for a role, by its first-appearance order. */
+  roleColor(label: string): string {
+    const i = this.roles().indexOf(label);
+    return ROLE_COLORS[(i < 0 ? 0 : i) % ROLE_COLORS.length];
   }
 
   /** User override of a role's voice from the Voices sheet. */
