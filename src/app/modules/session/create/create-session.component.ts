@@ -224,6 +224,30 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
                     [style.transform]="showHardWords() ? 'translateX(20px)' : 'translateX(0)'"></span>
                 </button>
               </div>
+
+              <!-- Show key words while answering -->
+              <div class="flex items-start justify-between gap-3 mt-4 pt-4 border-t border-gw-card-border">
+                <div class="flex items-start gap-3">
+                  <div class="w-9 h-9 rounded-xl bg-gw-primary/10 flex items-center justify-center shrink-0">
+                    <i-lucide [img]="BookIcon" size="18" class="text-gw-primary"></i-lucide>
+                  </div>
+                  <div>
+                    <p class="text-[13px] font-bold text-gw-text">Keep key words while answering</p>
+                    <p class="text-[11px] text-gw-text-muted mt-0.5 leading-snug">Keep the question's key words on screen while the candidate answers, so they remember to use them. Leave off to hide them once answering starts.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  [attr.aria-checked]="showHardWordsInAnswer()"
+                  (click)="toggleHardWordsInAnswer()"
+                  class="relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 mt-0.5"
+                  [style.background]="showHardWordsInAnswer() ? 'var(--gw-primary)' : '#c9cdd6'"
+                >
+                  <span class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
+                    [style.transform]="showHardWordsInAnswer() ? 'translateX(20px)' : 'translateX(0)'"></span>
+                </button>
+              </div>
             </div>
           }
 
@@ -300,6 +324,8 @@ export class CreateSessionComponent implements OnInit {
   aiEnabled = signal(false);
   /** Q&A-only "Show Hard Words" practice aid toggle. */
   showHardWords = signal(false);
+  /** Q&A-only "Keep key words while answering" toggle. */
+  showHardWordsInAnswer = signal(false);
 
   derivedMode = computed(() => {
     const cat = this.selectedScript()?.category ?? '';
@@ -347,13 +373,21 @@ export class CreateSessionComponent implements OnInit {
     aiSpeechRate: [1.00],
     aiQuestionDelay: [2],
     // Q&A-only "Show Hard Words" practice aid
-    showHardWords: [false]
+    showHardWords: [false],
+    // Q&A-only "Keep key words while answering"
+    showHardWordsInAnswer: [false]
   });
 
   toggleHardWords() {
     const next = !this.showHardWords();
     this.showHardWords.set(next);
     this.createForm.patchValue({ showHardWords: next });
+  }
+
+  toggleHardWordsInAnswer() {
+    const next = !this.showHardWordsInAnswer();
+    this.showHardWordsInAnswer.set(next);
+    this.createForm.patchValue({ showHardWordsInAnswer: next });
   }
 
   toggleAi() {
@@ -440,6 +474,7 @@ export class CreateSessionComponent implements OnInit {
     // Q&A "Show Hard Words" practice aid — only meaningful for Question & Answer (backend clamps it too).
     if (this.isQuestionAnswer()) {
       payload.showHardWords = !!this.createForm.value.showHardWords;
+      payload.showHardWordsInAnswer = !!this.createForm.value.showHardWordsInAnswer;
     }
 
     this.isLoading.set(true);

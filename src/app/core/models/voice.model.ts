@@ -47,8 +47,12 @@ export interface TurnState {
   aiQuestionDelaySec?: number | null;
   /** Q&A "Show Hard Words" practice aid — true when the session was created with the flag on. */
   showHardWords?: boolean;
-  /** Q&A "Key words to remember" — populated by the backend ONLY on the Interviewer/listen turn and
-   *  ONLY when showHardWords is on. Empty on the candidate's answer turn (blind) and on flag-off sessions. */
+  /** Q&A "Show key words while answering" — true when the question's key words stay visible on the
+   *  candidate's own answer turn. Independent of showHardWords. */
+  showHardWordsInAnswer?: boolean;
+  /** Q&A "Key words to remember" — populated by the backend on the Interviewer/listen turn (when
+   *  showHardWords is on) and on the candidate's answer turn (when showHardWordsInAnswer is on, carrying
+   *  the question's words). Empty otherwise. */
   hardWords?: HardWord[];
 }
 

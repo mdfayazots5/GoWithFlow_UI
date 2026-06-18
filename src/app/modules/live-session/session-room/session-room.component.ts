@@ -6,8 +6,8 @@ import { AuthService } from '@core/services/auth.service';
 import { WebsocketService } from '@core/services/websocket.service';
 import { SpeakerScreenComponent } from '../speaker-screen/speaker-screen.component';
 import { ListenerScreenComponent } from '../listener-screen/listener-screen.component';
-import { LucideAngularModule, LogOut, Clock, Activity, RefreshCw, Settings, X, AlertTriangle, Users, Mic, Headphones } from 'lucide-angular';
-import { TurnState, SessionSummary } from '@core/models/voice.model';
+import { LucideAngularModule, LogOut, Clock, Activity, RefreshCw, Settings, X, AlertTriangle, Users, Mic, Headphones, Book } from 'lucide-angular';
+import { TurnState, SessionSummary, HardWord } from '@core/models/voice.model';
 import { catchError, of } from 'rxjs';
 import { SessionPreferencesService } from '@core/services/session-preferences.service';
 import { VoiceBroadcastService } from '@core/services/voice-broadcast.service';
@@ -225,6 +225,26 @@ type PresenceToast = {
               </button>
             </div>
           } @else if (isSpeaker()) {
+            <!-- Q&A "Keep key words while answering" — the question's key words stay visible while the
+                 candidate answers. Room-level (decoupled from SpeakerScreen). Wraps; never scrolls sideways. -->
+            @if (answerHardWords().length) {
+              <div class="mb-3 bg-[#3D5A99]/12 rounded-[20px] border border-[#3D5A99]/30 px-4 py-3 space-y-2 animate-in fade-in duration-300">
+                <div class="flex items-center gap-2">
+                  <i-lucide [img]="BookIcon" size="14" class="text-[#E07B39] flex-shrink-0"></i-lucide>
+                  <span class="text-[11px] font-black uppercase tracking-widest text-white/45 italic">Key words to use</span>
+                </div>
+                <ul class="flex flex-col gap-1.5">
+                  @for (hw of answerHardWords(); track hw.word) {
+                    <li class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                      <span class="text-[13px] font-black text-white/85 tracking-tight">{{ hw.word }}</span>
+                      @if (hw.meaning) {
+                        <span class="text-[12px] font-medium text-white/50 leading-snug">— {{ hw.meaning }}</span>
+                      }
+                    </li>
+                  }
+                </ul>
+              </div>
+            }
             <app-speaker-screen
               [turnState]="turnState()!"
               (turnShifted)="onTurnShifted()"
@@ -327,6 +347,12 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
   readonly UsersIcon = Users;
   readonly MicIcon = Mic;
   readonly HeadphonesIcon = Headphones;
+  readonly BookIcon = Book;
+
+  /** Q&A "Keep key words while answering" — the question's key words shown on the candidate's own
+   *  answer (speaker) turn. Driven here at the room level, decoupled from the SpeakerScreen turnState
+   *  input so the canonical-state fill never disturbs the recording auto-start/submit timers. */
+  answerHardWords = signal<HardWord[]>([]);
 
   // ── Core session state ──
   turnState = signal<TurnState | null>(null);
@@ -580,6 +606,13 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
     }
     this.isSpeaker.set(amSpeaker);
 
+    // Q&A "Keep key words while answering": on my own answer turn the canonical state carries the
+    // question's key words. Surface them via a room-level signal (NOT the SpeakerScreen turnState input)
+    // so this fill never re-fires SpeakerScreen.ngOnChanges and cancels the recording timers.
+    this.answerHardWords.set(
+      amSpeaker && state.showHardWordsInAnswer ? (state.hardWords ?? []) : [],
+    );
+
     // Phase 17 — if this turn is held by the AI, narrate it via TTS then advance. Driven from the
     // canonical state (full utterance text + AI config) rather than the optimistic shift event.
     this.maybeNarrateAiTurn(state);
@@ -662,6 +695,8 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
         hardWords: []
       });
       this.isSpeaker.set(willSpeak);
+      // Clear the answer-turn key words until loadCurrentTurn repopulates them (no stale flash).
+      this.answerHardWords.set([]);
     }
 
     this.loadCurrentTurn(sessionId);

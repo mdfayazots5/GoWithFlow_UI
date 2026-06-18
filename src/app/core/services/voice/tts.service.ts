@@ -21,6 +21,21 @@ export class TtsService {
   /** Cached best-available language for this device (resolved from installed voices once). */
   private resolvedLang: string | null = null;
 
+  /** TEMP DIAGNOSTIC (2026-06-18, voice gender fix) — dump device voice list once. REMOVE after device map confirmed. */
+  private static _voicesDumped = false;
+  private async dumpVoicesOnce(): Promise<void> {
+    if (TtsService._voicesDumped) return;
+    TtsService._voicesDumped = true;
+    try {
+      const { voices } = await TextToSpeech.getSupportedVoices();
+      const en = (voices ?? []).filter(v => (v.lang ?? '').toLowerCase().startsWith('en'));
+      console.log('[TTS-DIAG] total voices=', voices?.length, ' en voices=', en.length);
+      en.forEach(v => console.log(`[TTS-DIAG] name="${v.name}" lang="${v.lang}" uri="${(v as any).voiceURI ?? ''}"`));
+    } catch (err) {
+      console.log('[TTS-DIAG] getSupportedVoices failed', err);
+    }
+  }
+
   /**
    * Speaks `text` and resolves when playback completes. Failures never throw — narration must never
    * wedge the turn flow. `voiceVariant` picks the Nth same-gender voice in the resolved language.
@@ -32,6 +47,7 @@ export class TtsService {
     const clean = (text ?? '').trim();
     if (!clean) return;
 
+    await this.dumpVoicesOnce(); // TEMP DIAGNOSTIC — remove after device voice map confirmed
     const lang = opts.lang ?? await this.resolveBestLang();
     const voiceIndex = await this.resolveVoiceIndex(lang, opts.gender, opts.voiceVariant);
 
