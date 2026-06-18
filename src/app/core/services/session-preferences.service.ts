@@ -4,6 +4,8 @@ export interface SessionPreferences {
   defaultVoiceStarter: boolean;
   autoSubmitOnStop: boolean;
   listenVoiceBroadcast: boolean;
+  /** Q&A practice aid — show the question's "Key words" on both the question and the answer turn. */
+  showHardWords: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -13,7 +15,8 @@ export class SessionPreferencesService {
   private readonly defaults: SessionPreferences = {
     defaultVoiceStarter: true,
     autoSubmitOnStop: false,
-    listenVoiceBroadcast: false
+    listenVoiceBroadcast: false,
+    showHardWords: true
   };
 
   private _prefs = signal<SessionPreferences>(this.load());

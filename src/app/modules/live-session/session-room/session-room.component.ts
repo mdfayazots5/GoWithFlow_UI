@@ -177,6 +177,25 @@ type PresenceToast = {
               </div>
               }
 
+              <!-- Show Hard Words — Question & Answer practice aid; key words shown on both turns -->
+              @if (turnState()?.hideScriptText) {
+              <div class="flex items-center justify-between py-2.5 px-3.5 bg-white/[0.04] rounded-xl border border-white/[0.08]">
+                <div class="min-w-0 mr-3">
+                  <p class="text-[11px] font-black text-white/80 italic">Show Hard Words</p>
+                  <p class="text-[11px] text-white/35 mt-0.5 leading-tight">Show the question's key words on the question and answer turns</p>
+                </div>
+                <button
+                  (click)="sessionPrefs.update({ showHardWords: !sessionPrefs.prefs.showHardWords })"
+                  class="relative w-11 h-6 rounded-full transition-colors duration-200 flex-shrink-0"
+                  [ngClass]="sessionPrefs.prefs.showHardWords ? 'bg-gw-primary' : 'bg-white/15'"
+                  [attr.aria-pressed]="sessionPrefs.prefs.showHardWords"
+                  aria-label="Toggle show hard words" type="button">
+                  <span class="absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 pointer-events-none"
+                    [style.transform]="getToggleThumbTransform(sessionPrefs.prefs.showHardWords)"></span>
+                </button>
+              </div>
+              }
+
             </div>
           </div>
           </div>
@@ -225,10 +244,17 @@ type PresenceToast = {
               </button>
             </div>
           } @else if (isSpeaker()) {
-            <!-- Q&A "Keep key words while answering" — the question's key words stay visible while the
-                 candidate answers. Room-level (decoupled from SpeakerScreen). Wraps; never scrolls sideways. -->
-            @if (answerHardWords().length) {
-              <div class="mb-3 bg-[#3D5A99]/12 rounded-[20px] border border-[#3D5A99]/30 px-4 py-3 space-y-2 animate-in fade-in duration-300">
+            <app-speaker-screen
+              [turnState]="turnState()!"
+              (turnShifted)="onTurnShifted()"
+            ></app-speaker-screen>
+
+            <!-- Q&A "Show Hard Words" — the question's key words stay visible while the candidate answers.
+                 Rendered at the bottom (below the speaker screen, consistent with the question turn) and
+                 gated on the room-settings pref. Room-level + decoupled from SpeakerScreen so this never
+                 disturbs the recording auto-start. Wraps; never scrolls sideways. -->
+            @if (sessionPrefs.prefs.showHardWords && answerHardWords().length) {
+              <div class="mt-3 bg-[#3D5A99]/12 rounded-[20px] border border-[#3D5A99]/30 px-4 py-3 space-y-2 animate-in fade-in duration-300">
                 <div class="flex items-center gap-2">
                   <i-lucide [img]="BookIcon" size="14" class="text-[#E07B39] flex-shrink-0"></i-lucide>
                   <span class="text-[11px] font-black uppercase tracking-widest text-white/45 italic">Key words to use</span>
@@ -245,10 +271,6 @@ type PresenceToast = {
                 </ul>
               </div>
             }
-            <app-speaker-screen
-              [turnState]="turnState()!"
-              (turnShifted)="onTurnShifted()"
-            ></app-speaker-screen>
           } @else {
             <app-listener-screen
               [turnState]="turnState()!"
@@ -606,12 +628,11 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
     }
     this.isSpeaker.set(amSpeaker);
 
-    // Q&A "Keep key words while answering": on my own answer turn the canonical state carries the
-    // question's key words. Surface them via a room-level signal (NOT the SpeakerScreen turnState input)
-    // so this fill never re-fires SpeakerScreen.ngOnChanges and cancels the recording timers.
-    this.answerHardWords.set(
-      amSpeaker && state.showHardWordsInAnswer ? (state.hardWords ?? []) : [],
-    );
+    // Q&A "Show Hard Words": on my own answer turn the canonical state carries the question's key words
+    // (backend always sends them on Q&A turns). Surface them via a room-level signal (NOT the
+    // SpeakerScreen turnState input) so this fill never re-fires SpeakerScreen.ngOnChanges and cancels
+    // the recording timers. Display is gated in the template by the room-settings `showHardWords` pref.
+    this.answerHardWords.set(amSpeaker ? (state.hardWords ?? []) : []);
 
     // Phase 17 — if this turn is held by the AI, narrate it via TTS then advance. Driven from the
     // canonical state (full utterance text + AI config) rather than the optimistic shift event.

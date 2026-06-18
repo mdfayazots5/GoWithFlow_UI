@@ -5,6 +5,7 @@ import { TurnState } from '@core/models/voice.model';
 import { LucideAngularModule, Mic, ThumbsUp, AlertCircle, Volume2, Ear, BookOpen } from 'lucide-angular';
 import { LiveSessionService } from '../live-session.service';
 import { VoiceBroadcastService } from '@core/services/voice-broadcast.service';
+import { SessionPreferencesService } from '@core/services/session-preferences.service';
 import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.component';
 
 @Component({
@@ -101,9 +102,9 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
         </div>
       }
 
-      <!-- Key words to remember (Q&A practice aid) — populated by the backend only on the interviewer
-           listen turn AND only when the session's Show Hard Words flag is on. Wraps; never scrolls sideways. -->
-      @if (turnState.hardWords && turnState.hardWords.length) {
+      <!-- Key words to remember (Q&A practice aid) — populated by the backend on the interviewer/listen
+           turn; shown when the room-settings "Show Hard Words" pref is on. Wraps; never scrolls sideways. -->
+      @if (sessionPrefs.prefs.showHardWords && turnState.hardWords && turnState.hardWords.length) {
         <div class="bg-[#3D5A99]/12 rounded-[20px] border border-[#3D5A99]/30 px-4 py-3 space-y-2 animate-in fade-in duration-300">
           <div class="flex items-center gap-2">
             <i-lucide [img]="BookIcon" size="14" class="text-[#E07B39] flex-shrink-0"></i-lucide>
@@ -206,6 +207,7 @@ export class ListenerScreenComponent {
 
   private liveSessionService = inject(LiveSessionService);
   readonly voiceBroadcast = inject(VoiceBroadcastService);
+  readonly sessionPrefs = inject(SessionPreferencesService);
 
   readonly MicIcon = Mic;
   readonly VolumeIcon = Volume2;
