@@ -14,7 +14,8 @@ import {
   Users,
   Clock,
   Layers,
-  Bot
+  Bot,
+  BookOpen
 } from 'lucide-angular';
 import { Script } from '@core/models/script.model';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
@@ -198,6 +199,34 @@ import { debounceTime, distinctUntilChanged } from 'rxjs';
             }
           </div>
 
+          <!-- Show Hard Words (Question & Answer only) -->
+          @if (isQuestionAnswer()) {
+            <div class="bg-white rounded-2xl border border-gw-card-border p-5">
+              <div class="flex items-start justify-between gap-3">
+                <div class="flex items-start gap-3">
+                  <div class="w-9 h-9 rounded-xl bg-gw-primary/10 flex items-center justify-center shrink-0">
+                    <i-lucide [img]="BookIcon" size="18" class="text-gw-primary"></i-lucide>
+                  </div>
+                  <div>
+                    <p class="text-[13px] font-bold text-gw-text">Show Hard Words</p>
+                    <p class="text-[11px] text-gw-text-muted mt-0.5 leading-snug">Practice aid — while the interviewer asks each question, show its key words to remember. Leave off for a real blind interview.</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  [attr.aria-checked]="showHardWords()"
+                  (click)="toggleHardWords()"
+                  class="relative w-11 h-6 rounded-full transition-colors duration-200 shrink-0 mt-0.5"
+                  [style.background]="showHardWords() ? 'var(--gw-primary)' : '#c9cdd6'"
+                >
+                  <span class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200"
+                    [style.transform]="showHardWords() ? 'translateX(20px)' : 'translateX(0)'"></span>
+                </button>
+              </div>
+            </div>
+          }
+
           <!-- Submit Button -->
           <button
             type="button"
@@ -248,6 +277,7 @@ export class CreateSessionComponent implements OnInit {
   readonly ClockIcon = Clock;
   readonly LayersIcon = Layers;
   readonly BotIcon = Bot;
+  readonly BookIcon = BookOpen;
 
   /** The 6 named Indian AI voices for the picker. */
   readonly voices = AI_VOICES;
@@ -268,11 +298,16 @@ export class CreateSessionComponent implements OnInit {
   isLoading = signal(false);
   selectedScript = signal<Script | null>(null);
   aiEnabled = signal(false);
+  /** Q&A-only "Show Hard Words" practice aid toggle. */
+  showHardWords = signal(false);
 
   derivedMode = computed(() => {
     const cat = this.selectedScript()?.category ?? '';
     return this.categoryModeMap[cat] ?? cat;
   });
+
+  /** True when the selected script is a Question & Answer script — gates the Show Hard Words toggle. */
+  isQuestionAnswer = computed(() => this.derivedMode() === 'Question & Answer');
 
   derivedMaxMembers = computed(() => {
     // Distinct speaker labels count is not in the script list payload —
@@ -310,8 +345,16 @@ export class CreateSessionComponent implements OnInit {
     aiEnabled: [false],
     aiVoiceName: ['aarav'],
     aiSpeechRate: [1.00],
-    aiQuestionDelay: [2]
+    aiQuestionDelay: [2],
+    // Q&A-only "Show Hard Words" practice aid
+    showHardWords: [false]
   });
+
+  toggleHardWords() {
+    const next = !this.showHardWords();
+    this.showHardWords.set(next);
+    this.createForm.patchValue({ showHardWords: next });
+  }
 
   toggleAi() {
     const next = !this.aiEnabled();
@@ -392,6 +435,11 @@ export class CreateSessionComponent implements OnInit {
       payload.aiVoiceGender = persona.gender;           // derived, for legacy back-compat
       payload.aiSpeechRate = Number(this.createForm.value.aiSpeechRate);
       payload.aiQuestionDelaySec = Number(this.createForm.value.aiQuestionDelay);
+    }
+
+    // Q&A "Show Hard Words" practice aid — only meaningful for Question & Answer (backend clamps it too).
+    if (this.isQuestionAnswer()) {
+      payload.showHardWords = !!this.createForm.value.showHardWords;
     }
 
     this.isLoading.set(true);

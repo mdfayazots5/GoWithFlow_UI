@@ -2,7 +2,7 @@
 import { Component, Input, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { TurnState } from '@core/models/voice.model';
-import { LucideAngularModule, Mic, ThumbsUp, AlertCircle, Volume2, Ear } from 'lucide-angular';
+import { LucideAngularModule, Mic, ThumbsUp, AlertCircle, Volume2, Ear, BookOpen } from 'lucide-angular';
 import { LiveSessionService } from '../live-session.service';
 import { VoiceBroadcastService } from '@core/services/voice-broadcast.service';
 import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.component';
@@ -101,6 +101,27 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
         </div>
       }
 
+      <!-- Key words to remember (Q&A practice aid) — populated by the backend only on the interviewer
+           listen turn AND only when the session's Show Hard Words flag is on. Wraps; never scrolls sideways. -->
+      @if (turnState.hardWords && turnState.hardWords.length) {
+        <div class="bg-[#3D5A99]/12 rounded-[20px] border border-[#3D5A99]/30 px-4 py-3 space-y-2 animate-in fade-in duration-300">
+          <div class="flex items-center gap-2">
+            <i-lucide [img]="BookIcon" size="14" class="text-[#E07B39] flex-shrink-0"></i-lucide>
+            <span class="text-[11px] font-black uppercase tracking-widest text-white/45 italic">Key words to remember</span>
+          </div>
+          <ul class="flex flex-col gap-1.5">
+            @for (hw of turnState.hardWords; track hw.word) {
+              <li class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                <span class="text-[13px] font-black text-white/85 tracking-tight">{{ hw.word }}</span>
+                @if (hw.meaning) {
+                  <span class="text-[12px] font-medium text-white/50 leading-snug">— {{ hw.meaning }}</span>
+                }
+              </li>
+            }
+          </ul>
+        </div>
+      }
+
       <!-- Inline Banners (condensed) -->
       @if (showReReadBanner) {
         <div class="flex items-center gap-2.5 px-4 py-2.5 bg-[#E07B39]/10 border border-[#E07B39]/25 rounded-xl animate-in slide-in-from-top-2 duration-300">
@@ -189,6 +210,7 @@ export class ListenerScreenComponent {
   readonly MicIcon = Mic;
   readonly VolumeIcon = Volume2;
   readonly EarIcon = Ear;
+  readonly BookIcon = BookOpen;
 
   lastAction = signal<string | null>(null);
 

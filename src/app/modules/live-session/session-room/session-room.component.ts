@@ -650,7 +650,11 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
         maxReReads: 2,
         // isFacilitatorTurn defaults false in the optimistic update; the canonical
         // loadCurrentTurn() response immediately follows and sets the correct value.
-        isFacilitatorTurn: false
+        isFacilitatorTurn: false,
+        // Clear the previous turn's Q&A hard words so they never flash on the wrong turn;
+        // loadCurrentTurn() repopulates them only on the interviewer/listen turn (and only when the
+        // session flag is on). showHardWords is session-level and carries through the spread.
+        hardWords: []
       });
       this.isSpeaker.set(willSpeak);
     }

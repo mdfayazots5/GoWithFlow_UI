@@ -45,6 +45,17 @@ export interface TurnState {
   aiVoiceName?: string | null;
   aiSpeechRate?: number | null;
   aiQuestionDelaySec?: number | null;
+  /** Q&A "Show Hard Words" practice aid — true when the session was created with the flag on. */
+  showHardWords?: boolean;
+  /** Q&A "Key words to remember" — populated by the backend ONLY on the Interviewer/listen turn and
+   *  ONLY when showHardWords is on. Empty on the candidate's answer turn (blind) and on flag-off sessions. */
+  hardWords?: HardWord[];
+}
+
+/** A single Q&A "Key word to remember" surfaced on the Interviewer/listen turn. */
+export interface HardWord {
+  word: string;
+  meaning?: string | null;
 }
 
 export interface UtteranceData {
@@ -57,6 +68,8 @@ export interface UtteranceData {
   contextTag: string;
   focusWord?: string;
   pronunciationNote?: string;
+  /** Q&A — raw 'word:meaning | …' hard-words string; only sent when the words are being shown. */
+  hardWords?: string | null;
 }
 
 export interface VoiceAnalysisResponse {
