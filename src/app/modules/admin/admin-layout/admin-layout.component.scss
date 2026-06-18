@@ -297,11 +297,11 @@
   font-family: inherit;
   letter-spacing: 0.1px;
 
-  mat-icon {
-    font-size: 18px;
+  i-lucide {
     width: 18px;
     height: 18px;
     flex-shrink: 0;
+    display: inline-flex;
   }
 
   &:hover {

@@ -184,7 +184,24 @@ import { RouterLink } from '@angular/router';
                  </button>
                }
             </div>
-            <div class="overflow-x-auto">
+            <!-- Mobile: stacked cards (no horizontal scroll — UIStandards) -->
+            <div class="md:hidden divide-y divide-gw-bg">
+              @for (row of visibleValidationRows(); track row.sequenceId) {
+                <div class="px-4 py-3 space-y-1.5">
+                  <div class="flex items-center gap-2">
+                    <span class="text-[11px] font-black italic text-gw-text">#{{ row.sequenceId }}</span>
+                    <span class="text-[11px] font-bold text-gw-text-muted uppercase tracking-tight truncate">{{ row.speakerLabel }}</span>
+                  </div>
+                  <p class="text-[13px] font-bold text-gw-text leading-snug break-words">{{ row.englishText }}</p>
+                  @if (row.hintText) {
+                    <p class="text-[12px] font-medium text-gw-text-muted leading-snug break-words border-t border-gw-bg pt-1.5">{{ row.hintText }}</p>
+                  }
+                </div>
+              }
+            </div>
+
+            <!-- Desktop / tablet: full table -->
+            <div class="hidden md:block overflow-x-auto">
               <table class="w-full text-left">
                 <thead class="bg-gw-bg/50">
                   <tr>

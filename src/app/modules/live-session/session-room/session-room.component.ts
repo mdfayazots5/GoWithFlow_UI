@@ -566,14 +566,19 @@ export class SessionRoomComponent implements OnInit, OnDestroy {
 
   private updateState(state: TurnState) {
     const current = this.turnState();
+    const amSpeaker = String(state.activeMemberId) === localStorage.getItem('gwf_userId');
     // Only push a new turnState reference when the turn actually changes.
     // handleTurnShift already sets an optimistic state for the same turn; the subsequent
     // loadCurrentTurn() API confirmation for that same turn must not fire a second
     // ngOnChanges in SpeakerScreenComponent, which would re-arm auto-start mid-recording.
-    if (!current || String(current.sessionId) !== String(state.sessionId) || state.turnIndex > current.turnIndex) {
+    // EXCEPTION: on a turn where I'm NOT the active speaker (e.g. the AI interviewer/listen turn)
+    // there is no SpeakerScreen to re-arm, and the optimistic patch deliberately blanks per-turn
+    // data like Q&A `hardWords` — so the canonical response MUST be applied to fill it in. Without
+    // this, the "Key words to remember" panel only ever appeared on the first turn.
+    if (!current || String(current.sessionId) !== String(state.sessionId) || state.turnIndex > current.turnIndex || !amSpeaker) {
       this.turnState.set(state);
     }
-    this.isSpeaker.set(String(state.activeMemberId) === localStorage.getItem('gwf_userId'));
+    this.isSpeaker.set(amSpeaker);
 
     // Phase 17 — if this turn is held by the AI, narrate it via TTS then advance. Driven from the
     // canonical state (full utterance text + AI config) rather than the optimistic shift event.

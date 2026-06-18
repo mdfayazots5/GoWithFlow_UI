@@ -1,8 +1,7 @@
 import { Component, inject, signal, computed, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterOutlet, ActivatedRoute, NavigationEnd } from '@angular/router';
-import { MatIconModule } from '@angular/material/icon';
-import { LayoutDashboard, Users, BookOpen, BarChart3, UsersRound } from 'lucide-angular';
+import { LucideAngularModule, LayoutDashboard, Users, BookOpen, BarChart3, UsersRound, LogOut } from 'lucide-angular';
 import { AuthService } from '@modules/auth/auth.service';
 import { UserStateService } from '@core/services/user-state.service';
 import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.component';
@@ -12,7 +11,7 @@ import { filter, map } from 'rxjs';
 @Component({
   selector: 'app-admin-layout',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterOutlet, MatIconModule, UserAvatarComponent, BottomNavComponent],
+  imports: [CommonModule, RouterLink, RouterOutlet, LucideAngularModule, UserAvatarComponent, BottomNavComponent],
   templateUrl: './admin-layout.component.html',
   styleUrls: ['./admin-layout.component.scss']
 })
@@ -31,6 +30,8 @@ export class AdminLayoutComponent {
   private userState = inject(UserStateService);
   private router    = inject(Router);
   private route     = inject(ActivatedRoute);
+
+  readonly LogOutIcon = LogOut;
 
   pageTitle       = signal('Dashboard');
   profileMenuOpen = signal(false);

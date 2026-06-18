@@ -14,7 +14,7 @@ import {
   standalone: true,
   imports: [CommonModule, RouterLink, LucideAngularModule],
   template: `
-    <div class="space-y-6 pb-12">
+    <div class="space-y-4 pb-6">
 
       <!-- Back + Header -->
       <div class="flex items-center gap-4">
@@ -66,43 +66,43 @@ import {
               <div class="px-5 py-4 border-b border-gw-card-border">
                 <h3 class="text-sm font-black text-gw-text uppercase tracking-wider">Script Info</h3>
               </div>
-              <div class="p-5 grid sm:grid-cols-2 gap-4">
+              <div class="p-3 sm:p-4 grid grid-cols-2 gap-2.5">
 
-                <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
+                <div class="flex items-center gap-2.5 p-2.5 bg-gw-bg rounded-xl min-w-0">
                   <i-lucide [img]="TagIcon" size="16" class="text-gw-text-muted flex-shrink-0"></i-lucide>
-                  <div>
+                  <div class="min-w-0">
                     <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Category</p>
-                    <p class="text-sm font-bold text-gw-text mt-0.5">{{ script()!.category }}</p>
+                    <p class="text-[13px] font-bold text-gw-text mt-0.5 break-words leading-tight">{{ script()!.category }}</p>
                   </div>
                 </div>
 
-                <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
+                <div class="flex items-center gap-2.5 p-2.5 bg-gw-bg rounded-xl min-w-0">
                   <i-lucide [img]="HashIcon" size="16" class="text-gw-text-muted flex-shrink-0"></i-lucide>
-                  <div>
+                  <div class="min-w-0">
                     <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Grammar Tag</p>
-                    <p class="text-sm font-bold text-gw-text mt-0.5">{{ script()!.grammarFocusTag }}</p>
+                    <p class="text-[13px] font-bold text-gw-text mt-0.5 break-words leading-tight">{{ script()!.grammarFocusTag }}</p>
                   </div>
                 </div>
 
-                <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
+                <div class="flex items-center gap-2.5 p-2.5 bg-gw-bg rounded-xl min-w-0">
                   <i-lucide [img]="UsersIcon" size="16" class="text-gw-text-muted flex-shrink-0"></i-lucide>
-                  <div>
+                  <div class="min-w-0">
                     <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Age Group</p>
-                    <p class="text-sm font-bold text-gw-text mt-0.5">{{ script()!.targetAgeGroup }}</p>
+                    <p class="text-[13px] font-bold text-gw-text mt-0.5 break-words leading-tight">{{ script()!.targetAgeGroup }}</p>
                   </div>
                 </div>
 
-                <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
+                <div class="flex items-center gap-2.5 p-2.5 bg-gw-bg rounded-xl min-w-0">
                   <i-lucide [img]="LinesIcon" size="16" class="text-gw-text-muted flex-shrink-0"></i-lucide>
-                  <div>
+                  <div class="min-w-0">
                     <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Utterance Lines</p>
-                    <p class="text-sm font-bold text-gw-text mt-0.5">{{ script()!.utteranceCount }}</p>
+                    <p class="text-[13px] font-bold text-gw-text mt-0.5 break-words leading-tight">{{ script()!.utteranceCount }}</p>
                   </div>
                 </div>
 
-                <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
+                <div class="flex items-center gap-2.5 p-2.5 bg-gw-bg rounded-xl min-w-0">
                   <i-lucide [img]="LayersIcon" size="16" class="text-gw-text-muted flex-shrink-0"></i-lucide>
-                  <div>
+                  <div class="min-w-0">
                     <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Complexity</p>
                     <div class="flex gap-1 mt-1.5">
                       @for (d of [1,2,3,4,5]; track d) {
@@ -113,11 +113,11 @@ import {
                   </div>
                 </div>
 
-                <div class="flex items-center gap-3 p-3 bg-gw-bg rounded-xl">
+                <div class="flex items-center gap-2.5 p-2.5 bg-gw-bg rounded-xl min-w-0">
                   <i-lucide [img]="CalendarIcon" size="16" class="text-gw-text-muted flex-shrink-0"></i-lucide>
-                  <div>
+                  <div class="min-w-0">
                     <p class="text-[11px] font-black uppercase tracking-widest text-gw-text-muted">Uploaded</p>
-                    <p class="text-sm font-bold text-gw-text mt-0.5">{{ script()!.uploadedDate | date:'d MMM y' }}</p>
+                    <p class="text-[13px] font-bold text-gw-text mt-0.5 break-words leading-tight">{{ script()!.uploadedDate | date:'d MMM y' }}</p>
                   </div>
                 </div>
 
