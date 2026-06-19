@@ -72,16 +72,23 @@ import { TabReuseStrategy } from '@core/strategies/tab-reuse.strategy';
       flex: 1;
       overflow-y: auto;
       overflow-x: hidden;
-      /* Single source of the page gutter — pages no longer add their own px-4/pt-2.
-         Bottom nav clearance is owned solely by .gwf-page-bottom on each page. */
-      padding: 16px 16px 0;
+      /* Single source of the page frame: pages add no px-4/pt-2 and no bottom padding.
+         Bottom value clears the fixed bottom nav (68px + safe area) plus a 16px gap. */
+      padding: 16px 16px calc(68px + env(safe-area-inset-bottom, 0px) + 16px);
     }
 
     /* Tablet+ : a wider, more comfortable gutter (UIStandards device matrix). */
     @media (min-width: 768px) {
       .user-content-area {
-        padding: 20px 24px 0;
+        padding: 20px 24px calc(68px + env(safe-area-inset-bottom, 0px) + 16px);
       }
+    }
+
+    /* Pages inside the user shell must NOT force 100vh — the scroll container already fills the
+       space, so a page-level min-h-screen pushes even empty pages past the viewport and scrolls.
+       Full-bleed routes (.flush) keep their own full-height layout. */
+    .user-content-area:not(.flush) .min-h-screen {
+      min-height: 0;
     }
 
     .user-content-area.no-bottom-pad {

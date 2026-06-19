@@ -82,11 +82,10 @@ import { AI_VOICES } from '@core/services/voice/voice-personas';
                   <span class="truncate">{{ role }}</span>
                 </span>
                 <select
-                  [value]="voiceIdOf(role)"
                   (change)="playback.setRoleVoice(role, $any($event.target).value)"
                   class="h-9 bg-white rounded-lg px-2 text-[12px] font-bold text-gw-text border border-gw-card-border outline-none cursor-pointer shrink-0">
                   @for (v of voices; track v.id) {
-                    <option [value]="v.id">{{ v.name }} ({{ v.gender === 'Male' ? 'M' : 'F' }})</option>
+                    <option [value]="v.id" [selected]="v.id === voiceIdOf(role)">{{ v.name }} ({{ v.gender === 'Male' ? 'M' : 'F' }})</option>
                   }
                 </select>
               </div>

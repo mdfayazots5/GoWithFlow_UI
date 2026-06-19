@@ -281,17 +281,16 @@ public class ListenMediaService extends Service {
             java.util.Set<Voice> all = tts.getVoices();
             if (all == null) return;
 
-            boolean wantFemale = !"Male".equalsIgnoreCase(line.gender);
+            String wantGender = "Male".equalsIgnoreCase(line.gender) ? "Male" : "Female";
             String langPrefix = chosen != null ? chosen.getLanguage().toLowerCase() : "en";
             String countryPrefix = chosen != null ? chosen.getCountry().toLowerCase() : "";
 
             java.util.List<Voice> inLocale = new java.util.ArrayList<>();
             java.util.List<Voice> inLang = new java.util.ArrayList<>();
             for (Voice v : all) {
-                String n = v.getName() == null ? "" : v.getName().toLowerCase();
-                boolean isFemale = n.contains("female");
-                boolean genderOk = wantFemale ? isFemale : (n.contains("male") && !isFemale);
-                if (!genderOk) continue;
+                // Gender from the voice code, not the name — Android voice names ("en-in-x-ene-local")
+                // carry the code but no "male"/"female" word.
+                if (!wantGender.equals(voiceGender(v.getName()))) continue;
                 String vLang = (v.getLocale() != null && v.getLocale().getLanguage() != null) ? v.getLocale().getLanguage().toLowerCase() : "";
                 String vCountry = (v.getLocale() != null && v.getLocale().getCountry() != null) ? v.getLocale().getCountry().toLowerCase() : "";
                 if (!vLang.equals(langPrefix)) continue;
@@ -304,6 +303,26 @@ public class ListenMediaService extends Service {
                 tts.setVoice(pool.get(Math.max(0, line.variant) % pool.size()));
             }
         } catch (Exception ignored) { /* device voice set varies — fall back to default */ }
+    }
+
+    /**
+     * Gender of a Google TTS voice from its code (the {@code <code>} in {@code en-in-x-<code>-local}).
+     * Device voice names carry no "male"/"female" word, so gender is read from the code. Verified by ear
+     * on-device (IV2201, 2026-06-19): en-IN {@code ena}/{@code enc} = female, {@code end}/{@code ene} = male.
+     * Mirrors {@code TtsService.voiceGender} on the web side. Returns null when unknown.
+     */
+    private static String voiceGender(String voiceName) {
+        if (voiceName == null) return null;
+        String n = voiceName.toLowerCase();
+        java.util.regex.Matcher m = java.util.regex.Pattern.compile("-x-([a-z]+)(?:-|$)").matcher(n);
+        if (m.find()) {
+            String c = m.group(1);
+            if (c.equals("ena") || c.equals("enc")) return "Female";
+            if (c.equals("end") || c.equals("ene")) return "Male";
+        }
+        if (n.contains("female")) return "Female";
+        if (n.contains("male")) return "Male";
+        return null;
     }
 
     // ── MediaSession + notification ───────────────────────────────────

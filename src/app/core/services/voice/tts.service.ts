@@ -21,19 +21,24 @@ export class TtsService {
   /** Cached best-available language for this device (resolved from installed voices once). */
   private resolvedLang: string | null = null;
 
-  /** TEMP DIAGNOSTIC (2026-06-18, voice gender fix) — dump device voice list once. REMOVE after device map confirmed. */
-  private static _voicesDumped = false;
-  private async dumpVoicesOnce(): Promise<void> {
-    if (TtsService._voicesDumped) return;
-    TtsService._voicesDumped = true;
-    try {
-      const { voices } = await TextToSpeech.getSupportedVoices();
-      const en = (voices ?? []).filter(v => (v.lang ?? '').toLowerCase().startsWith('en'));
-      console.log('[TTS-DIAG] total voices=', voices?.length, ' en voices=', en.length);
-      en.forEach(v => console.log(`[TTS-DIAG] name="${v.name}" lang="${v.lang}" uri="${(v as any).voiceURI ?? ''}"`));
-    } catch (err) {
-      console.log('[TTS-DIAG] getSupportedVoices failed', err);
-    }
+  /**
+   * Google TTS voice **code → gender** (the `<code>` in `en-in-x-<code>-local`). On real devices the
+   * plugin's `name` is just the locale label ("English India") — it carries NO gender — so gender must
+   * be read from the voiceURI code. Verified by ear on-device (IV2201, 2026-06-19): en-IN ena/enc are
+   * female, end/ene are male. Extend this map as other locales' codes are confirmed.
+   */
+  private static readonly VOICE_GENDER: Record<string, 'Male' | 'Female'> = {
+    ena: 'Female', enc: 'Female', end: 'Male', ene: 'Male', // en-IN (Google)
+  };
+
+  /** Gender of a device voice: prefer the known voiceURI code map, then any gender word in the name. */
+  private static voiceGender(v: { name?: string; voiceURI?: string }): 'Male' | 'Female' | null {
+    const code = ((v.voiceURI ?? '').toLowerCase().match(/-x-([a-z]+)(?:-|$)/) ?? [])[1];
+    if (code && TtsService.VOICE_GENDER[code]) return TtsService.VOICE_GENDER[code];
+    const n = (v.name ?? '').toLowerCase();
+    if (n.includes('female')) return 'Female';
+    if (n.includes('male')) return 'Male';
+    return null;
   }
 
   /**
@@ -47,7 +52,6 @@ export class TtsService {
     const clean = (text ?? '').trim();
     if (!clean) return;
 
-    await this.dumpVoicesOnce(); // TEMP DIAGNOSTIC — remove after device voice map confirmed
     const lang = opts.lang ?? await this.resolveBestLang();
     const voiceIndex = await this.resolveVoiceIndex(lang, opts.gender, opts.voiceVariant);
 
@@ -97,10 +101,11 @@ export class TtsService {
   }
 
   /**
-   * Resolve a concrete voice index for the given language + gender + variant. Among the same-gender
-   * voices in that language, pick the variant-th (clamped). Android voice names are inconsistent
-   * (e.g. "en-in-x-ene-local"), so gender is matched by substring; if nothing matches we return null
-   * and the plugin uses its default for the language.
+   * Resolve a concrete voice index for the given language + gender + variant. Keeps the persona's
+   * accent by preferring voices of the **exact resolved locale** (e.g. `en-IN`), then same language,
+   * then any. Gender is read from the voiceURI code (see {@link voiceGender}) because device voice
+   * names carry no gender. Among the same-gender voices, picks the variant-th (clamped). Returns null
+   * when no gender match is found, so the plugin falls back to its default for the language.
    */
   private async resolveVoiceIndex(
     lang: string,
@@ -112,17 +117,16 @@ export class TtsService {
       const { voices } = await TextToSpeech.getSupportedVoices();
       if (!voices?.length) return null;
 
-      const prefix = lang.slice(0, 2).toLowerCase();
-      const inLang = voices.filter(v => (v.lang ?? '').toLowerCase().startsWith(prefix));
-      const pool = inLang.length ? inLang : voices;
+      const want = lang.toLowerCase().replace('_', '-');   // e.g. 'en-in'
+      const two = want.slice(0, 2);
+      const norm = (v: { lang?: string }) => (v.lang ?? '').toLowerCase().replace('_', '-');
 
-      // "female" contains "male" — match female explicitly; male must NOT also contain "female".
-      const matchesGender = (name: string): boolean => {
-        const n = name.toLowerCase();
-        return gender === 'Female' ? n.includes('female') : n.includes('male') && !n.includes('female');
-      };
+      // Prefer the exact locale (keep the Indian accent), then same language, then everything.
+      let pool = voices.filter(v => norm(v) === want);
+      if (!pool.length) pool = voices.filter(v => norm(v).startsWith(two));
+      if (!pool.length) pool = voices;
 
-      const sameGender = pool.filter(v => matchesGender(v.name ?? ''));
+      const sameGender = pool.filter(v => TtsService.voiceGender(v) === gender);
       if (!sameGender.length) return null;
 
       // Pick the variant-th same-gender voice so different personas use different device voices.
