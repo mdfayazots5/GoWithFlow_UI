@@ -16,7 +16,7 @@ export class SessionPreferencesService {
     defaultVoiceStarter: true,
     autoSubmitOnStop: false,
     listenVoiceBroadcast: false,
-    showHardWords: true
+    showHardWords: false
   };
 
   private _prefs = signal<SessionPreferences>(this.load());
