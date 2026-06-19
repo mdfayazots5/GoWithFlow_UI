@@ -28,7 +28,7 @@ interface SlotAssignment {
   imports: [CommonModule, FormsModule, LucideAngularModule, UserAvatarComponent],
   template: `
     <div class="min-h-screen bg-gw-bg">
-      <div class="max-w-lg mx-auto px-4 pt-4 gwf-page-bottom space-y-5 animate-in fade-in duration-500">
+      <div class="max-w-lg mx-auto gwf-page-bottom space-y-5 animate-in fade-in duration-500">
 
         <div>
           <h1 class="text-lg font-black text-gw-text tracking-tight">Assign Roles</h1>

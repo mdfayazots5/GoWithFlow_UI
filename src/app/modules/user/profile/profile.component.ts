@@ -22,7 +22,7 @@ import { SkeletonCardComponent, SkeletonStatGridComponent } from '@shared/ui/ske
   imports: [CommonModule, LucideAngularModule, ReactiveFormsModule, UserAvatarComponent, LoadingStateComponent, SkeletonCardComponent, SkeletonStatGridComponent],
   template: `
     <div class="min-h-screen bg-gw-bg">
-      <div class="max-w-lg mx-auto space-y-4 gwf-page-bottom px-4 pt-2 animate-in fade-in duration-500">
+      <div class="max-w-lg mx-auto space-y-4 gwf-page-bottom animate-in fade-in duration-500">
 
         <app-loading-state [loading]="!profile()" [retryable]="false">
           <ng-container skeleton>

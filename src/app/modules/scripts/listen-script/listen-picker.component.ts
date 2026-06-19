@@ -18,7 +18,7 @@ import { SkeletonListComponent } from '@shared/ui/skeleton';
   imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, RouterLink, SkeletonListComponent],
   template: `
     <div class="min-h-screen bg-gw-bg">
-      <div class="max-w-lg mx-auto px-4 pt-2 gwf-page-bottom space-y-4 animate-in fade-in duration-500">
+      <div class="max-w-lg mx-auto gwf-page-bottom space-y-4 animate-in fade-in duration-500">
 
         <div class="flex items-center gap-3">
           <div class="w-10 h-10 rounded-xl bg-gw-primary/10 flex items-center justify-center shrink-0">

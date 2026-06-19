@@ -17,7 +17,7 @@ import { SkeletonCardComponent, SkeletonListComponent } from '@shared/ui/skeleto
   imports: [CommonModule, LucideAngularModule, RouterLink, UserAvatarComponent, LoadingStateComponent, SkeletonCardComponent, SkeletonListComponent],
   template: `
     <div class="min-h-screen bg-gw-bg">
-      <div class="max-w-lg mx-auto px-4 pt-2 gwf-page-bottom space-y-4 animate-in fade-in duration-500">
+      <div class="max-w-lg mx-auto gwf-page-bottom space-y-4 animate-in fade-in duration-500">
 
       <!-- Page heading -->
       <div>

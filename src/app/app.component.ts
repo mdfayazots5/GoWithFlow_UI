@@ -72,9 +72,16 @@ import { TabReuseStrategy } from '@core/strategies/tab-reuse.strategy';
       flex: 1;
       overflow-y: auto;
       overflow-x: hidden;
-      padding: 16px;
-      /* 64px nav + safe area so content never hides behind the bar */
-      padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+      /* Single source of the page gutter — pages no longer add their own px-4/pt-2.
+         Bottom nav clearance is owned solely by .gwf-page-bottom on each page. */
+      padding: 16px 16px 0;
+    }
+
+    /* Tablet+ : a wider, more comfortable gutter (UIStandards device matrix). */
+    @media (min-width: 768px) {
+      .user-content-area {
+        padding: 20px 24px 0;
+      }
     }
 
     .user-content-area.no-bottom-pad {

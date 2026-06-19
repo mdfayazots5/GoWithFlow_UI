@@ -18,7 +18,7 @@ import { SkeletonListComponent } from '@shared/ui/skeleton';
   imports: [CommonModule, LucideAngularModule, UserAvatarComponent, SkeletonListComponent],
   template: `
     <div class="min-h-screen bg-gw-bg">
-      <div class="max-w-lg mx-auto px-4 pt-4 gwf-page-bottom space-y-4 animate-in fade-in duration-500">
+      <div class="max-w-lg mx-auto gwf-page-bottom space-y-4 animate-in fade-in duration-500">
 
         <div>
           <h1 class="text-lg font-black text-gw-text tracking-tight">My Invitations</h1>

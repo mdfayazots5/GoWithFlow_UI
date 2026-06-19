@@ -24,7 +24,7 @@ import { SkeletonListComponent, SkeletonCardComponent } from '@shared/ui/skeleto
   imports: [CommonModule, LucideAngularModule, RouterLink, SkeletonListComponent, SkeletonCardComponent],
   template: `
     <div class="min-h-screen bg-gw-bg">
-      <div class="max-w-lg mx-auto px-4 pt-2 gwf-page-bottom space-y-4 animate-in fade-in duration-500">
+      <div class="max-w-lg mx-auto gwf-page-bottom space-y-4 animate-in fade-in duration-500">
 
         <!-- ── Greeting Header ──────────────────────────────────────── -->
         <div class="flex items-center justify-between gap-3">
