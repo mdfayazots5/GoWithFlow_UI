@@ -26,9 +26,14 @@ import { SkeletonListComponent } from '@shared/ui/skeleton';
 
         <!-- ── Page Heading ─────────────────────────────────────── -->
         <div class="flex items-center justify-between gap-3">
-          <div>
-            <h1 class="text-xl font-black text-gw-text tracking-tight leading-tight">Script Library</h1>
-            <p class="text-[11px] font-semibold text-gw-text-muted mt-0.5">Choose a script to start your session</p>
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-gw-primary/10 flex items-center justify-center shrink-0">
+              <i-lucide [img]="BookOpenIcon" size="20" class="text-gw-primary"></i-lucide>
+            </div>
+            <div>
+              <h1 class="text-xl font-black text-gw-text tracking-tight leading-tight">Script Library</h1>
+              <p class="text-[11px] font-semibold text-gw-text-muted mt-0.5">Choose a script to start your session</p>
+            </div>
           </div>
           @if (isAdmin()) {
             <a routerLink="/admin/scripts/upload"

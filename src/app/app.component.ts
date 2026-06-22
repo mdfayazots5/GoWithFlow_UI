@@ -124,6 +124,9 @@ export class AppComponent {
 
   constructor() {
     this.backButton.init();
+    // "Stay logged in": silently refresh an expired access token on app launch so reopening the app
+    // the next day lands in the session instead of the login screen (Item 5).
+    this.auth.ensureFreshSessionOnStartup();
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd)
     ).subscribe((event: any) => {

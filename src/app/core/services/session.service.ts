@@ -120,7 +120,12 @@ export class SessionService {
   }
 
   startSession(sessionId: string): Observable<boolean> {
-    return this.http.post<boolean>(`${this.baseUrl}/${sessionId}/start`, {});
+    // Unwrap the standard ApiResponse<bool> envelope so callers get a real boolean.
+    // A business failure (e.g. not all members ready) returns HTTP 200 with success:false,
+    // so checking the HTTP status alone is not enough.
+    return this.http.post<any>(`${this.baseUrl}/${sessionId}/start`, {}).pipe(
+      map(res => res?.success === true && res?.data === true)
+    );
   }
 
   endSession(sessionId: string): Observable<boolean> {

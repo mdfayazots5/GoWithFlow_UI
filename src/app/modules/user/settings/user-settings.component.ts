@@ -6,21 +6,28 @@ import { LucideAngularModule, User, Mail, Phone, Camera, Save, CheckCircle, Mic 
 import { UserService } from '@core/services/user.service';
 import { UserStateService } from '@core/services/user-state.service';
 import { AuthService } from '@core/services/auth.service';
+import { ToastService } from '@core/services/toast.service';
 import { SessionPreferencesService } from '@core/services/session-preferences.service';
 import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.component';
+import { AvatarCropperComponent } from '@shared/components/avatar-cropper/avatar-cropper.component';
 
 @Component({
   selector: 'app-user-settings',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, UserAvatarComponent],
+  imports: [CommonModule, ReactiveFormsModule, LucideAngularModule, UserAvatarComponent, AvatarCropperComponent],
   template: `
     <div class="min-h-screen bg-gw-bg">
       <div class="max-w-lg mx-auto gwf-page-bottom space-y-4 animate-in fade-in duration-500">
 
         <!-- Page heading -->
-        <div>
-          <h1 class="text-xl font-black text-gw-text tracking-tight">Account Settings</h1>
-          <p class="text-[11px] font-semibold text-gw-text-muted mt-0.5">Update your profile and preferences</p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gw-primary/10 flex items-center justify-center shrink-0">
+            <i-lucide [img]="UserIcon" size="20" class="text-gw-primary"></i-lucide>
+          </div>
+          <div>
+            <h1 class="text-xl font-black text-gw-text tracking-tight">Account Settings</h1>
+            <p class="text-[11px] font-semibold text-gw-text-muted mt-0.5">Update your profile and preferences</p>
+          </div>
         </div>
 
         <!-- Avatar Section -->
@@ -33,7 +40,7 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
             </app-user-avatar>
             <label class="absolute -bottom-2 -right-2 bg-gw-primary text-white p-2.5 rounded-xl shadow-lg border-2 border-white cursor-pointer hover:opacity-90 active:scale-95 transition-all">
               <i-lucide [img]="CameraIcon" size="15"></i-lucide>
-              <input type="file" (change)="onFileSelected($event)" class="hidden" accept="image/*">
+              <input #fileInput type="file" (change)="onFileSelected($event)" class="hidden" accept="image/png,image/jpeg,image/jpg,image/webp">
             </label>
           </div>
           <p class="text-[11px] font-bold uppercase tracking-widest text-gw-text-muted">Tap camera to change photo</p>
@@ -157,6 +164,11 @@ import { UserAvatarComponent } from '@shared/components/user-avatar/user-avatar.
         </div>
 
       </div>
+
+      <!-- Crop modal (Item 6) -->
+      @if (cropFile) {
+        <app-avatar-cropper [file]="cropFile" (cropped)="onCropped($event)" (cancelled)="cropFile = null"></app-avatar-cropper>
+      }
     </div>
   `,
   styles: [`:host { display: block; }`]
@@ -176,6 +188,13 @@ export class UserSettingsComponent implements OnInit {
   isSaving = false;
   isSaved  = false;
 
+  /** Image awaiting crop (drives the crop modal). Null when the cropper is closed. */
+  cropFile: File | null = null;
+
+  /** Max avatar upload size before cropping/downscaling (2 MB). */
+  private readonly MAX_AVATAR_BYTES = 2 * 1024 * 1024;
+  private readonly ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+
   get prefs() { return this.sessionPrefs.prefs; }
 
   constructor(
@@ -183,6 +202,7 @@ export class UserSettingsComponent implements OnInit {
     private userService: UserService,
     private userState: UserStateService,
     private auth: AuthService,
+    private toast: ToastService,
     private sessionPrefs: SessionPreferencesService,
     private router: Router
   ) {}
@@ -204,18 +224,42 @@ export class UserSettingsComponent implements OnInit {
   }
 
   onFileSelected(event: any) {
-    const file = event.target.files[0];
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    // Always reset the input so re-selecting the same file fires (change) again.
+    input.value = '';
     if (!file) return;
+
+    // Item 7 — validate type and size with a clear, visible message before doing anything.
+    if (!this.ALLOWED_TYPES.includes(file.type)) {
+      this.toast.error('Please choose a PNG, JPG or WEBP image.');
+      return;
+    }
+    if (file.size > this.MAX_AVATAR_BYTES) {
+      const mb = (file.size / (1024 * 1024)).toFixed(1);
+      this.toast.error(`Image is ${mb} MB. Please choose an image under 2 MB.`);
+      return;
+    }
+
+    // Item 6 — open the cropper; the upload happens with the cropped 512×512 result.
+    this.cropFile = file;
+  }
+
+  /** Receives the cropped 512×512 avatar from the cropper, previews it and uploads. */
+  onCropped(cropped: File) {
+    this.cropFile = null;
     const reader = new FileReader();
     reader.onload = (e: any) => this.avatarPreview = e.target.result;
-    reader.readAsDataURL(file);
-    this.userService.uploadAvatar(file).subscribe({
+    reader.readAsDataURL(cropped);
+    this.userService.uploadAvatar(cropped).subscribe({
       next: ({ avatarUrl }) => {
         if (avatarUrl) {
           this.avatarPreview = avatarUrl;
           this.userState.updateAvatar(avatarUrl);
+          this.toast.success('Profile photo updated');
         }
-      }
+      },
+      error: () => this.toast.error('Could not upload photo. Please try again.'),
     });
   }
 

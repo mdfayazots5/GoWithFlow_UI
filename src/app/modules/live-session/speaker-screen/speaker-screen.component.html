@@ -133,8 +133,10 @@
     @if (analysisPhase === 'feedback' && sessionResult) {
       <div class="flex flex-col gap-3 mt-2">
 
-        <!-- Feedback cards — scrollable region -->
-        <app-voice-feedback [result]="sessionResult"></app-voice-feedback>
+        <!-- Feedback cards — scrollable region.
+             Q&A blind answers ([hideScoring]) suppress word-correction scoring; only the
+             plain "You said / Expected" comparison is shown (mistakes are not saved either). -->
+        <app-voice-feedback [result]="sessionResult" [hideScoring]="!!turnState.hideScriptText"></app-voice-feedback>
 
         <!-- Action buttons — docked, always visible above the fold -->
         <div class="action-dock flex flex-col gap-2 pt-2 border-t border-white/5">

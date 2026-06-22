@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatBottomSheetRef } from '@angular/material/bottom-sheet';
-import { LucideAngularModule, X, Gauge, Repeat, AudioLines } from 'lucide-angular';
+import { LucideAngularModule, X, Gauge, Repeat, AudioLines, Repeat2 } from 'lucide-angular';
 import { ScriptPlaybackService, PLAYBACK_SPEEDS, RepeatMode } from '@core/services/voice/script-playback.service';
 import { AI_VOICES } from '@core/services/voice/voice-personas';
 
@@ -15,7 +15,7 @@ import { AI_VOICES } from '@core/services/voice/voice-personas';
   standalone: true,
   imports: [CommonModule, LucideAngularModule],
   template: `
-    <div class="p-5 space-y-5">
+    <div class="bg-gw-card-bg text-gw-text rounded-t-[20px] p-5 space-y-5 max-h-[85vh] overflow-y-auto">
       <div class="flex items-center justify-between">
         <div>
           <p class="text-[11px] font-bold text-gw-text-muted uppercase tracking-widest italic">Settings</p>
@@ -67,6 +67,63 @@ import { AI_VOICES } from '@core/services/voice/voice-personas';
         </div>
       </div>
 
+      <!-- Practice — repeat each line and/or pause so the learner can repeat it aloud -->
+      <div class="space-y-2.5">
+        <div class="flex items-center gap-2 text-gw-text">
+          <i-lucide [img]="PracticeIcon" size="15" class="text-gw-text-muted"></i-lucide>
+          <span class="text-[11px] font-black uppercase tracking-widest">Practice</span>
+        </div>
+
+        <!-- Master toggle -->
+        <button (click)="playback.setPracticeMode(!playback.practiceMode())"
+          class="w-full flex items-center justify-between gap-3 bg-gw-bg rounded-xl px-3.5 py-3 text-left">
+          <span class="min-w-0">
+            <span class="block text-sm font-bold text-gw-text">Repeat mode</span>
+            <span class="block text-[11px] font-semibold text-gw-text-muted italic">Repeat each line, with time to say it back</span>
+          </span>
+          <span class="shrink-0 w-11 h-6 rounded-full transition-all relative"
+            [class.bg-gw-primary]="playback.practiceMode()"
+            [class.bg-gw-card-border]="!playback.practiceMode()">
+            <span class="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all"
+              [style.left.rem]="playback.practiceMode() ? 1.375 : 0.125"></span>
+          </span>
+        </button>
+
+        @if (playback.practiceMode()) {
+          <!-- Repeat count -->
+          <div class="flex items-center justify-between gap-3 bg-gw-bg rounded-xl px-3.5 py-2.5">
+            <span class="text-sm font-bold text-gw-text">Repeat each line</span>
+            <div class="flex gap-1.5">
+              @for (n of repeatCounts; track n) {
+                <button (click)="playback.setRepeatCount(n)"
+                  class="w-10 h-9 rounded-lg text-[12px] font-black tabular-nums transition-all"
+                  [class.bg-gw-primary]="playback.repeatCount() === n"
+                  [class.text-white]="playback.repeatCount() === n"
+                  [class.bg-white]="playback.repeatCount() !== n"
+                  [class.text-gw-text-muted]="playback.repeatCount() !== n">
+                  {{ n }}×
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Pause to repeat -->
+          <button (click)="playback.setPauseToRepeat(!playback.pauseToRepeat())"
+            class="w-full flex items-center justify-between gap-3 bg-gw-bg rounded-xl px-3.5 py-3 text-left">
+            <span class="min-w-0">
+              <span class="block text-sm font-bold text-gw-text">Pause to repeat</span>
+              <span class="block text-[11px] font-semibold text-gw-text-muted italic">Adds a gap after each line so you can say it</span>
+            </span>
+            <span class="shrink-0 w-11 h-6 rounded-full transition-all relative"
+              [class.bg-gw-primary]="playback.pauseToRepeat()"
+              [class.bg-gw-card-border]="!playback.pauseToRepeat()">
+              <span class="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all"
+                [style.left.rem]="playback.pauseToRepeat() ? 1.375 : 0.125"></span>
+            </span>
+          </button>
+        }
+      </div>
+
       <!-- Voices — one of 6 named Indian voices per role -->
       @if (playback.roles().length > 0) {
         <div class="space-y-2">
@@ -110,8 +167,10 @@ export class ListenSettingsSheetComponent {
   readonly SpeedIcon = Gauge;
   readonly RepeatIcon = Repeat;
   readonly WaveIcon = AudioLines;
+  readonly PracticeIcon = Repeat2;
 
   readonly speeds = PLAYBACK_SPEEDS;
+  readonly repeatCounts = [1, 2, 3];
   readonly voices = AI_VOICES;
   readonly repeatModes: Array<{ mode: RepeatMode; label: string }> = [
     { mode: 'off', label: 'Off' },

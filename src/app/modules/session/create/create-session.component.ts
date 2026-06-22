@@ -400,12 +400,32 @@ export class CreateSessionComponent implements OnInit {
         localStorage.setItem('gwf_sessionId', String(res.sessionId));
         localStorage.setItem('gwf_joinCode', res.joinCode);
 
-        // AI session: every non-host slot is already filled by the AI, so there are no guest
-        // slots to invite — go straight to the lobby.
-        if (this.aiEnabled()) {
-          this.isLoading.set(false);
-          this.toast.success('AI practice session created!');
-          this.router.navigate(['/session/lobby', res.sessionId]);
+        // AI session: every non-host slot is already filled by the AI and is already "ready",
+        // so the lobby/ready step has nothing to wait for. Auto-start and drop the host straight
+        // into the live room — the ready page is skipped entirely.
+        // NOTE: Question & Answer force-enables the AI on the backend even when the toggle is off,
+        // so it is always an AI (solo) session and must skip the lobby too.
+        const isAiSession = this.aiEnabled() || this.derivedMode() === 'Question & Answer';
+        if (isAiSession) {
+          this.sessionService.startSession(res.sessionId).subscribe({
+            next: (started) => {
+              this.isLoading.set(false);
+              if (started) {
+                // Full page redirect — bypasses Angular lazy-load issues in the Capacitor WebView.
+                window.location.href = `/live-session/room/${res.sessionId}`;
+              } else {
+                // Auto-start was rejected (rare) — fall back to the lobby so the host can start manually.
+                this.toast.success('Session created!');
+                this.router.navigate(['/session/lobby', res.sessionId]);
+              }
+            },
+            error: () => {
+              // Auto-start failed — degrade gracefully to the lobby rather than stranding the host.
+              this.isLoading.set(false);
+              this.toast.success('Session created!');
+              this.router.navigate(['/session/lobby', res.sessionId]);
+            }
+          });
           return;
         }
 

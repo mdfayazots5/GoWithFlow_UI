@@ -55,6 +55,29 @@ export class ScriptPlaybackService {
   readonly currentLine = computed<PlaybackLine | null>(() => this.lines()[this.currentIndex()] ?? null);
   readonly hasContent = computed(() => this.lines().length > 0);
 
+  // ── Practice / Repeat group (Listen settings) ─────────────────────
+  // A learning loop: optionally repeat each line N times and/or pause after each line so the
+  // learner can repeat it aloud (shadowing). These are global Listen preferences (not per script),
+  // persisted in localStorage. When practice mode is ON the engine uses the JS line loop on every
+  // platform (so the per-line repeat/pause timing is honored) — the native foreground media service
+  // only drives plain, lock-screen playback when practice is OFF.
+  readonly practiceMode = signal(false);
+  /** How many times each line is spoken in practice mode (1–3). */
+  readonly repeatCount = signal(2);
+  /** When true, pause after each line (gap ≈ line length) so the learner repeats it aloud. */
+  readonly pauseToRepeat = signal(false);
+  /** Pause length as a multiple of the spoken line's estimated duration. */
+  private static readonly PAUSE_FACTOR = 1.0;
+
+  /** True when the very next question-jump should be available. */
+  readonly questionStarts = computed<number[]>(() => {
+    const lines = this.lines();
+    const first = this.roles()[0];
+    if (!lines.length || first == null) return [0];
+    const starts = lines.filter(l => l.speakerLabel === first).map(l => l.index);
+    return starts.length ? (starts[0] === 0 ? starts : [0, ...starts]) : [0];
+  });
+
   /** Monotonic token: bumped on any stop so a pending speak()-loop knows it was superseded. */
   private playToken = 0;
 
@@ -63,10 +86,22 @@ export class ScriptPlaybackService {
   /** Whether the native service has been started for the current script. */
   private nativeStarted = false;
 
+  /**
+   * Whether the native foreground media service should drive playback. Practice mode forces the JS
+   * line loop on every platform so per-line repeat/pause timing works (the native service has no
+   * notion of practice repeats).
+   */
+  private useNativeService(): boolean {
+    return this.native && !this.practiceMode();
+  }
+
   constructor() {
+    this.loadPrefs();
     // Mirror native playback state (incl. lock-screen / notification control actions) into signals.
     if (this.native) {
       void ListenMedia.addListener('stateChanged', s => {
+        // Ignore native events while practice mode (JS loop) owns playback.
+        if (this.practiceMode()) return;
         this.currentIndex.set(s.index);
         this.isPlaying.set(s.isPlaying);
         this.rate.set(s.rate);
@@ -122,7 +157,7 @@ export class ScriptPlaybackService {
   play(): void {
     if (!this.hasContent() || this.isPlaying()) return;
     this.isPlaying.set(true);
-    if (this.native) {
+    if (this.useNativeService()) {
       if (!this.nativeStarted) { this.nativeStarted = true; void this.nativeStart(this.currentIndex()); }
       else void ListenMedia.play();
       return;
@@ -132,18 +167,41 @@ export class ScriptPlaybackService {
 
   pause(): void {
     this.isPlaying.set(false);
-    if (this.native) { void ListenMedia.pause(); this.persist(); return; }
+    if (this.useNativeService()) { void ListenMedia.pause(); this.persist(); return; }
     this.playToken++;          // cancel any in-flight loop
     void this.tts.stop();
     this.persist();
   }
 
+  /**
+   * Transport "Next": jump to the START of the NEXT question (music-app style). Falls back to the
+   * last line if already in the final question.
+   */
   next(): void {
-    this.seekTo(Math.min(this.lines().length - 1, this.currentIndex() + 1));
+    const starts = this.questionStarts();
+    const cur = this.currentIndex();
+    const nextStart = starts.find(s => s > cur);
+    this.seekTo(nextStart ?? (this.lines().length - 1));
   }
 
+  /**
+   * Transport "Back" (music-app style): if we're partway INTO the current question, restart it from
+   * its first line; otherwise jump to the START of the PREVIOUS question.
+   */
   prev(): void {
-    this.seekTo(Math.max(0, this.currentIndex() - 1));
+    const starts = this.questionStarts();
+    const cur = this.currentIndex();
+    // Largest start <= cur is the current question's first line.
+    let curStartIdx = 0;
+    for (let i = 0; i < starts.length; i++) { if (starts[i] <= cur) curStartIdx = i; else break; }
+    const curStart = starts[curStartIdx];
+    if (cur > curStart) { this.seekTo(curStart); return; }       // restart current question
+    this.seekTo(starts[Math.max(0, curStartIdx - 1)]);            // previous question
+  }
+
+  /** Step exactly one line earlier/later (used by the line-level seek bar, not the transport). */
+  stepLine(delta: number): void {
+    this.seekTo(this.currentIndex() + delta);
   }
 
   /** Jump playback to a tapped line. If playing, narration restarts at that line. */
@@ -152,7 +210,7 @@ export class ScriptPlaybackService {
     const clamped = Math.max(0, Math.min(this.lines().length - 1, index));
     this.currentIndex.set(clamped);
     this.persist();
-    if (this.native) { void ListenMedia.seekTo({ index: clamped }); return; }
+    if (this.useNativeService()) { void ListenMedia.seekTo({ index: clamped }); return; }
     const wasPlaying = this.isPlaying();
     this.playToken++;          // cancel current line
     void this.tts.stop();
@@ -164,7 +222,7 @@ export class ScriptPlaybackService {
 
   setRate(rate: number): void {
     this.rate.set(rate);
-    if (this.native) { void ListenMedia.setRate({ rate }); return; }
+    if (this.useNativeService()) { void ListenMedia.setRate({ rate }); return; }
     if (this.isPlaying()) {
       // Restart the current line so the new speed takes effect immediately.
       const i = this.currentIndex();
@@ -187,7 +245,32 @@ export class ScriptPlaybackService {
   /** Set the repeat mode directly (used by the Settings sheet). */
   setRepeat(mode: RepeatMode): void {
     this.repeat.set(mode);
-    if (this.native) void ListenMedia.setRepeat({ mode });
+    if (this.useNativeService()) void ListenMedia.setRepeat({ mode });
+  }
+
+  // ── Practice / Repeat group setters ───────────────────────────────
+
+  /** Toggle practice mode. Switches the playback backend (native service ↔ JS loop), preserving position. */
+  setPracticeMode(on: boolean): void {
+    if (this.practiceMode() === on) return;
+    const wasPlaying = this.isPlaying();
+    this.stopInternal();              // stop the CURRENT backend (uses old practiceMode value)
+    this.practiceMode.set(on);
+    this.persistPrefs();
+    this.nativeStarted = false;
+    if (wasPlaying) this.play();      // resume on the now-correct backend
+  }
+
+  /** Set how many times each line repeats in practice mode (clamped 1–3). Takes effect on the next line. */
+  setRepeatCount(n: number): void {
+    this.repeatCount.set(Math.max(1, Math.min(3, Math.round(n))));
+    this.persistPrefs();
+  }
+
+  /** Toggle the "pause after each line so I can repeat" gap (practice mode). Takes effect on the next line. */
+  setPauseToRepeat(on: boolean): void {
+    this.pauseToRepeat.set(on);
+    this.persistPrefs();
   }
 
   /** Stable display color for a role, by its first-appearance order. */
@@ -202,7 +285,7 @@ export class ScriptPlaybackService {
     const current = this.roleVoices()[label];
     if (current && current.id === persona.id) return;
     this.roleVoices.update(m => ({ ...m, [label]: persona }));
-    if (this.native) {
+    if (this.useNativeService()) {
       // Re-send the queue with updated per-line voices; native continues from the current line.
       if (this.nativeStarted && this.isPlaying()) void this.nativeStart(this.currentIndex());
       return;
@@ -243,13 +326,24 @@ export class ScriptPlaybackService {
 
       const line = this.lines()[i];
       const persona = this.roleVoices()[line.speakerLabel] ?? AI_VOICES[0];
-      await this.tts.speak(line.text, {
-        rate: this.rate(), gender: persona.gender, pitch: persona.pitch,
-        voiceVariant: persona.variant, lang: 'en-IN',
-      });
 
-      // Superseded (paused / seeked / rate change) — abandon this loop silently.
-      if (token !== this.playToken || !this.isPlaying()) return;
+      // Practice mode repeats each line N times, optionally pausing for the learner to repeat aloud.
+      const reps = this.practiceMode() ? Math.max(1, this.repeatCount()) : 1;
+      for (let r = 0; r < reps; r++) {
+        // No explicit lang: TtsService resolves en-IN → en-GB → en-US to whatever the device has
+        // installed, so desktop (no en-IN voice) still produces audio instead of silence.
+        await this.tts.speak(line.text, {
+          rate: this.rate(), gender: persona.gender, pitch: persona.pitch,
+          voiceVariant: persona.variant,
+        });
+        // Superseded (paused / seeked / rate change) — abandon this loop silently.
+        if (token !== this.playToken || !this.isPlaying()) return;
+
+        if (this.practiceMode() && this.pauseToRepeat()) {
+          await this.delay(this.estimateLineMs(line.text), token);
+          if (token !== this.playToken || !this.isPlaying()) return;
+        }
+      }
 
       if (this.repeat() === 'one') continue;          // re-speak same line
       i++;
@@ -262,9 +356,27 @@ export class ScriptPlaybackService {
     }
   }
 
+  /** Estimate a spoken line's duration (ms) from word count and rate — used to size the practice pause. */
+  private estimateLineMs(text: string): number {
+    const words = (text ?? '').trim().split(/\s+/).filter(Boolean).length || 1;
+    const base = words * 380;                          // ~380ms/word at rate 1.0
+    return Math.max(900, (base / Math.max(0.25, this.rate())) * ScriptPlaybackService.PAUSE_FACTOR);
+  }
+
+  /** Cancellable wait that bails the instant the loop is superseded or playback stops. */
+  private async delay(ms: number, token: number): Promise<void> {
+    let waited = 0;
+    const step = 100;
+    while (waited < ms) {
+      if (token !== this.playToken || !this.isPlaying()) return;
+      await new Promise(r => setTimeout(r, Math.min(step, ms - waited)));
+      waited += step;
+    }
+  }
+
   private stopInternal(): void {
     this.isPlaying.set(false);
-    if (this.native) { void ListenMedia.stop(); this.nativeStarted = false; return; }
+    if (this.useNativeService()) { void ListenMedia.stop(); this.nativeStarted = false; return; }
     this.playToken++;
     void this.tts.stop();
   }
@@ -319,6 +431,33 @@ export class ScriptPlaybackService {
       return Number.isFinite(n) ? n : null;
     } catch {
       return null;
+    }
+  }
+
+  // ── Practice-preference persistence (global, not per script) ───────
+
+  private static readonly PREF_PRACTICE = 'gwf_listen_practice';
+  private static readonly PREF_COUNT = 'gwf_listen_repeat_count';
+  private static readonly PREF_PAUSE = 'gwf_listen_pause_to_repeat';
+
+  private loadPrefs(): void {
+    try {
+      this.practiceMode.set(localStorage.getItem(ScriptPlaybackService.PREF_PRACTICE) === '1');
+      this.pauseToRepeat.set(localStorage.getItem(ScriptPlaybackService.PREF_PAUSE) === '1');
+      const c = parseInt(localStorage.getItem(ScriptPlaybackService.PREF_COUNT) ?? '', 10);
+      if (Number.isFinite(c)) this.repeatCount.set(Math.max(1, Math.min(3, c)));
+    } catch {
+      /* storage unavailable — keep defaults (off) */
+    }
+  }
+
+  private persistPrefs(): void {
+    try {
+      localStorage.setItem(ScriptPlaybackService.PREF_PRACTICE, this.practiceMode() ? '1' : '0');
+      localStorage.setItem(ScriptPlaybackService.PREF_PAUSE, this.pauseToRepeat() ? '1' : '0');
+      localStorage.setItem(ScriptPlaybackService.PREF_COUNT, String(this.repeatCount()));
+    } catch {
+      /* storage unavailable — non-fatal */
     }
   }
 }

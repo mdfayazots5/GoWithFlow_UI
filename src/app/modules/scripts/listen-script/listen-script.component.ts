@@ -4,11 +4,12 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatBottomSheet, MatBottomSheetModule } from '@angular/material/bottom-sheet';
 import {
   LucideAngularModule, ChevronLeft, Play, Pause, SkipForward, SkipBack,
-  AudioLines, Headphones, SlidersHorizontal,
+  AudioLines, Headphones, SlidersHorizontal, ChevronUp, ChevronDown,
 } from 'lucide-angular';
 import { catchError, of } from 'rxjs';
 import { ScriptService } from '@core/services/script.service';
 import { ScriptPlaybackService } from '@core/services/voice/script-playback.service';
+import { TtsService } from '@core/services/voice/tts.service';
 import { ListenSettingsSheetComponent } from './listen-settings.sheet';
 
 /** Device tier per UIStandards.md §2 Device-Type Matrix. */
@@ -81,10 +82,11 @@ type Tier = 'xxs' | 'phone' | 'tablet' | 'desktop';
         </div>
 
         <!-- Lyrics list -->
-        <div class="flex-1 overflow-y-auto px-4 pb-4 space-y-1.5 min-h-0" style="scroll-behavior: smooth;">
+        <div #lyrics class="relative flex-1 overflow-y-auto px-4 pb-4 space-y-1.5 min-h-0"
+          style="scroll-behavior: smooth;" (scroll)="onLyricsScroll()">
           @for (line of playback.lines(); track line.index) {
             <button [id]="'listen-line-' + line.index"
-              (click)="playback.seekTo(line.index)"
+              (click)="onLineTap(line.index)"
               class="w-full text-left rounded-2xl px-4 py-3 transition-all duration-300"
               [style.background]="line.index === playback.currentIndex() ? 'rgba(255,255,255,0.10)' : 'transparent'"
               [style.border]="line.index === playback.currentIndex() ? '1px solid ' + playback.roleColor(line.speakerLabel) : '1px solid transparent'">
@@ -110,6 +112,18 @@ type Tier = 'xxs' | 'phone' | 'tablet' | 'desktop';
           }
         </div>
 
+        <!-- Scroll-follow pill: shown when the user scrolls away from the playing line -->
+        @if (showJumpPill()) {
+          <div class="relative z-10 flex justify-center pointer-events-none">
+            <button (click)="jumpToPlaying()"
+              class="pointer-events-auto -mt-1 mb-1 inline-flex items-center gap-1.5 rounded-full bg-white text-[#1A1A2E]
+                     px-3.5 h-9 shadow-xl active:scale-95 transition-all">
+              <i-lucide [img]="jumpDir() === 'up' ? ChevronUpIcon : ChevronDownIcon" size="16"></i-lucide>
+              <span class="text-[11px] font-black uppercase tracking-widest">Now playing</span>
+            </button>
+          </div>
+        }
+
         <!-- Dock: seek + transport -->
         <div class="shrink-0 px-6 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]
                     bg-gradient-to-t from-[#0F0F1C] via-[#0F0F1C]/95 to-transparent">
@@ -133,7 +147,7 @@ type Tier = 'xxs' | 'phone' | 'tablet' | 'desktop';
 
           <!-- Transport -->
           <div class="flex items-center justify-center gap-6 md:gap-8">
-            <button (click)="playback.prev()"
+            <button (click)="onPrev()"
               class="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center text-white/85 hover:text-white active:scale-95 transition-all">
               <i-lucide [img]="PrevIcon" [size]="iconSize('side')"></i-lucide>
             </button>
@@ -143,7 +157,7 @@ type Tier = 'xxs' | 'phone' | 'tablet' | 'desktop';
               <i-lucide [img]="playback.isPlaying() ? PauseIcon : PlayIcon" [size]="iconSize('play')"></i-lucide>
             </button>
 
-            <button (click)="playback.next()"
+            <button (click)="onNext()"
               class="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center text-white/85 hover:text-white active:scale-95 transition-all">
               <i-lucide [img]="NextIcon" [size]="iconSize('side')"></i-lucide>
             </button>
@@ -162,6 +176,7 @@ export class ListenScriptComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private sheet = inject(MatBottomSheet);
   private platformId = inject(PLATFORM_ID);
+  private tts = inject(TtsService);
 
   readonly BackIcon = ChevronLeft;
   readonly PlayIcon = Play;
@@ -171,9 +186,24 @@ export class ListenScriptComponent implements OnInit, OnDestroy {
   readonly WaveIcon = AudioLines;
   readonly HeadphonesIcon = Headphones;
   readonly SettingsIcon = SlidersHorizontal;
+  readonly ChevronUpIcon = ChevronUp;
+  readonly ChevronDownIcon = ChevronDown;
 
   title = signal('');
   isLoading = signal(true);
+
+  /**
+   * Auto-follow: when true the active line is auto-centered as playback advances. A MANUAL scroll
+   * turns it off (so the list stops yanking back, esp. on role switch); the "Now playing" pill
+   * re-enables it. (Item 9)
+   */
+  private autoFollow = true;
+  /** Suppress the (scroll) handler while WE are programmatically scrolling. */
+  private programmaticScroll = false;
+  private programmaticTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Pill visibility + direction (chevron points toward the off-screen playing line). */
+  readonly showJumpPill = signal(false);
+  readonly jumpDir = signal<'up' | 'down'>('down');
 
   /** Device tier (§2 matrix) — drives per-device icon sizes. Fonts use clamp() (CSS, no JS). */
   readonly tier = signal<Tier>('phone');
@@ -207,11 +237,13 @@ export class ListenScriptComponent implements OnInit, OnDestroy {
     }
 
     // Spotify-style auto-scroll: smoothly ease the active line to the VERTICAL CENTER of the lyrics
-    // viewport whenever the playback position changes (skip while the user is dragging the seek bar).
+    // viewport whenever the playback position changes — but ONLY while auto-follow is on. When the
+    // user has scrolled away, we leave the list where they put it and instead refresh the pill.
     effect(() => {
       const idx = this.playback.currentIndex();
       if (!isPlatformBrowser(this.platformId) || !this.playback.hasContent() || this.scrubbing) return;
-      queueMicrotask(() => this.centerActiveLine(idx));
+      if (this.autoFollow) queueMicrotask(() => this.centerActiveLine(idx));
+      else queueMicrotask(() => this.refreshPill());
     });
   }
 
@@ -223,10 +255,54 @@ export class ListenScriptComponent implements OnInit, OnDestroy {
     const cRect = container.getBoundingClientRect();
     const eRect = el.getBoundingClientRect();
     const delta = (eRect.top - cRect.top) - (container.clientHeight / 2) + (el.clientHeight / 2);
+    this.beginProgrammaticScroll();
     container.scrollTo({ top: Math.max(0, container.scrollTop + delta), behavior: 'smooth' });
+    this.showJumpPill.set(false);
   }
 
+  // ── Scroll-follow (Item 9) ─────────────────────────────────────────
+
+  /** Mark the next scroll events (~600ms) as programmatic so they don't disable auto-follow. */
+  private beginProgrammaticScroll(): void {
+    this.programmaticScroll = true;
+    if (this.programmaticTimer) clearTimeout(this.programmaticTimer);
+    this.programmaticTimer = setTimeout(() => { this.programmaticScroll = false; }, 600);
+  }
+
+  /** A manual scroll suspends auto-follow and shows the "Now playing" pill (if the line is off-screen). */
+  onLyricsScroll(): void {
+    if (this.programmaticScroll) return;
+    this.autoFollow = false;
+    this.refreshPill();
+  }
+
+  /** Show the pill (with the correct chevron) only when the playing line is outside the viewport. */
+  private refreshPill(): void {
+    const el = document.getElementById(`listen-line-${this.playback.currentIndex()}`);
+    const container = el?.parentElement;
+    if (!el || !container) { this.showJumpPill.set(false); return; }
+    const cRect = container.getBoundingClientRect();
+    const eRect = el.getBoundingClientRect();
+    if (eRect.bottom < cRect.top) { this.jumpDir.set('up'); this.showJumpPill.set(true); }
+    else if (eRect.top > cRect.bottom) { this.jumpDir.set('down'); this.showJumpPill.set(true); }
+    else this.showJumpPill.set(false);
+  }
+
+  /** Pill tap: re-enable auto-follow and center the playing line. */
+  jumpToPlaying(): void {
+    this.autoFollow = true;
+    this.centerActiveLine(this.playback.currentIndex());
+  }
+
+  // ── Follow-aware transport (explicit user jumps re-enable auto-follow) ──
+  onPrev(): void { this.autoFollow = true; this.playback.prev(); }
+  onNext(): void { this.autoFollow = true; this.playback.next(); }
+  onLineTap(index: number): void { this.autoFollow = true; this.playback.seekTo(index); }
+
   ngOnInit(): void {
+    // Prime the TTS engine within this navigation gesture so the first line isn't clipped (Item 3).
+    void this.tts.warmUp();
+
     const scriptId = this.route.snapshot.paramMap.get('scriptId');
     if (!scriptId) {
       this.isLoading.set(false);
@@ -252,6 +328,7 @@ export class ListenScriptComponent implements OnInit, OnDestroy {
   // ── Seek bar: map an X position to the nearest LINE (no mid-line seek on-device) ──
   onSeekDown(e: PointerEvent): void {
     this.scrubbing = true;
+    this.autoFollow = true;   // scrubbing is an explicit jump — resume following after
     (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
     this.seekFromEvent(e);
   }
@@ -262,6 +339,7 @@ export class ListenScriptComponent implements OnInit, OnDestroy {
     if (!this.scrubbing) return;
     this.scrubbing = false;
     (e.currentTarget as HTMLElement).releasePointerCapture?.(e.pointerId);
+    if (this.autoFollow) this.centerActiveLine(this.playback.currentIndex());
   }
 
   private seekFromEvent(e: PointerEvent): void {
@@ -279,6 +357,7 @@ export class ListenScriptComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     if (isPlatformBrowser(this.platformId)) window.removeEventListener('resize', this.onResize);
+    if (this.programmaticTimer) clearTimeout(this.programmaticTimer);
     this.playback.reset();
   }
 }

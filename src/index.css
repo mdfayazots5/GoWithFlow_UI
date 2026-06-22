@@ -179,3 +179,19 @@ body {
 /* Utility for no scrollbar */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Bottom-sheet panel (Listen settings, script preview). The Material container has no surface of
+   its own here, so give it a solid card background, rounded top corners and safe-area padding —
+   otherwise the sheet floats over the page with no panel (broken UI). */
+.preview-bottom-sheet.mat-bottom-sheet-container,
+.preview-bottom-sheet .mat-bottom-sheet-container {
+  background: var(--gw-card-bg);
+  color: var(--gw-text);
+  border-top-left-radius: 20px;
+  border-top-right-radius: 20px;
+  padding: 0;
+  overflow: hidden;
+  max-height: 85vh;
+  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.18);
+  padding-bottom: env(safe-area-inset-bottom);
+}

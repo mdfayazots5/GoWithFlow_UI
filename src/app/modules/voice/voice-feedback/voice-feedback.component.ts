@@ -20,6 +20,14 @@ export class VoiceFeedbackComponent implements OnChanges {
 
   @Input() result: VoiceSessionResult | null = null;
 
+  /**
+   * Q&A blind-answer turns pass this true. A free-form spoken answer has no single scripted
+   * "expected" sentence to score word-by-word against, so the band/score strip, the word-level
+   * correction highlight and the hesitation notice are suppressed — only the plain
+   * "You said / Expected" comparison is shown. No pronunciation/word-correction scoring is surfaced.
+   */
+  @Input() hideScoring = false;
+
   overallBand: FeedbackBand | null = null;
   wordColorMap: { word: string; css: string; tooltip: string; isMissing: boolean }[] = [];
   showDetailedBreakdown = true;

@@ -1,14 +1,14 @@
 <div class="voice-feedback" *ngIf="result">
 
   <!-- Overall Band Banner -->
-  <div class="band-banner" *ngIf="overallBand" [style.background]="overallBand.bg" [style.color]="overallBand.color">
+  <div class="band-banner" *ngIf="overallBand && !hideScoring" [style.background]="overallBand.bg" [style.color]="overallBand.color">
     <span class="band-emoji">{{ overallBand.emoji }}</span>
     <span class="band-label">{{ overallBand.label }}</span>
     <span class="overall-score">{{ result.overallScore }}/100</span>
   </div>
 
   <!-- Score Strip -->
-  <div class="score-strip">
+  <div class="score-strip" *ngIf="!hideScoring">
     <div class="score-item">
       <span class="score-num" [class.good]="result.fluencyScore >= 75" [class.bad]="result.fluencyScore < 60">
         {{ result.fluencyScore }}
@@ -30,7 +30,7 @@
   </div>
 
   <!-- Word-Level Highlight Row -->
-  <div class="word-highlight-row">
+  <div class="word-highlight-row" *ngIf="!hideScoring">
     <p class="section-label">What you said:</p>
     <div class="words-row">
       <span
@@ -52,19 +52,19 @@
   </div>
 
   <!-- Hesitation Warning -->
-  <div class="hesitation-row" *ngIf="result.hesitationWords.length > 0">
+  <div class="hesitation-row" *ngIf="!hideScoring && result.hesitationWords.length > 0">
     <span class="hesitation-icon">🤔</span>
     <span class="hesitation-text">
       Hesitation words detected: <strong>{{ result.hesitationWords.join(', ') }}</strong>
     </span>
   </div>
 
-  <!-- Transcribed vs Expected (collapsed by default) -->
-  <button class="toggle-detail" (click)="showDetailedBreakdown = !showDetailedBreakdown">
+  <!-- Transcribed vs Expected (collapsed by default; always shown for Q&A blind answers) -->
+  <button class="toggle-detail" *ngIf="!hideScoring" (click)="showDetailedBreakdown = !showDetailedBreakdown">
     {{ showDetailedBreakdown ? 'Hide detail ↑' : 'Show full comparison ↓' }}
   </button>
 
-  <div class="detail-panel" *ngIf="showDetailedBreakdown">
+  <div class="detail-panel" *ngIf="showDetailedBreakdown || hideScoring">
     <div class="comparison-row">
       <label>You said:</label>
       <p class="spoken-text">{{ result.transcribedText || '(nothing detected)' }}</p>

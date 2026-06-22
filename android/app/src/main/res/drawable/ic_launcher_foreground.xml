@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  GoWithFlow app icon foreground — "Voice-wave G".
+  A white circular 'G' (open on the right) with rounded sound-wave bars rising in its mouth; the
+  tallest centre bar is brand orange. Content sits inside the adaptive safe zone (~22–86 of 108).
+  Background colour is @color/ic_launcher_background (brand deep blue).
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 'G' ring: a thick white arc with an opening on the right -->
+    <path
+        android:pathData="M76.8,46.6 A24,24 0 1 1 76.8,61.4"
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="9"
+        android:strokeLineCap="round" />
+
+    <!-- Voice-wave bars in the mouth of the G (left + right white, centre orange = accent) -->
+    <path
+        android:pathData="M58,48 L58,60"
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M64,43 L64,65"
+        android:fillColor="#00000000"
+        android:strokeColor="#E07B39"
+        android:strokeWidth="5"
+        android:strokeLineCap="round" />
+    <path
+        android:pathData="M70,47 L70,61"
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="5"
+        android:strokeLineCap="round" />
+</vector>

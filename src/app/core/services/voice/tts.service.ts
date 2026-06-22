@@ -21,6 +21,9 @@ export class TtsService {
   /** Cached best-available language for this device (resolved from installed voices once). */
   private resolvedLang: string | null = null;
 
+  /** Whether the engine has been primed once this app session (see {@link warmUp}). */
+  private warmedUp = false;
+
   /**
    * Google TTS voice **code → gender** (the `<code>` in `en-in-x-<code>-local`). On real devices the
    * plugin's `name` is just the locale label ("English India") — it carries NO gender — so gender must
@@ -78,6 +81,23 @@ export class TtsService {
   }
 
   /**
+   * Primes the TTS engine once per session by speaking a near-silent priming utterance, so the FIRST
+   * real line is not clipped (cold-start swallows the leading word — verified on the Listen player).
+   * Idempotent and safe to call from a UI gesture (e.g. opening the Listen player). Failures are
+   * swallowed — warming up is best-effort.
+   */
+  async warmUp(): Promise<void> {
+    if (this.warmedUp) return;
+    this.warmedUp = true;
+    try {
+      const lang = await this.resolveBestLang();
+      await TextToSpeech.speak({ text: 'ready', lang, rate: 1.0, pitch: 1.0, volume: 0 });
+    } catch {
+      /* best-effort — engine may still warm from the attempt */
+    }
+  }
+
+  /**
    * Picks the device's best available language from LANG_CHAIN (first one that actually has a voice
    * installed), so narration uses Indian English when present and degrades gracefully otherwise.
    * Cached after the first resolution.
@@ -85,19 +105,45 @@ export class TtsService {
   private async resolveBestLang(): Promise<string> {
     if (this.resolvedLang) return this.resolvedLang;
     try {
-      const { voices } = await TextToSpeech.getSupportedVoices();
+      const voices = await this.getVoices();
       for (const lang of TtsService.LANG_CHAIN) {
         const prefix = lang.toLowerCase();
-        if (voices?.some(v => (v.lang ?? '').toLowerCase().replace('_', '-').startsWith(prefix))) {
-          this.resolvedLang = lang;
+        if (voices.some(v => (v.lang ?? '').toLowerCase().replace('_', '-').startsWith(prefix))) {
+          this.resolvedLang = lang;   // cache only a CONFIRMED match from a non-empty voice list
           return lang;
         }
       }
+      // We have voices but none in the chain — pick the first English voice, else its own locale.
+      if (voices.length) {
+        const en = voices.find(v => (v.lang ?? '').toLowerCase().startsWith('en'));
+        const fallback = (en?.lang ?? voices[0].lang ?? TtsService.LANG_CHAIN[0]).replace('_', '-');
+        this.resolvedLang = fallback;
+        return fallback;
+      }
     } catch {
-      /* fall through to default */
+      /* fall through to default; do NOT cache so a later call can resolve once voices load */
     }
-    this.resolvedLang = TtsService.LANG_CHAIN[0];
-    return this.resolvedLang;
+    // No voices available yet (web populates asynchronously) — return a default WITHOUT caching,
+    // so the next speak() re-resolves once speechSynthesis has loaded its voice list.
+    return TtsService.LANG_CHAIN[0];
+  }
+
+  /**
+   * Returns installed voices. On the web, `speechSynthesis.getVoices()` is populated asynchronously
+   * and is often EMPTY on the first call — which previously caused desktop to lock onto `en-IN`
+   * (no audio). Retry briefly so the real list is used. Returns `[]` if none ever load.
+   */
+  private async getVoices(): Promise<Array<{ lang?: string; name?: string; voiceURI?: string }>> {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        const { voices } = await TextToSpeech.getSupportedVoices();
+        if (voices?.length) return voices;
+      } catch {
+        return [];
+      }
+      await new Promise(r => setTimeout(r, 150));
+    }
+    return [];
   }
 
   /**
@@ -114,8 +160,8 @@ export class TtsService {
   ): Promise<number | null> {
     if (!gender) return null;
     try {
-      const { voices } = await TextToSpeech.getSupportedVoices();
-      if (!voices?.length) return null;
+      const voices = await this.getVoices();
+      if (!voices.length) return null;
 
       const want = lang.toLowerCase().replace('_', '-');   // e.g. 'en-in'
       const two = want.slice(0, 2);

@@ -50,14 +50,13 @@ type Filter = typeof FILTERS[number];
       <div class="max-w-lg mx-auto gwf-page-bottom space-y-4 animate-in fade-in duration-500">
 
         <!-- ── Page Heading ─────────────────────────────────────── -->
-        <div class="flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gw-primary/10 flex items-center justify-center shrink-0">
+            <i-lucide [img]="HistoryIcon" size="20" class="text-gw-primary"></i-lucide>
+          </div>
           <div>
             <h1 class="text-xl font-black text-gw-text tracking-tight leading-tight">Session History</h1>
             <p class="text-[11px] font-semibold text-gw-text-muted mt-0.5">Your past practice records</p>
-          </div>
-          <div class="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
-               style="background: rgba(61,90,153,0.08);">
-            <i-lucide [img]="HistoryIcon" size="18" style="color:#3D5A99;"></i-lucide>
           </div>
         </div>
 
