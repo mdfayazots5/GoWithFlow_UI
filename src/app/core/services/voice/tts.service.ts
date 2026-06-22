@@ -30,22 +30,8 @@ export class TtsService {
     return Capacitor.getPlatform() === 'web';
   }
 
-  /**
-   * Works around two desktop-Chrome speechSynthesis bugs before each utterance:
-   *  - the queue can get stuck in a "paused" state (no audio, no error) — `resume()` clears it;
-   *  - a leftover/cancelled utterance can make the next `speak()` throw `synthesis-failed` — `cancel()`
-   *    clears the queue. No-op when the API is unavailable.
-   */
-  private prepWebSynth(): void {
-    if (!this.isWeb) return;
-    try {
-      const synth = (globalThis as any)?.speechSynthesis;
-      if (!synth) return;
-      synth.resume();
-      synth.cancel();
-    } catch {
-      /* non-fatal */
-    }
+  private get webSynth(): SpeechSynthesis | null {
+    return this.isWeb ? ((globalThis as any)?.speechSynthesis ?? null) : null;
   }
 
   /**
@@ -79,40 +65,111 @@ export class TtsService {
     const clean = (text ?? '').trim();
     if (!clean) return;
 
+    // Web (desktop/mobile browser): drive speechSynthesis directly — the plugin layer + a pinned
+    // remote (Google network) voice were the source of repeated `synthesis-failed`. See speakWeb.
+    if (this.isWeb) {
+      await this.speakWeb(clean, opts);
+      return;
+    }
+
     const lang = opts.lang ?? await this.resolveBestLang();
     const voiceIndex = await this.resolveVoiceIndex(lang, opts.gender, opts.voiceVariant);
+    try {
+      await TextToSpeech.speak({
+        text: clean,
+        lang,
+        rate: opts.rate ?? 1.0,
+        pitch: opts.pitch ?? 1.0,
+        volume: 1.0,
+        ...(voiceIndex != null ? { voice: voiceIndex } : {}),
+      });
+    } catch (err) {
+      console.warn('[TTS] speak failed', err);
+    }
+  }
+
+  /**
+   * Web speak path. Uses the raw Web Speech API for full control and resilience against desktop-Chrome
+   * quirks that made the plugin throw `synthesis-failed`:
+   *  - **Prefers a LOCAL voice** (remote/Google network voices intermittently fail / need connectivity).
+   *  - **Never `cancel()`s right before `speak()`** (the cancel→speak race itself yields `synthesis-failed`).
+   *  - On `synthesis-failed`, **retries once without pinning a voice** (browser default).
+   *  - A **watchdog** resolves the promise if neither `onend` nor `onerror` fires (Chrome can silently
+   *    drop events), so the Listen line-loop never hangs.
+   */
+  private async speakWeb(
+    text: string,
+    opts: { rate?: number; gender?: 'Male' | 'Female'; pitch?: number; voiceVariant?: number },
+  ): Promise<void> {
+    const synth = this.webSynth;
+    if (!synth) return;
+
+    const voices = await this.getWebVoices();
+    const voice = this.pickWebVoice(voices, opts.gender, opts.voiceVariant ?? 0);
     const rate = opts.rate ?? 1.0;
     const pitch = opts.pitch ?? 1.0;
 
-    // Attempt 1: full options (resolved language + a specific same-gender voice).
-    this.prepWebSynth();
-    try {
-      await TextToSpeech.speak({
-        text: clean, lang, rate, pitch, volume: 1.0,
-        ...(voiceIndex != null ? { voice: voiceIndex } : {}),
+    const speakOnce = (useVoice: SpeechSynthesisVoice | null): Promise<'ok' | 'failed'> =>
+      new Promise(resolve => {
+        let settled = false;
+        const done = (r: 'ok' | 'failed') => { if (!settled) { settled = true; clearTimeout(watchdog); resolve(r); } };
+
+        const u = new SpeechSynthesisUtterance(text);
+        if (useVoice) { u.voice = useVoice; u.lang = useVoice.lang; }
+        u.rate = rate;
+        u.pitch = pitch;
+        u.volume = 1.0;
+        u.onend = () => done('ok');
+        u.onerror = (e: SpeechSynthesisErrorEvent) => {
+          if (e.error !== 'interrupted' && e.error !== 'canceled') console.warn('[TTS] web speak error', e.error);
+          done('failed');
+        };
+
+        // Generous watchdog: only fires if Chrome drops both events (≈350ms/word + buffer).
+        const words = text.split(/\s+/).filter(Boolean).length || 1;
+        const estMs = (words * 350) / Math.max(0.25, rate) + 1500;
+        const watchdog = setTimeout(() => done('ok'), estMs + 5000);
+
+        try { synth.resume(); } catch { /* non-fatal */ }
+        try { synth.speak(u); } catch { done('failed'); }
       });
-      return;
-    } catch (err) {
-      // Desktop Chrome throws `synthesis-failed` for a pinned remote (Google network) voice or a
-      // lang/voice mismatch. Retry once letting the browser pick its own default voice for the lang.
-      console.warn('[TTS] speak failed (attempt 1), retrying with default voice', err);
-    }
 
-    this.prepWebSynth();
-    try {
-      await TextToSpeech.speak({ text: clean, lang, rate, pitch, volume: 1.0 });
-      return;
-    } catch (err2) {
-      console.warn('[TTS] speak failed (attempt 2), retrying with engine default', err2);
-    }
+    const first = await speakOnce(voice);
+    // Retry once with the browser's own default voice if a pinned voice failed to synthesize.
+    if (first === 'failed' && voice) await speakOnce(null);
+  }
 
-    // Final attempt: bare minimum — no lang, no voice — so any working default engine speaks.
-    this.prepWebSynth();
-    try {
-      await TextToSpeech.speak({ text: clean, rate, pitch, volume: 1.0 });
-    } catch (err3) {
-      console.warn('[TTS] speak failed (all attempts)', err3);
+  /** Reads web voices, waiting briefly for the async `voiceschanged` population (first call is often empty). */
+  private getWebVoices(): Promise<SpeechSynthesisVoice[]> {
+    const synth = this.webSynth;
+    return new Promise(resolve => {
+      if (!synth) { resolve([]); return; }
+      const immediate = synth.getVoices();
+      if (immediate.length) { resolve(immediate); return; }
+      let tries = 0;
+      const iv = setInterval(() => {
+        const v = synth.getVoices();
+        if (v.length || ++tries > 12) { clearInterval(iv); resolve(v); }
+      }, 150);
+    });
+  }
+
+  /** Pick the best web voice: prefer LOCAL English voices, honoring requested gender/variant. */
+  private pickWebVoice(
+    voices: SpeechSynthesisVoice[],
+    gender?: 'Male' | 'Female',
+    variant = 0,
+  ): SpeechSynthesisVoice | null {
+    if (!voices.length) return null;
+    const english = voices.filter(v => (v.lang ?? '').toLowerCase().startsWith('en'));
+    const pool = english.length ? english : voices;
+    const local = pool.filter(v => v.localService);
+    const base = local.length ? local : pool;       // prefer local; fall back to any in pool
+    if (gender) {
+      const sameGender = base.filter(v => TtsService.voiceGender(v) === gender);
+      if (sameGender.length) return sameGender[Math.max(0, variant) % sameGender.length];
     }
+    return base[0];
   }
 
   async stop(): Promise<void> {
@@ -132,6 +189,9 @@ export class TtsService {
   async warmUp(): Promise<void> {
     if (this.warmedUp) return;
     this.warmedUp = true;
+    // Web is handled by speakWeb (local voice + retry), which doesn't clip; only the native engine
+    // needs priming. Skip on web so we don't fire a throwaway plugin call there.
+    if (this.isWeb) return;
     try {
       const lang = await this.resolveBestLang();
       await TextToSpeech.speak({ text: 'ready', lang, rate: 1.0, pitch: 1.0, volume: 0 });
