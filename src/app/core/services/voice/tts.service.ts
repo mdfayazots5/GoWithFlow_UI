@@ -109,10 +109,10 @@ export class TtsService {
     const rate = opts.rate ?? 1.0;
     const pitch = opts.pitch ?? 1.0;
 
-    const speakOnce = (useVoice: SpeechSynthesisVoice | null): Promise<'ok' | 'failed'> =>
+    const speakOnce = (useVoice: SpeechSynthesisVoice | null): Promise<'ok' | 'failed' | 'aborted'> =>
       new Promise(resolve => {
         let settled = false;
-        const done = (r: 'ok' | 'failed') => { if (!settled) { settled = true; clearTimeout(watchdog); resolve(r); } };
+        const done = (r: 'ok' | 'failed' | 'aborted') => { if (!settled) { settled = true; clearTimeout(watchdog); resolve(r); } };
 
         const u = new SpeechSynthesisUtterance(text);
         if (useVoice) { u.voice = useVoice; u.lang = useVoice.lang; }
@@ -121,7 +121,10 @@ export class TtsService {
         u.volume = 1.0;
         u.onend = () => done('ok');
         u.onerror = (e: SpeechSynthesisErrorEvent) => {
-          if (e.error !== 'interrupted' && e.error !== 'canceled') console.warn('[TTS] web speak error', e.error);
+          // An intentional stop() (pause / seek / rate change) cancels the utterance — that is NOT a
+          // failure and must NOT trigger a retry, or the line would re-speak after you press pause.
+          if (e.error === 'interrupted' || e.error === 'canceled') { done('aborted'); return; }
+          console.warn('[TTS] web speak error', e.error);
           done('failed');
         };
 
@@ -135,7 +138,8 @@ export class TtsService {
       });
 
     const first = await speakOnce(voice);
-    // Retry once with the browser's own default voice if a pinned voice failed to synthesize.
+    // Retry once with the browser's own default voice ONLY for a genuine synthesis failure
+    // (not for an intentional cancel).
     if (first === 'failed' && voice) await speakOnce(null);
   }
 
@@ -173,6 +177,12 @@ export class TtsService {
   }
 
   async stop(): Promise<void> {
+    // Web speaks via the raw Web Speech API (see speakWeb), so it must be cancelled there — the plugin
+    // stop() does not affect it. Without this, pause/seek never silenced web playback.
+    if (this.isWeb) {
+      try { this.webSynth?.cancel(); } catch { /* no-op */ }
+      return;
+    }
     try {
       await TextToSpeech.stop();
     } catch {
