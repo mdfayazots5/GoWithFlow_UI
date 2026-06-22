@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { Capacitor } from '@capacitor/core';
 import { TextToSpeech } from '@capacitor-community/text-to-speech';
 
 /**
@@ -23,6 +24,29 @@ export class TtsService {
 
   /** Whether the engine has been primed once this app session (see {@link warmUp}). */
   private warmedUp = false;
+
+  /** True on the web platform (desktop/mobile browser) — where speechSynthesis quirks apply. */
+  private get isWeb(): boolean {
+    return Capacitor.getPlatform() === 'web';
+  }
+
+  /**
+   * Works around two desktop-Chrome speechSynthesis bugs before each utterance:
+   *  - the queue can get stuck in a "paused" state (no audio, no error) — `resume()` clears it;
+   *  - a leftover/cancelled utterance can make the next `speak()` throw `synthesis-failed` — `cancel()`
+   *    clears the queue. No-op when the API is unavailable.
+   */
+  private prepWebSynth(): void {
+    if (!this.isWeb) return;
+    try {
+      const synth = (globalThis as any)?.speechSynthesis;
+      if (!synth) return;
+      synth.resume();
+      synth.cancel();
+    } catch {
+      /* non-fatal */
+    }
+  }
 
   /**
    * Google TTS voice **code → gender** (the `<code>` in `en-in-x-<code>-local`). On real devices the
@@ -57,18 +81,37 @@ export class TtsService {
 
     const lang = opts.lang ?? await this.resolveBestLang();
     const voiceIndex = await this.resolveVoiceIndex(lang, opts.gender, opts.voiceVariant);
+    const rate = opts.rate ?? 1.0;
+    const pitch = opts.pitch ?? 1.0;
 
+    // Attempt 1: full options (resolved language + a specific same-gender voice).
+    this.prepWebSynth();
     try {
       await TextToSpeech.speak({
-        text: clean,
-        lang,
-        rate: opts.rate ?? 1.0,
-        pitch: opts.pitch ?? 1.0,
-        volume: 1.0,
+        text: clean, lang, rate, pitch, volume: 1.0,
         ...(voiceIndex != null ? { voice: voiceIndex } : {}),
       });
+      return;
     } catch (err) {
-      console.warn('[TTS] speak failed', err);
+      // Desktop Chrome throws `synthesis-failed` for a pinned remote (Google network) voice or a
+      // lang/voice mismatch. Retry once letting the browser pick its own default voice for the lang.
+      console.warn('[TTS] speak failed (attempt 1), retrying with default voice', err);
+    }
+
+    this.prepWebSynth();
+    try {
+      await TextToSpeech.speak({ text: clean, lang, rate, pitch, volume: 1.0 });
+      return;
+    } catch (err2) {
+      console.warn('[TTS] speak failed (attempt 2), retrying with engine default', err2);
+    }
+
+    // Final attempt: bare minimum — no lang, no voice — so any working default engine speaks.
+    this.prepWebSynth();
+    try {
+      await TextToSpeech.speak({ text: clean, rate, pitch, volume: 1.0 });
+    } catch (err3) {
+      console.warn('[TTS] speak failed (all attempts)', err3);
     }
   }
 
@@ -172,8 +215,15 @@ export class TtsService {
       if (!pool.length) pool = voices.filter(v => norm(v).startsWith(two));
       if (!pool.length) pool = voices;
 
-      const sameGender = pool.filter(v => TtsService.voiceGender(v) === gender);
+      let sameGender = pool.filter(v => TtsService.voiceGender(v) === gender);
       if (!sameGender.length) return null;
+
+      // On the web, prefer LOCAL voices — remote (Google network) voices intermittently throw
+      // `synthesis-failed` on desktop Chrome. Only narrow if at least one local voice exists.
+      if (this.isWeb) {
+        const local = sameGender.filter(v => (v as { localService?: boolean }).localService === true);
+        if (local.length) sameGender = local;
+      }
 
       // Pick the variant-th same-gender voice so different personas use different device voices.
       const chosen = sameGender[Math.max(0, variant) % sameGender.length];
